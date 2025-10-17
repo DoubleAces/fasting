@@ -1,0 +1,518 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Daily Fasting Tracker API",
+    "version": "1.0.0",
+    "description": "REST API for managing daily fasting log entries and user settings"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000/api",
+      "description": "Local development server"
+    }
+  ],
+  "paths": {
+    "/entries": {
+      "get": {
+        "summary": "Get all entries",
+        "description": "Retrieve all daily fasting entries in reverse chronological order",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 30
+            },
+            "description": "Maximum number of entries to return"
+          },
+          {
+            "name": "skip",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 0
+            },
+            "description": "Number of entries to skip (for pagination)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "entries": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Entry"
+                      }
+                    },
+                    "total": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        }
+      },
+      "post": {
+        "summary": "Create new entry",
+        "description": "Create a new daily fasting entry. Automatically calculates fasting duration if previous day exists.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EntryInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Entry created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Entry"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "409": {
+            "description": "Entry for this date already exists",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        }
+      }
+    },
+    "/entries/{id}": {
+      "get": {
+        "summary": "Get entry by ID",
+        "description": "Retrieve a specific daily entry by its MongoDB ObjectId",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Entry MongoDB ObjectId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Entry"
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        }
+      },
+      "put": {
+        "summary": "Update entry",
+        "description": "Update an existing entry. Recalculates fasting duration for this entry and the next day's entry if meal times change.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EntryInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Entry updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Entry"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete entry",
+        "description": "Delete an entry. Recalculates fasting duration for the next day's entry if it exists.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Entry deleted successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Entry deleted successfully"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        }
+      }
+    },
+    "/settings": {
+      "get": {
+        "summary": "Get user settings",
+        "description": "Retrieve current user preferences for measurement system and time format",
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Settings"
+                }
+              }
+            }
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        }
+      },
+      "put": {
+        "summary": "Update user settings",
+        "description": "Update user preferences. Creates settings if they don't exist (first-time setup).",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SettingsInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Settings updated successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Settings"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Entry": {
+        "type": "object",
+        "properties": {
+          "_id": {
+            "type": "string",
+            "example": "6723a1b2c3d4e5f6g7h8i9j0"
+          },
+          "date": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2025-10-17T00:00:00.000Z"
+          },
+          "firstMealTime": {
+            "type": "string",
+            "pattern": "^([01]\\d|2[0-3]):([0-5]\\d)$",
+            "example": "12:00"
+          },
+          "lastMealTime": {
+            "type": "string",
+            "pattern": "^([01]\\d|2[0-3]):([0-5]\\d)$",
+            "example": "20:00"
+          },
+          "fastingDuration": {
+            "type": "number",
+            "nullable": true,
+            "example": 960,
+            "description": "Duration in minutes"
+          },
+          "sleepHours": {
+            "type": "number",
+            "nullable": true,
+            "minimum": 0,
+            "maximum": 24,
+            "example": 7.5
+          },
+          "weight": {
+            "type": "number",
+            "nullable": true,
+            "minimum": 20,
+            "maximum": 500,
+            "example": 75.5,
+            "description": "Weight in kilograms"
+          },
+          "hungerLevel": {
+            "type": "string",
+            "enum": ["Low", "Medium", "High"],
+            "nullable": true,
+            "example": "Medium"
+          },
+          "energyLevel": {
+            "type": "string",
+            "enum": ["Low Energy", "Medium Energy", "High Energy"],
+            "nullable": true,
+            "example": "High Energy"
+          },
+          "wellBeing": {
+            "type": "string",
+            "enum": ["Poor", "Fair", "Good"],
+            "nullable": true,
+            "example": "Good"
+          },
+          "foodNotes": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 1000,
+            "example": "Oatmeal for breakfast, salad for lunch"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": ["_id", "date", "firstMealTime", "lastMealTime", "createdAt", "updatedAt"]
+      },
+      "EntryInput": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "format": "date",
+            "example": "2025-10-17"
+          },
+          "firstMealTime": {
+            "type": "string",
+            "pattern": "^([01]\\d|2[0-3]):([0-5]\\d)$",
+            "example": "12:00"
+          },
+          "lastMealTime": {
+            "type": "string",
+            "pattern": "^([01]\\d|2[0-3]):([0-5]\\d)$",
+            "example": "20:00"
+          },
+          "sleepHours": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 24,
+            "example": 7.5
+          },
+          "weight": {
+            "type": "number",
+            "minimum": 20,
+            "maximum": 500,
+            "example": 75.5
+          },
+          "hungerLevel": {
+            "type": "string",
+            "enum": ["Low", "Medium", "High"]
+          },
+          "energyLevel": {
+            "type": "string",
+            "enum": ["Low Energy", "Medium Energy", "High Energy"]
+          },
+          "wellBeing": {
+            "type": "string",
+            "enum": ["Poor", "Fair", "Good"]
+          },
+          "foodNotes": {
+            "type": "string",
+            "maxLength": 1000
+          }
+        },
+        "required": ["date", "firstMealTime", "lastMealTime"]
+      },
+      "Settings": {
+        "type": "object",
+        "properties": {
+          "_id": {
+            "type": "string"
+          },
+          "userId": {
+            "type": "string",
+            "example": "default"
+          },
+          "measurementSystem": {
+            "type": "string",
+            "enum": ["metric", "imperial"],
+            "example": "metric"
+          },
+          "timeFormat": {
+            "type": "string",
+            "enum": ["12h", "24h"],
+            "example": "24h"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": ["_id", "userId", "measurementSystem", "timeFormat", "createdAt", "updatedAt"]
+      },
+      "SettingsInput": {
+        "type": "object",
+        "properties": {
+          "measurementSystem": {
+            "type": "string",
+            "enum": ["metric", "imperial"]
+          },
+          "timeFormat": {
+            "type": "string",
+            "enum": ["12h", "24h"]
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "details": {
+            "type": "object"
+          }
+        },
+        "required": ["error", "message"]
+      }
+    },
+    "responses": {
+      "ValidationError": {
+        "description": "Validation error",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": "Validation Error",
+              "message": "Invalid input data",
+              "details": {
+                "firstMealTime": "First meal time must be after last meal time"
+              }
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "Resource not found",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": "Not Found",
+              "message": "Entry not found"
+            }
+          }
+        }
+      },
+      "ServerError": {
+        "description": "Internal server error",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            },
+            "example": {
+              "error": "Internal Server Error",
+              "message": "An unexpected error occurred"
+            }
+          }
+        }
+      }
+    }
+  }
+}
