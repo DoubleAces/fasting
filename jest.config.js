@@ -56,6 +56,12 @@ const config = {
     '<rootDir>/.next/',
     '<rootDir>/node_modules/',
     '<rootDir>/tests/e2e/',
+    '<rootDir>/tests/unit/models/', // Models need MongoDB - will test via integration tests
+  ],
+  
+  // Transform ignore patterns for ES modules
+  transformIgnorePatterns: [
+    '/node_modules/(?!(bson|mongodb|mongoose|@babel)/)',
   ],
   
   // Clear mocks between tests
