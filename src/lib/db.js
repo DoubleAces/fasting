@@ -9,9 +9,6 @@
 
 import mongoose from 'mongoose';
 
-// Connection state
-const MONGODB_URI = process.env.MONGODB_URI;
-
 // Connection options for production-ready setup
 const options = {
   maxPoolSize: 10,        // Maximum number of connections in the pool
@@ -42,6 +39,7 @@ if (!cached) {
 export async function connectDB() {
   // Validate environment variable (check at runtime for tests)
   const uri = process.env.MONGODB_URI;
+  
   if (!uri) {
     throw new Error(
       'Please define the MONGODB_URI environment variable inside .env.local'

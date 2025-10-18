@@ -6,6 +6,11 @@
  * @jest-environment node
  */
 
+// Load environment variables BEFORE any imports that might use them
+import { config } from 'dotenv';
+import { resolve } from 'path';
+config({ path: resolve(process.cwd(), '.env.local') });
+
 import { connectDB, disconnectDB } from '@/lib/db';
 import Entry from '@/lib/models/Entry';
 import { GET as getAllEntries, POST as createEntry } from '@/app/api/entries/route';
@@ -33,6 +38,16 @@ async function parseResponse(response) {
 
 describe('Entry API Endpoints - Integration Tests', () => {
   beforeAll(async () => {
+    // Ensure we use the Atlas URI from .env.local, not the mocked localhost from unit tests
+    const atlasURI = process.env.MONGODB_URI;
+    if (!atlasURI || !atlasURI.includes('mongodb+srv')) {
+      // Force reload from .env.local
+      const { config } = await import('dotenv');
+      const { resolve } = await import('path');
+      config({ path: resolve(process.cwd(), '.env.local'), override: true });
+    }
+    
+    console.log('Integration test using URI:', process.env.MONGODB_URI?.substring(0, 60));
     await connectDB();
   });
 
