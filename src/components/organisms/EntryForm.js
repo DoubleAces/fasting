@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { flushSync } from 'react-dom';
 import FormField from '@/components/molecules/FormField';
+import DateInput from '@/components/molecules/DateInput';
 import TimeInput from '@/components/molecules/TimeInput';
 import RatingSelector from '@/components/molecules/RatingSelector';
 import Button from '@/components/atoms/Button';
@@ -15,19 +16,35 @@ import ErrorMessage from '@/components/atoms/ErrorMessage';
  * 
  * @param {Object} props - Component props
  * @param {Object} [props.entry] - Existing entry for edit mode
+ * @param {Object} [props.settings] - User settings for display preferences
  * @param {Function} [props.onSuccess] - Callback called after successful submission
  * @param {Function} [props.onCancel] - Callback for cancel button
  */
 const EntryForm = ({
   entry,
+  settings,
   onSuccess,
   onCancel,
 }) => {
   const isEditMode = Boolean(entry);
+  
+  // Get weight unit from settings
+  const weightUnit = settings?.measurementSystem === 'imperial' ? 'lbs' : 'kg';
+  const timeFormat = settings?.timeFormat || '24h';
+
+  // Helper to format date for input
+  const formatDateForInput = (date) => {
+    if (!date) return '';
+    const d = new Date(date);
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
 
   // Form state
   const [formData, setFormData] = useState({
-    date: entry?.date || '',
+    date: formatDateForInput(entry?.date) || '',
     firstMealTime: entry?.firstMealTime || '',
     lastMealTime: entry?.lastMealTime || '',
     hoursOfSleep: entry?.hoursOfSleep || '',
@@ -36,11 +53,17 @@ const EntryForm = ({
     energyLevel: entry?.energyLevel || '',
     wellBeing: entry?.wellBeing || '',
     foodNotes: entry?.foodNotes || '',
+    extendedFastConfirmed: entry?.extendedFastConfirmed || false,
   });
 
   // Error state
   const [errors, setErrors] = useState({});
   const [apiError, setApiError] = useState('');
+
+  // Extended fast detection state
+  const [gapInfo, setGapInfo] = useState(null);
+  const [showExtendedFastPrompt, setShowExtendedFastPrompt] = useState(false);
+  const [checkingGap, setCheckingGap] = useState(false);
 
   // Loading state
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -64,16 +87,60 @@ const EntryForm = ({
     { value: 'Good', label: 'Good' },
   ];
 
+  // Check for extended fast when date changes
+  React.useEffect(() => {
+    const checkForGap = async () => {
+      if (!formData.date) {
+        setGapInfo(null);
+        setShowExtendedFastPrompt(false);
+        return;
+      }
+
+      // Don't check if we're editing and already confirmed
+      if (isEditMode && entry?.extendedFastConfirmed) {
+        return;
+      }
+
+      setCheckingGap(true);
+      try {
+        const response = await fetch(`/api/entries/check-previous?date=${formData.date}`);
+        const data = await response.json();
+
+        if (data.hasGap && data.daysSinceLast > 1) {
+          setGapInfo(data);
+          // Only show prompt if user hasn't already confirmed for this session
+          if (!formData.extendedFastConfirmed) {
+            setShowExtendedFastPrompt(true);
+          }
+        } else {
+          setGapInfo(null);
+          setShowExtendedFastPrompt(false);
+          // Clear extended fast confirmation if gap no longer exists
+          if (formData.extendedFastConfirmed) {
+            setFormData(prev => ({ ...prev, extendedFastConfirmed: false }));
+          }
+        }
+      } catch (error) {
+        console.error('Error checking for gap:', error);
+      } finally {
+        setCheckingGap(false);
+      }
+    };
+
+    checkForGap();
+  }, [formData.date, isEditMode, entry?.extendedFastConfirmed]);
+
   // Handle field changes
   const handleChange = (field) => (e) => {
-    const value = e.target.value;
+    // Handle both event objects and direct values (for custom components)
+    const value = typeof e === 'string' ? e : e.target.value;
     setFormData(prev => ({
       ...prev,
       [field]: value,
     }));
     
-    // Clear error for this field
-    if (errors[field]) {
+    // Clear error for this field when it has a value
+    if (value && errors[field]) {
       setErrors(prev => {
         const newErrors = { ...prev };
         delete newErrors[field];
@@ -87,10 +154,36 @@ const EntryForm = ({
     // Validate numeric fields on blur
     const newErrors = { ...errors };
 
-    if (field === 'date' && !formData.date) {
-      newErrors.date = 'Date is required';
-    } else if (field === 'date') {
-      delete newErrors.date;
+    if (field === 'date') {
+      // Validate date when leaving the entire date component
+      if (!formData.date) {
+        newErrors.date = 'Date is required';
+      } else {
+        // Date is filled, clear any error
+        delete newErrors.date;
+      }
+      setErrors(newErrors);
+      return;
+    }
+
+    if (field === 'firstMealTime') {
+      if (!formData.firstMealTime) {
+        newErrors.firstMealTime = 'First meal time is required';
+      } else {
+        delete newErrors.firstMealTime;
+      }
+      setErrors(newErrors);
+      return;
+    }
+
+    if (field === 'lastMealTime') {
+      if (!formData.lastMealTime) {
+        newErrors.lastMealTime = 'Last meal time is required';
+      } else {
+        delete newErrors.lastMealTime;
+      }
+      setErrors(newErrors);
+      return;
     }
 
     if (field === 'hoursOfSleep' && formData.hoursOfSleep) {
@@ -130,6 +223,17 @@ const EntryForm = ({
     }));
   };
 
+  // Handle extended fast confirmation
+  const handleExtendedFastConfirm = () => {
+    setFormData(prev => ({ ...prev, extendedFastConfirmed: true }));
+    setShowExtendedFastPrompt(false);
+  };
+
+  const handleExtendedFastDeny = () => {
+    setFormData(prev => ({ ...prev, extendedFastConfirmed: false }));
+    setShowExtendedFastPrompt(false);
+  };
+
   // Validate form
   const validateForm = () => {
     const newErrors = {};
@@ -137,12 +241,35 @@ const EntryForm = ({
     // Required fields
     if (!formData.date) {
       newErrors.date = 'Date is required';
+    } else {
+      // Check if date is in the future
+      const selectedDate = new Date(formData.date);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0); // Reset time to start of day
+      selectedDate.setHours(0, 0, 0, 0);
+      
+      if (selectedDate > today) {
+        newErrors.date = 'Date cannot be in the future';
+      }
     }
     if (!formData.firstMealTime) {
       newErrors.firstMealTime = 'First meal time is required';
     }
     if (!formData.lastMealTime) {
       newErrors.lastMealTime = 'Last meal time is required';
+    }
+
+    // Validate that last meal is after first meal (same day eating)
+    if (formData.firstMealTime && formData.lastMealTime) {
+      const [firstHour, firstMin] = formData.firstMealTime.split(':').map(Number);
+      const [lastHour, lastMin] = formData.lastMealTime.split(':').map(Number);
+      
+      const firstMinutes = firstHour * 60 + firstMin;
+      const lastMinutes = lastHour * 60 + lastMin;
+      
+      if (lastMinutes <= firstMinutes) {
+        newErrors.lastMealTime = 'Last meal time must be after first meal time';
+      }
     }
 
     // Optional field validation
@@ -194,6 +321,7 @@ const EntryForm = ({
         date: formData.date,
         firstMealTime: formData.firstMealTime,
         lastMealTime: formData.lastMealTime,
+        extendedFastConfirmed: formData.extendedFastConfirmed, // Always send this
       };
 
       // Add optional fields only if they have values
@@ -230,6 +358,13 @@ const EntryForm = ({
 
       if (!response.ok) {
         const errorData = await response.json();
+        
+        // If we have detailed validation errors, display them
+        if (errorData.errors && Array.isArray(errorData.errors)) {
+          const errorMessages = errorData.errors.map(err => `${err.field}: ${err.message}`).join('; ');
+          throw new Error(errorMessages);
+        }
+        
         throw new Error(errorData.error || 'Failed to save entry');
       }
 
@@ -256,16 +391,76 @@ const EntryForm = ({
       )}
 
       {/* Date Field */}
-      <FormField
+      <DateInput
         id="entry-date"
         label="Date"
-        type="date"
         value={formData.date}
         onChange={handleChange('date')}
         onBlur={handleBlur('date')}
         error={errors.date}
         required
+        max={new Date().toISOString().split('T')[0]}
       />
+
+      {/* Extended Fast Confirmation Prompt */}
+      {showExtendedFastPrompt && gapInfo && (
+        <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+          <div className="flex items-start gap-3">
+            <span className="text-2xl" role="img" aria-label="Question">🤔</span>
+            <div className="flex-1">
+              <h4 className="text-sm font-semibold text-blue-900 mb-1">
+                Extended Fast Detected
+              </h4>
+              <p className="text-sm text-blue-800 mb-3">
+                Your last entry was {gapInfo.daysSinceLast} days ago on{' '}
+                {new Date(gapInfo.previousEntry.date).toLocaleDateString('en-GB', {
+                  day: '2-digit',
+                  month: '2-digit',
+                  year: 'numeric',
+                })}.
+                Did you fast continuously since your last meal at{' '}
+                {gapInfo.previousEntry.lastMealTime}?
+              </p>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant="primary"
+                  size="sm"
+                  onClick={handleExtendedFastConfirm}
+                >
+                  Yes, I fasted
+                </Button>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  onClick={handleExtendedFastDeny}
+                >
+                  No, I ate but didn't log
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Show confirmation when extended fast is confirmed */}
+      {formData.extendedFastConfirmed && gapInfo && !showExtendedFastPrompt && (
+        <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+          <div className="flex items-center gap-2">
+            <span className="text-lg" role="img" aria-label="Check">✅</span>
+            <p className="text-sm text-green-800">
+              Extended fast confirmed - fasting duration will be calculated from{' '}
+              {new Date(gapInfo.previousEntry.date).toLocaleDateString('en-GB', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+              })}{' '}
+              at {gapInfo.previousEntry.lastMealTime}
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Meal Times */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -274,7 +469,9 @@ const EntryForm = ({
           label="First Meal Time"
           value={formData.firstMealTime}
           onChange={handleChange('firstMealTime')}
+          onBlur={handleBlur('firstMealTime')}
           error={errors.firstMealTime}
+          format={timeFormat}
           required
         />
 
@@ -283,7 +480,9 @@ const EntryForm = ({
           label="Last Meal Time"
           value={formData.lastMealTime}
           onChange={handleChange('lastMealTime')}
+          onBlur={handleBlur('lastMealTime')}
           error={errors.lastMealTime}
+          format={timeFormat}
           required
         />
       </div>
@@ -306,7 +505,7 @@ const EntryForm = ({
 
         <FormField
           id="morning-weight"
-          label="Morning Weight (kg)"
+          label={`Morning Weight (${weightUnit})`}
           type="number"
           value={formData.morningWeight}
           onChange={handleChange('morningWeight')}
@@ -314,7 +513,7 @@ const EntryForm = ({
           error={errors.morningWeight}
           min={0}
           step={0.1}
-          placeholder="e.g., 75.5"
+          placeholder={weightUnit === 'lbs' ? 'e.g., 165.5' : 'e.g., 75.5'}
         />
       </div>
 

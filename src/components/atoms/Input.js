@@ -37,6 +37,8 @@ const Input = ({
     'px-3',
     'py-2',
     'text-base',
+    'text-gray-900',
+    'placeholder-gray-400',
     'rounded-lg',
     'transition-colors',
     'duration-200',

@@ -13,20 +13,50 @@ import Button from '@/components/atoms/Button';
  */
 export default function Home() {
   const [entries, setEntries] = useState([]);
+  const [settings, setSettings] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [showForm, setShowForm] = useState(false);
   const [editingEntry, setEditingEntry] = useState(null);
 
-  // Fetch entries on mount
+  // Fetch entries and settings on mount
   useEffect(() => {
-    fetchEntries();
+    fetchData();
   }, []);
+
+  // Fetch both entries and settings
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      setError('');
+
+      // Fetch both in parallel
+      const [entriesRes, settingsRes] = await Promise.all([
+        fetch('/api/entries?limit=5'),
+        fetch('/api/settings')
+      ]);
+
+      const [entriesData, settingsData] = await Promise.all([
+        entriesRes.json(),
+        settingsRes.json()
+      ]);
+
+      if (!entriesRes.ok) {
+        throw new Error(entriesData.error || 'Failed to load entries');
+      }
+
+      setEntries(entriesData.entries || []);
+      setSettings(settingsData); // Settings returned directly from API
+    } catch (err) {
+      setError(err.message || 'Failed to load data');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Fetch recent entries
   const fetchEntries = async () => {
     try {
-      setLoading(true);
       setError('');
 
       const response = await fetch('/api/entries?limit=5');
@@ -39,8 +69,6 @@ export default function Home() {
       setEntries(data.entries || []);
     } catch (err) {
       setError(err.message || 'Failed to load entries');
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -58,6 +86,15 @@ export default function Home() {
 
   // Handle delete entry
   const handleDeleteEntry = async (entryId) => {
+    // Ask for confirmation
+    const confirmed = window.confirm(
+      'Are you sure you want to delete this entry? This action cannot be undone.'
+    );
+    
+    if (!confirmed) {
+      return; // User cancelled
+    }
+
     try {
       const response = await fetch(`/api/entries/${entryId}`, {
         method: 'DELETE',
@@ -122,6 +159,7 @@ export default function Home() {
             </h2>
             <EntryForm
               entry={editingEntry}
+              settings={settings}
               onSuccess={handleFormSuccess}
               onCancel={handleFormCancel}
             />
@@ -136,6 +174,7 @@ export default function Home() {
             </h2>
             <EntryList
               entries={entries}
+              settings={settings}
               loading={loading}
               error={error}
               onEdit={handleEditEntry}

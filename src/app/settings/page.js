@@ -37,7 +37,8 @@ export default function SettingsPage() {
         throw new Error(data.error || 'Failed to load settings');
       }
 
-      setSettings(data.settings);
+      // API returns settings directly, not wrapped in data.settings
+      setSettings(data);
     } catch (err) {
       setError(err.message || 'Failed to load settings');
     } finally {

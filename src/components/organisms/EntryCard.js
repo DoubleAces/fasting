@@ -10,13 +10,64 @@ import Button from '@/components/atoms/Button';
  * Provides edit and delete actions when handlers are provided.
  * 
  * @param {Object} entry - The fasting entry to display
+ * @param {Object} [settings] - User settings for display preferences
  * @param {Function} [onEdit] - Optional callback when edit button clicked
  * @param {Function} [onDelete] - Optional callback when delete button clicked
  * @param {string} [className] - Optional additional CSS classes
  */
-export default function EntryCard({ entry, onEdit, onDelete, className = '' }) {
-  // Format the date to be more readable
-  const formattedDate = format(parseISO(entry.date), 'MMMM d, yyyy');
+export default function EntryCard({ entry, settings, onEdit, onDelete, className = '' }) {
+  // Format the date to dd/mm/yyyy
+  const formattedDate = format(parseISO(entry.date), 'dd/MM/yyyy');
+
+  // Get weight unit from settings
+  const weightUnit = settings?.measurementSystem === 'imperial' ? 'lbs' : 'kg';
+
+  // Get time format from settings
+  const timeFormat = settings?.timeFormat || '24h';
+
+  // Format time based on user settings
+  const formatTime = (timeStr) => {
+    if (!timeStr) return 'N/A';
+    
+    if (timeFormat === '12h') {
+      const [hour, minute] = timeStr.split(':').map(Number);
+      const period = hour >= 12 ? 'PM' : 'AM';
+      const hour12 = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+      return `${hour12}:${minute.toString().padStart(2, '0')} ${period}`;
+    }
+    
+    return timeStr; // 24h format
+  };
+
+  // Calculate fasting hours from fastingDuration (stored in MINUTES)
+  const fastingHours = entry.fastingDuration 
+    ? (() => {
+        const hours = Math.floor(entry.fastingDuration / 60);
+        const minutes = Math.round(entry.fastingDuration % 60);
+        return minutes > 0 ? `${hours}h ${minutes}m` : `${hours}h`;
+      })()
+    : 'N/A';
+
+  // Calculate eating window from meal times
+  const calculateEatingWindow = () => {
+    if (!entry.firstMealTime || !entry.lastMealTime) return 'N/A';
+    
+    const [firstHour, firstMin] = entry.firstMealTime.split(':').map(Number);
+    const [lastHour, lastMin] = entry.lastMealTime.split(':').map(Number);
+    
+    const firstMinutes = firstHour * 60 + firstMin;
+    const lastMinutes = lastHour * 60 + lastMin;
+    
+    let diffMinutes = lastMinutes - firstMinutes;
+    if (diffMinutes < 0) diffMinutes += 24 * 60; // Handle overnight
+    
+    const hours = Math.floor(diffMinutes / 60);
+    const minutes = diffMinutes % 60;
+    
+    return minutes > 0 ? `${hours}h ${minutes}m` : `${hours}h`;
+  };
+
+  const eatingWindow = calculateEatingWindow();
 
   // Handle edit action
   const handleEdit = () => {
@@ -73,13 +124,13 @@ export default function EntryCard({ entry, onEdit, onDelete, className = '' }) {
         <div>
           <p className="text-sm text-gray-600 mb-1">Fasting Duration</p>
           <p className="text-2xl font-bold text-indigo-600">
-            {entry.fastingHours} hours
+            {fastingHours}
           </p>
         </div>
         <div>
           <p className="text-sm text-gray-600 mb-1">Eating Window</p>
           <p className="text-2xl font-bold text-green-600">
-            {entry.eatingWindow} hours
+            {eatingWindow}
           </p>
         </div>
       </div>
@@ -89,13 +140,13 @@ export default function EntryCard({ entry, onEdit, onDelete, className = '' }) {
         <div>
           <p className="text-sm text-gray-600 mb-1">First Meal</p>
           <p className="text-lg font-medium text-gray-900">
-            {entry.firstMealTime}
+            {formatTime(entry.firstMealTime)}
           </p>
         </div>
         <div>
           <p className="text-sm text-gray-600 mb-1">Last Meal</p>
           <p className="text-lg font-medium text-gray-900">
-            {entry.lastMealTime}
+            {formatTime(entry.lastMealTime)}
           </p>
         </div>
       </div>
@@ -115,7 +166,7 @@ export default function EntryCard({ entry, onEdit, onDelete, className = '' }) {
             <div>
               <p className="text-sm text-gray-600 mb-1">Weight</p>
               <p className="text-lg font-medium text-gray-900">
-                {entry.morningWeight} kg
+                {entry.morningWeight} {weightUnit}
               </p>
             </div>
           )}

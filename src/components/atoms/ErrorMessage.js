@@ -20,7 +20,7 @@ const ErrorMessage = ({
   children,
   ...props
 }) => {
-  const baseClasses = 'text-red-600 text-sm mt-1';
+  const baseClasses = 'text-red-600 text-sm mt-1 font-medium';
   const combinedClasses = `${baseClasses} ${className}`.trim();
 
   return (

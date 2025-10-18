@@ -128,13 +128,13 @@ export const entrySchema = Joi.object({
 
   /**
    * Energy level (optional)
-   * Enum: 'Low', 'Medium', 'High Energy'
+   * Enum: 'Low Energy', 'Medium Energy', 'High Energy'
    */
   energyLevel: Joi.string()
-    .valid('Low', 'Medium', 'High Energy')
+    .valid('Low Energy', 'Medium Energy', 'High Energy')
     .optional()
     .messages({
-      'any.only': 'Energy level must be one of: Low, Medium, High Energy',
+      'any.only': 'Energy level must be one of: Low Energy, Medium Energy, High Energy',
     }),
 
   /**
@@ -158,6 +158,16 @@ export const entrySchema = Joi.object({
     .optional()
     .messages({
       'string.max': 'Food notes cannot exceed 2000 characters',
+    }),
+
+  /**
+   * Extended fast confirmation (optional)
+   * Boolean flag indicating user confirmed fasting across multi-day gap
+   */
+  extendedFastConfirmed: Joi.boolean()
+    .optional()
+    .messages({
+      'boolean.base': 'Extended fast confirmation must be true or false',
     }),
 }).options({
   stripUnknown: true, // Remove unknown fields

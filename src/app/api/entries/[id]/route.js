@@ -58,30 +58,53 @@ export const PUT = withErrorHandler(async (request, { params }) => {
   
   const dateChanged = formatDate(existingEntry.date) !== formatDate(value.date);
   const firstMealChanged = existingEntry.firstMealTime !== value.firstMealTime;
+  const extendedFastChanged = existingEntry.extendedFastConfirmed !== value.extendedFastConfirmed;
   
-  if (dateChanged || firstMealChanged) {
+  if (dateChanged || firstMealChanged || extendedFastChanged) {
     try {
-      // Get the date for the day before this entry
-      const currentDate = new Date(value.date);
-      const previousDate = new Date(currentDate);
-      previousDate.setDate(previousDate.getDate() - 1);
-      const previousDateFormatted = formatDate(previousDate);
-      
-      const previousEntry = await Entry.findOne({
-        date: new Date(previousDateFormatted),
-        _id: { $ne: params.id } // Exclude current entry
-      });
+      // If user confirmed extended fast, find the most recent previous entry
+      if (value.extendedFastConfirmed) {
+        const previousEntry = await Entry.findOne({
+          date: { $lt: new Date(value.date) },
+          _id: { $ne: params.id } // Exclude current entry
+        })
+          .sort({ date: -1 })
+          .limit(1);
 
-      if (previousEntry && previousEntry.lastMealTime && value.firstMealTime) {
-        const result = calculateFastingDuration(
-          previousEntry.lastMealTime,
-          value.firstMealTime,
-          previousEntry.date,
-          value.date
-        );
-        fastingDuration = result.totalMinutes;
+        if (previousEntry && previousEntry.lastMealTime && value.firstMealTime) {
+          const result = calculateFastingDuration(
+            previousEntry.lastMealTime,
+            value.firstMealTime,
+            previousEntry.date,
+            value.date
+          );
+          fastingDuration = result.totalMinutes;
+        } else {
+          fastingDuration = null;
+        }
       } else {
-        fastingDuration = null; // No previous day to calculate from
+        // Standard behavior: only check previous day (yesterday)
+        const currentDate = new Date(value.date);
+        const previousDate = new Date(currentDate);
+        previousDate.setDate(previousDate.getDate() - 1);
+        const previousDateFormatted = formatDate(previousDate);
+        
+        const previousEntry = await Entry.findOne({
+          date: new Date(previousDateFormatted),
+          _id: { $ne: params.id } // Exclude current entry
+        });
+
+        if (previousEntry && previousEntry.lastMealTime && value.firstMealTime) {
+          const result = calculateFastingDuration(
+            previousEntry.lastMealTime,
+            value.firstMealTime,
+            previousEntry.date,
+            value.date
+          );
+          fastingDuration = result.totalMinutes;
+        } else {
+          fastingDuration = null; // No previous day to calculate from
+        }
       }
     } catch (calcError) {
       console.warn('Could not calculate fasting duration:', calcError.message);

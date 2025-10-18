@@ -38,11 +38,17 @@ const entrySchema = new mongoose.Schema(
       },
     },
 
-    // Calculated fasting duration in hours (can be null if previous day missing)
+    // Calculated fasting duration in MINUTES (can be null if previous entry missing)
     fastingDuration: {
       type: Number,
       min: 0,
       default: null,
+    },
+
+    // Flag indicating user confirmed an extended fast (>24h gap from previous entry)
+    extendedFastConfirmed: {
+      type: Boolean,
+      default: false,
     },
 
     // Health metrics

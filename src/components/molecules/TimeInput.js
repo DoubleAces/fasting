@@ -1,149 +1,228 @@
 import React, { useState } from 'react';
-import Input from '@/components/atoms/Input';
+import Select from '@/components/atoms/Select';
 import Label from '@/components/atoms/Label';
 import ErrorMessage from '@/components/atoms/ErrorMessage';
-import { isValidTimeFormat } from '@/lib/utils/timeUtils';
 
 /**
  * TimeInput Molecule Component
  * 
- * A time input field with label and validation for both 12-hour and 24-hour formats.
- * Combines Input, Label, and ErrorMessage atoms.
- * Follows WCAG 2.1 AA accessibility guidelines.
+ * Custom time input with dropdown selectors for hour and minute.
+ * Supports both 12-hour (with AM/PM) and 24-hour formats based on format prop.
+ * Always returns time in 24-hour HH:mm format regardless of display format.
  * 
  * @param {Object} props - Component props
  * @param {string} props.id - Input element id
  * @param {string} props.label - Label text
- * @param {string} [props.value=''] - Current time value
- * @param {string} [props.format='24h'] - Time format: '12h' | '24h'
+ * @param {string} [props.value=''] - Current time value in HH:mm format (24-hour)
+ * @param {string} [props.format='24h'] - Display format: '12h' | '24h'
  * @param {boolean} [props.required=false] - Whether input is required
- * @param {boolean} [props.disabled=false] - Whether input is disabled
- * @param {boolean} [props.readOnly=false] - Whether input is read-only
  * @param {string} [props.error=''] - External error message
- * @param {string} [props.className=''] - Additional CSS classes
- * @param {Function} [props.onChange] - Change event handler
+ * @param {Function} [props.onChange] - Change handler, receives HH:mm string
  * @param {Function} [props.onBlur] - Blur event handler
  */
 const TimeInput = ({
   id,
   label,
-  value: controlledValue,
+  value,
   format = '24h',
   required = false,
-  disabled = false,
-  readOnly = false,
   error: externalError = '',
-  className = '',
   onChange,
   onBlur,
-  ...props
 }) => {
-  const [internalError, setInternalError] = useState('');
-  const [touched, setTouched] = useState(false);
-  const [internalValue, setInternalValue] = useState(controlledValue || '');
-
-  // Use controlled value if provided, otherwise use internal value
-  const value = controlledValue !== undefined ? controlledValue : internalValue;
-
-  // Determine which error to display
-  const errorMessage = externalError || (touched ? internalError : '');
-  const hasError = Boolean(errorMessage);
-
-  // Get placeholder based on format
-  const getPlaceholder = () => {
+  // Parse HH:mm into components
+  const parseTime = (timeString) => {
+    if (!timeString) return { hour: '', minute: '', period: 'AM' };
+    
+    const [hourStr, minuteStr] = timeString.split(':');
+    const hour24 = parseInt(hourStr, 10);
+    const minute = minuteStr || '';
+    
     if (format === '12h') {
-      return 'HH:mm AM/PM (e.g., 02:30 PM)';
-    }
-    return 'HH:mm (e.g., 14:30)';
-  };
-
-  // Validate time based on format
-  const validateTime = (timeValue) => {
-    // Empty is valid unless required
-    if (!timeValue || timeValue.trim() === '') {
-      if (required) {
-        return 'Time is required';
-      }
-      return '';
-    }
-
-    // Validate based on format
-    if (format === '24h') {
-      if (!isValidTimeFormat(timeValue)) {
-        return 'Invalid time format. Use HH:mm (e.g., 14:30)';
-      }
+      // Convert 24h to 12h
+      const period = hour24 >= 12 ? 'PM' : 'AM';
+      const hour12 = hour24 === 0 ? 12 : hour24 > 12 ? hour24 - 12 : hour24;
+      return { hour: hour12.toString(), minute, period };
     } else {
-      // 12-hour format validation
-      const time12hRegex = /^(0?[1-9]|1[0-2]):([0-5][0-9])\s?(AM|PM|am|pm)$/;
-      if (!time12hRegex.test(timeValue)) {
-        return 'Invalid time format. Use HH:mm AM/PM (e.g., 02:30 PM)';
+      // 24h format
+      return { hour: hourStr || '', minute, period: 'AM' };
+    }
+  };
+
+  // Convert components to HH:mm (always 24h format for storage)
+  const toTimeString = (hour, minute, period) => {
+    if (!hour || !minute) return '';
+    
+    let hour24 = parseInt(hour, 10);
+    
+    if (format === '12h') {
+      // Convert 12h to 24h
+      if (period === 'AM') {
+        if (hour24 === 12) hour24 = 0;
+      } else {
+        if (hour24 !== 12) hour24 += 12;
       }
     }
-
-    return '';
-  };
-
-  // Handle blur event
-  const handleBlur = (e) => {
-    setTouched(true);
-    const validationError = validateTime(e.target.value);
-    setInternalError(validationError);
-
-    if (onBlur) {
-      onBlur(e);
-    }
-  };
-
-  // Handle change event
-  const handleChange = (e) => {
-    const newValue = e.target.value;
     
-    // Update internal value if not controlled
-    if (controlledValue === undefined) {
-      setInternalValue(newValue);
-    }
+    const paddedHour = hour24.toString().padStart(2, '0');
+    const paddedMinute = typeof minute === 'string' ? minute : minute.toString().padStart(2, '0');
     
-    // Clear error when user starts typing after an error was shown
-    if (touched && internalError) {
-      const validationError = validateTime(newValue);
-      setInternalError(validationError);
-    }
+    return `${paddedHour}:${paddedMinute}`;
+  };
 
-    if (onChange) {
-      onChange(e);
+  const timeComponents = parseTime(value);
+  const [hour, setHour] = useState(timeComponents.hour);
+  const [minute, setMinute] = useState(timeComponents.minute);
+  const [period, setPeriod] = useState(timeComponents.period);
+
+  // Update local state when value prop changes
+  React.useEffect(() => {
+    if (value !== undefined) {
+      const parsed = parseTime(value);
+      setHour(parsed.hour);
+      setMinute(parsed.minute);
+      setPeriod(parsed.period);
+    }
+  }, [value, format]);
+
+  // Generate hour options based on format
+  const getHourOptions = () => {
+    const hours = format === '12h' 
+      ? Array.from({ length: 12 }, (_, i) => i + 1)
+      : Array.from({ length: 24 }, (_, i) => i);
+    
+    return hours.map(h => ({
+      value: h.toString().padStart(2, '0'),
+      label: h.toString().padStart(2, '0'),
+    }));
+  };
+
+  // Generate minute options (00-59)
+  const getMinuteOptions = () => {
+    return Array.from({ length: 60 }, (_, i) => ({
+      value: i.toString().padStart(2, '0'),
+      label: i.toString().padStart(2, '0'),
+    }));
+  };
+
+  // Handle changes
+  const handleHourChange = (e) => {
+    const newHour = e.target.value;
+    setHour(newHour);
+    // Always update if we have both hour and minute
+    if (newHour && minute) {
+      const timeStr = toTimeString(newHour, minute, period);
+      if (onChange) onChange(timeStr);
+    } else if (!newHour && !minute) {
+      // Clear the time if both are empty
+      if (onChange) onChange('');
     }
   };
 
-  const errorId = `${id}-error`;
+  const handleMinuteChange = (e) => {
+    const newMinute = e.target.value;
+    setMinute(newMinute);
+    // Always update if we have both hour and minute
+    if (hour && newMinute) {
+      const timeStr = toTimeString(hour, newMinute, period);
+      if (onChange) onChange(timeStr);
+    } else if (!hour && !newMinute) {
+      // Clear the time if both are empty
+      if (onChange) onChange('');
+    }
+  };
+
+  const handlePeriodChange = (e) => {
+    const newPeriod = e.target.value;
+    setPeriod(newPeriod);
+    // Always update if we have both hour and minute
+    if (hour && minute) {
+      const timeStr = toTimeString(hour, minute, newPeriod);
+      if (onChange) onChange(timeStr);
+    }
+  };
+
+  const handleBlur = () => {
+    // Only trigger onBlur if the focus is leaving the entire time input group
+    setTimeout(() => {
+      const activeElement = document.activeElement;
+      const isStillInTimeInput = 
+        activeElement?.id === `${id}-hour` ||
+        activeElement?.id === `${id}-minute` ||
+        activeElement?.id === `${id}-period`;
+      
+      if (!isStillInTimeInput && onBlur) {
+        onBlur();
+      }
+    }, 0);
+  };
 
   return (
-    <div className={className}>
-      <Label
-        htmlFor={id}
-        required={required}
-        error={hasError}
-      >
+    <div className="flex flex-col gap-2">
+      <Label htmlFor={`${id}-hour`} required={required}>
         {label}
       </Label>
       
-      <Input
-        id={id}
-        type="text"
-        value={value}
-        placeholder={getPlaceholder()}
-        required={required}
-        disabled={disabled}
-        readOnly={readOnly}
-        error={hasError}
-        aria-describedby={hasError ? errorId : undefined}
-        onChange={handleChange}
-        onBlur={handleBlur}
-        {...props}
-      />
-      
-      {hasError && (
-        <ErrorMessage id={errorId}>
-          {errorMessage}
+      <div className="flex gap-2 items-start">
+        {/* Hour Select */}
+        <div className="flex-1">
+          <Select
+            id={`${id}-hour`}
+            value={hour}
+            onChange={handleHourChange}
+            onBlur={handleBlur}
+            options={getHourOptions()}
+            placeholder="HH"
+            aria-label="Hour"
+            aria-invalid={Boolean(externalError)}
+            aria-describedby={externalError ? `${id}-error` : undefined}
+          />
+        </div>
+
+        <span className="text-gray-500 self-center text-xl leading-none pt-2" aria-hidden="true">:</span>
+
+        {/* Minute Select */}
+        <div className="flex-1">
+          <Select
+            id={`${id}-minute`}
+            value={minute}
+            onChange={handleMinuteChange}
+            onBlur={handleBlur}
+            options={getMinuteOptions()}
+            placeholder="MM"
+            aria-label="Minute"
+            aria-invalid={Boolean(externalError)}
+            aria-describedby={externalError ? `${id}-error` : undefined}
+          />
+        </div>
+
+        {/* AM/PM Select (only for 12h format) */}
+        {format === '12h' && (
+          <>
+            <span className="text-gray-500 self-center text-sm leading-none pt-3 px-1" aria-hidden="true">•</span>
+            <div className="flex-1">
+              <Select
+                id={`${id}-period`}
+                value={period}
+                onChange={handlePeriodChange}
+                onBlur={handleBlur}
+                options={[
+                  { value: 'AM', label: 'AM' },
+                  { value: 'PM', label: 'PM' },
+                ]}
+                aria-label="AM/PM"
+                aria-invalid={Boolean(externalError)}
+                aria-describedby={externalError ? `${id}-error` : undefined}
+              />
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* Error Message */}
+      {externalError && (
+        <ErrorMessage id={`${id}-error`}>
+          {externalError}
         </ErrorMessage>
       )}
     </div>

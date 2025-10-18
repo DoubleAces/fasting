@@ -36,6 +36,7 @@ const Select = ({
     'px-3',
     'py-2',
     'text-base',
+    'text-gray-900',
     'rounded-lg',
     'transition-colors',
     'duration-200',

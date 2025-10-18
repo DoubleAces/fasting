@@ -16,9 +16,16 @@ import ErrorMessage from '@/components/atoms/ErrorMessage';
  * @param {Function} [onCancel] - Optional callback when cancel button clicked
  */
 export default function SettingsForm({ settings, onSuccess, onCancel }) {
+  // Helper to convert measurementSystem to weightUnit for display
+  const getWeightUnit = (measurementSystem) => {
+    if (measurementSystem === 'imperial') return 'lbs';
+    if (measurementSystem === 'metric') return 'kg';
+    return 'kg'; // default
+  };
+
   // Form data state
   const [formData, setFormData] = useState({
-    weightUnit: settings?.weightUnit || 'kg',
+    weightUnit: getWeightUnit(settings?.measurementSystem) || 'kg',
     timeFormat: settings?.timeFormat || '24h',
     fastingGoal: settings?.fastingGoal || 16,
   });
@@ -111,24 +118,37 @@ export default function SettingsForm({ settings, onSuccess, onCancel }) {
     setApiError('');
 
     try {
-      const method = settings ? 'PUT' : 'POST';
+      // Convert weightUnit to measurementSystem for API
+      const apiPayload = {
+        measurementSystem: formData.weightUnit === 'lbs' ? 'imperial' : 'metric',
+        timeFormat: formData.timeFormat,
+        fastingGoal: Number(formData.fastingGoal),
+      };
+      
+      // Always use PUT - it creates if not exists (upsert)
       const response = await fetch('/api/settings', {
-        method,
+        method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(apiPayload),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
+        // Show detailed validation errors if available
+        if (data.errors && Array.isArray(data.errors)) {
+          const errorMessages = data.errors.map(err => `${err.field}: ${err.message}`).join('; ');
+          throw new Error(errorMessages);
+        }
         throw new Error(data.error || 'Failed to save settings');
       }
 
       // Success
       if (onSuccess) {
-        onSuccess(data.settings);
+        // API returns settings directly, not wrapped
+        onSuccess(data);
       }
     } catch (error) {
       setApiError(error.message || 'Failed to save settings');
