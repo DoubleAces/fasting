@@ -77,17 +77,18 @@ export const POST = withErrorHandler(async (request) => {
   // Calculate fasting duration if previous day exists
   let fastingDuration = null;
   try {
-    const yesterday = getYesterday(value.date);
-    const yesterdayFormatted = formatDate(yesterday);
+    // Get the date for the day before this entry
+    const currentDate = new Date(value.date);
+    const previousDate = new Date(currentDate);
+    previousDate.setDate(previousDate.getDate() - 1);
+    const previousDateFormatted = formatDate(previousDate);
     
+    // Find entry for previous day
     const previousEntry = await Entry.findOne({
-      date: {
-        $gte: new Date(yesterdayFormatted),
-        $lt: new Date(formatDate(value.date))
-      }
+      date: new Date(previousDateFormatted)
     });
 
-    if (previousEntry) {
+    if (previousEntry && previousEntry.lastMealTime && value.firstMealTime) {
       const result = calculateFastingDuration(
         previousEntry.lastMealTime,
         value.firstMealTime,

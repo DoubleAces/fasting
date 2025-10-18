@@ -525,7 +525,7 @@ describe('Entry API Endpoints - Integration Tests', () => {
 
       // Check Oct 18's fasting was recalculated based on Oct 16
       const updatedOct18 = await Entry.findById(oct18._id);
-      expect(updatedOct18.fastingDuration).toBe(960); // 16 hours from Oct 16's 20:00
+      expect(updatedOct18.fastingDuration).toBe(2400); // 40 hours from Oct 16's 20:00 (8PM) to Oct 18's 12:00 (noon)
     });
 
     it('should set next day fasting to null when no previous day remains', async () => {

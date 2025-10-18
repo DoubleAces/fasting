@@ -61,18 +61,18 @@ export const PUT = withErrorHandler(async (request, { params }) => {
   
   if (dateChanged || firstMealChanged) {
     try {
-      const yesterday = getYesterday(value.date);
-      const yesterdayFormatted = formatDate(yesterday);
+      // Get the date for the day before this entry
+      const currentDate = new Date(value.date);
+      const previousDate = new Date(currentDate);
+      previousDate.setDate(previousDate.getDate() - 1);
+      const previousDateFormatted = formatDate(previousDate);
       
       const previousEntry = await Entry.findOne({
-        date: {
-          $gte: new Date(yesterdayFormatted),
-          $lt: new Date(formatDate(value.date))
-        },
+        date: new Date(previousDateFormatted),
         _id: { $ne: params.id } // Exclude current entry
       });
 
-      if (previousEntry) {
+      if (previousEntry && previousEntry.lastMealTime && value.firstMealTime) {
         const result = calculateFastingDuration(
           previousEntry.lastMealTime,
           value.firstMealTime,
@@ -101,17 +101,17 @@ export const PUT = withErrorHandler(async (request, { params }) => {
   
   if (dateChanged || lastMealChanged) {
     try {
-      const tomorrow = getTomorrow(value.date);
-      const tomorrowFormatted = formatDate(tomorrow);
+      // Get the date for the day after this entry
+      const currentDate = new Date(value.date);
+      const nextDate = new Date(currentDate);
+      nextDate.setDate(nextDate.getDate() + 1);
+      const nextDateFormatted = formatDate(nextDate);
       
       const nextEntry = await Entry.findOne({
-        date: {
-          $gte: new Date(tomorrowFormatted),
-          $lt: new Date(formatDate(getTomorrow(tomorrow)))
-        }
+        date: new Date(nextDateFormatted)
       });
 
-      if (nextEntry) {
+      if (nextEntry && value.lastMealTime && nextEntry.firstMealTime) {
         const result = calculateFastingDuration(
           value.lastMealTime,
           nextEntry.firstMealTime,
@@ -151,30 +151,28 @@ export const DELETE = withErrorHandler(async (request, { params }) => {
 
   // Recalculate next day's fasting duration
   try {
-    const tomorrow = getTomorrow(entry.date);
-    const tomorrowFormatted = formatDate(tomorrow);
+    // Get the date for the day after the deleted entry
+    const deletedDate = new Date(entry.date);
+    const nextDate = new Date(deletedDate);
+    nextDate.setDate(nextDate.getDate() + 1);
+    const nextDateFormatted = formatDate(nextDate);
     
     const nextEntry = await Entry.findOne({
-      date: {
-        $gte: new Date(tomorrowFormatted),
-        $lt: new Date(formatDate(getTomorrow(tomorrow)))
-      }
+      date: new Date(nextDateFormatted)
     });
 
     if (nextEntry) {
-      // Try to find the new previous day
-      const yesterday = getYesterday(nextEntry.date);
-      const yesterdayFormatted = formatDate(yesterday);
+      // Try to find the new previous day (the day before the deleted entry)
+      const previousDate = new Date(deletedDate);
+      previousDate.setDate(previousDate.getDate() - 1);
+      const previousDateFormatted = formatDate(previousDate);
       
       const newPreviousEntry = await Entry.findOne({
-        date: {
-          $gte: new Date(yesterdayFormatted),
-          $lt: new Date(formatDate(nextEntry.date))
-        }
+        date: new Date(previousDateFormatted)
       });
 
       let newFastingDuration = null;
-      if (newPreviousEntry) {
+      if (newPreviousEntry && newPreviousEntry.lastMealTime && nextEntry.firstMealTime) {
         const result = calculateFastingDuration(
           newPreviousEntry.lastMealTime,
           nextEntry.firstMealTime,
