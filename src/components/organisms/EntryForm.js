@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { flushSync } from 'react-dom';
 import FormField from '@/components/molecules/FormField';
 import TimeInput from '@/components/molecules/TimeInput';
 import RatingSelector from '@/components/molecules/RatingSelector';
@@ -86,6 +87,12 @@ const EntryForm = ({
     // Validate numeric fields on blur
     const newErrors = { ...errors };
 
+    if (field === 'date' && !formData.date) {
+      newErrors.date = 'Date is required';
+    } else if (field === 'date') {
+      delete newErrors.date;
+    }
+
     if (field === 'hoursOfSleep' && formData.hoursOfSleep) {
       const sleep = parseFloat(formData.hoursOfSleep);
       if (isNaN(sleep) || sleep < 0) {
@@ -159,8 +166,7 @@ const EntryForm = ({
       newErrors.foodNotes = 'Food notes cannot exceed 2000 characters';
     }
 
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    return newErrors;
   };
 
   // Handle form submission
@@ -169,7 +175,14 @@ const EntryForm = ({
     setApiError('');
 
     // Validate form
-    if (!validateForm()) {
+    const validationErrors = validateForm();
+    
+    // Use flushSync to ensure errors are set synchronously before checking
+    flushSync(() => {
+      setErrors(validationErrors);
+    });
+    
+    if (Object.keys(validationErrors).length > 0) {
       return;
     }
 
@@ -249,6 +262,7 @@ const EntryForm = ({
         type="date"
         value={formData.date}
         onChange={handleChange('date')}
+        onBlur={handleBlur('date')}
         error={errors.date}
         required
       />
