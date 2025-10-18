@@ -20,6 +20,11 @@ const config = {
     '<rootDir>/src/**/*.test.jsx',
   ],
   
+  // Use node environment for integration tests
+  testEnvironmentOptions: {
+    customExportConditions: ['node', 'node-addons'],
+  },
+  
   // Coverage configuration
   collectCoverageFrom: [
     'src/**/*.{js,jsx}',
