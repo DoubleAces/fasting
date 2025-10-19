@@ -1,6 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 import LoginForm from '@/components/organisms/LoginForm';
 
 /**
@@ -20,19 +21,14 @@ import LoginForm from '@/components/organisms/LoginForm';
  * 
  * Route: /login
  * Layout: Auth layout (no authenticated navbar)
+ * 
+ * Note: Metadata set via document title since this is a client component
  */
 
-// Page metadata (noindex for SEO - don't index auth pages)
-export const metadata = {
-  title: 'Log In - Fasting Tracker',
-  description: 'Log in to your Fasting Tracker account to access your fasting entries and settings.',
-  robots: {
-    index: false,
-    follow: false,
-  },
-};
-
 export default function LoginPage() {
+  useEffect(() => {
+    document.title = 'Log In - Fasting Tracker';
+  }, []);
   const router = useRouter();
 
   /**
