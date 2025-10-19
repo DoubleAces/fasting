@@ -35,7 +35,11 @@ import styles from './Navbar.module.css';
 export default function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { data: session, status } = useSession();
+  
+  // Show authenticated menu while loading to prevent flicker
+  // Only hide if explicitly unauthenticated
   const isAuthenticated = status === 'authenticated';
+  const showAuthenticatedMenu = status === 'authenticated' || status === 'loading';
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(prev => !prev);
@@ -67,7 +71,7 @@ export default function Navbar() {
             FAQ
           </NavLink>
           
-          {isAuthenticated && (
+          {showAuthenticatedMenu && (
             <>
               <NavLink href="/entries" exact={true}>
                 My Entries
@@ -81,7 +85,7 @@ export default function Navbar() {
 
         {/* Desktop Auth Section */}
         <div className={styles.authButtons}>
-          {isAuthenticated ? (
+          {showAuthenticatedMenu ? (
             <>
               {session?.user?.email && (
                 <span className={styles.userEmail} title={session.user.email}>
@@ -139,7 +143,7 @@ export default function Navbar() {
               FAQ
             </NavLink>
             
-            {isAuthenticated && (
+            {showAuthenticatedMenu && (
               <>
                 <NavLink href="/entries" exact={true}>
                   My Entries
@@ -152,7 +156,7 @@ export default function Navbar() {
           </div>
           
           <div className={styles.mobileAuthButtons}>
-            {isAuthenticated ? (
+            {showAuthenticatedMenu ? (
               <>
                 {session?.user?.email && (
                   <div className={styles.mobileUserInfo}>
