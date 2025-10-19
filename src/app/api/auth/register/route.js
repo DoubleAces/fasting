@@ -17,7 +17,7 @@
  */
 
 import { NextResponse } from 'next/server';
-import connectDB from '@/lib/db';
+import { connectDB } from '@/lib/db';
 import User from '@/lib/models/User';
 import { hashPassword } from '@/lib/utils/password';
 import { registerSchema } from '@/lib/validation/authSchema';
