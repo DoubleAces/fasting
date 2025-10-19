@@ -1,13 +1,21 @@
 /**
  * Navbar Component (Organism)
  * 
- * Public navigation bar with logo, navigation links, and auth buttons.
- * Responsive with mobile hamburger menu.
+ * Navigation bar that adapts based on authentication status.
+ * Shows different links and buttons for authenticated vs unauthenticated users.
+ * 
+ * Unauthenticated:
+ * - Home, Features, FAQ links
+ * - Sign Up, Log In buttons
+ * 
+ * Authenticated:
+ * - Home, My Entries, Settings links
+ * - User email display
+ * - Sign Out button
  * 
  * Features:
  * - Logo linking to homepage
  * - Navigation links with active state
- * - Sign Up / Log In buttons
  * - Mobile hamburger menu
  * - Smooth transitions
  */
@@ -15,13 +23,17 @@
 'use client';
 
 import { useState } from 'react';
+import { useSession } from 'next-auth/react';
 import Logo from '@/components/atoms/Logo';
 import NavLink from '@/components/molecules/NavLink';
 import Link from '@/components/atoms/Link';
+import LogoutButton from '@/components/atoms/LogoutButton';
 import styles from './Navbar.module.css';
 
 export default function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { data: session, status } = useSession();
+  const isAuthenticated = status === 'authenticated';
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(prev => !prev);
@@ -44,22 +56,49 @@ export default function Navbar() {
           <NavLink href="/" exact={true}>
             Home
           </NavLink>
-          <NavLink href="/features" exact={true}>
-            Features
-          </NavLink>
-          <NavLink href="/faq" exact={true}>
-            FAQ
-          </NavLink>
+          
+          {isAuthenticated ? (
+            <>
+              <NavLink href="/entries" exact={true}>
+                My Entries
+              </NavLink>
+              <NavLink href="/settings" exact={true}>
+                Settings
+              </NavLink>
+            </>
+          ) : (
+            <>
+              <NavLink href="/features" exact={true}>
+                Features
+              </NavLink>
+              <NavLink href="/faq" exact={true}>
+                FAQ
+              </NavLink>
+            </>
+          )}
         </div>
 
-        {/* Desktop Auth Buttons */}
+        {/* Desktop Auth Section */}
         <div className={styles.authButtons}>
-          <Link href="/login" variant="text">
-            Log In
-          </Link>
-          <Link href="/register" variant="primary">
-            Sign Up
-          </Link>
+          {isAuthenticated ? (
+            <>
+              {session?.user?.email && (
+                <span className={styles.userEmail} title={session.user.email}>
+                  {session.user.name || session.user.email}
+                </span>
+              )}
+              <LogoutButton />
+            </>
+          ) : (
+            <>
+              <Link href="/login" variant="text">
+                Log In
+              </Link>
+              <Link href="/register" variant="primary">
+                Sign Up
+              </Link>
+            </>
+          )}
         </div>
 
         {/* Mobile Menu Button */}
@@ -90,20 +129,48 @@ export default function Navbar() {
             <NavLink href="/" exact={true}>
               Home
             </NavLink>
-            <NavLink href="/features" exact={true}>
-              Features
-            </NavLink>
-            <NavLink href="/faq" exact={true}>
-              FAQ
-            </NavLink>
+            
+            {isAuthenticated ? (
+              <>
+                <NavLink href="/entries" exact={true}>
+                  My Entries
+                </NavLink>
+                <NavLink href="/settings" exact={true}>
+                  Settings
+                </NavLink>
+              </>
+            ) : (
+              <>
+                <NavLink href="/features" exact={true}>
+                  Features
+                </NavLink>
+                <NavLink href="/faq" exact={true}>
+                  FAQ
+                </NavLink>
+              </>
+            )}
           </div>
+          
           <div className={styles.mobileAuthButtons}>
-            <Link href="/login" variant="secondary">
-              Log In
-            </Link>
-            <Link href="/register" variant="primary">
-              Sign Up
-            </Link>
+            {isAuthenticated ? (
+              <>
+                {session?.user?.email && (
+                  <div className={styles.mobileUserInfo}>
+                    Logged in as: {session.user.name || session.user.email}
+                  </div>
+                )}
+                <LogoutButton className={styles.mobileLogoutButton} />
+              </>
+            ) : (
+              <>
+                <Link href="/login" variant="secondary">
+                  Log In
+                </Link>
+                <Link href="/register" variant="primary">
+                  Sign Up
+                </Link>
+              </>
+            )}
           </div>
         </div>
       )}

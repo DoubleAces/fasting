@@ -40,6 +40,28 @@
   flex-shrink: 0;
 }
 
+.userEmail {
+  font-size: 0.875rem;
+  color: var(--text-secondary, #6b7280);
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mobileUserInfo {
+  padding: 0.75rem 0;
+  font-size: 0.875rem;
+  color: var(--text-secondary, #6b7280);
+  border-bottom: 1px solid var(--border-gray, #e5e7eb);
+  margin-bottom: 0.75rem;
+}
+
+.mobileLogoutButton {
+  width: 100%;
+  justify-content: center;
+}
+
 /* Mobile Menu Button */
 .mobileMenuButton {
   display: none;

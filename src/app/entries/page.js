@@ -7,7 +7,6 @@
 
 import { auth } from '@/lib/auth';
 import { redirect } from 'next/navigation';
-import LogoutButton from '@/components/atoms/LogoutButton';
 
 export const metadata = {
   title: 'My Entries - Fasting Tracker',
@@ -26,17 +25,14 @@ export default async function EntriesPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header with Logout */}
-        <div className="mb-8 flex justify-between items-start">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">
-              Welcome back, {session.user.name || session.user.email}!
-            </h1>
-            <p className="mt-2 text-gray-600">
-              Track your fasting journey and monitor your progress.
-            </p>
-          </div>
-          <LogoutButton />
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900">
+            Welcome back, {session.user.name || session.user.email}!
+          </h1>
+          <p className="mt-2 text-gray-600">
+            Track your fasting journey and monitor your progress.
+          </p>
         </div>
 
         {/* User Info Card */}
