@@ -730,4 +730,418 @@ describe('EntryForm Component', () => {
       });
     });
   });
+
+  describe('Extended Fast Detection', () => {
+    const mockPreviousEntry = {
+      _id: 'prev-entry-123',
+      date: '2024-03-13',
+      lastMealTime: '20:00',
+      fastingDuration: 960,
+    };
+
+    beforeEach(() => {
+      jest.clearAllMocks();
+    });
+
+    it('should call check-previous API when date is entered', async () => {
+      const user = userEvent.setup();
+      
+      // Mock check-previous API
+      fetch.mockImplementation((url) => {
+        if (url.includes('check-previous')) {
+          return Promise.resolve({
+            ok: true,
+            json: async () => ({ hasGap: false, daysSinceLast: 0 }),
+          });
+        }
+        return Promise.resolve({ ok: true, json: async () => ({ success: true }) });
+      });
+
+      render(<EntryForm />);
+
+      await fillDateInput(user, '2024-03-15');
+
+      await waitFor(() => {
+        expect(fetch).toHaveBeenCalledWith(
+          expect.stringContaining('/api/entries/check-previous?date=2024-03-15')
+        );
+      });
+    });
+
+    it('should show extended fast prompt when gap detected', async () => {
+      const user = userEvent.setup();
+      
+      // Mock check-previous API with gap
+      fetch.mockImplementation((url) => {
+        if (url.includes('check-previous')) {
+          return Promise.resolve({
+            ok: true,
+            json: async () => ({
+              hasGap: true,
+              daysSinceLast: 2,
+              previousEntry: mockPreviousEntry,
+            }),
+          });
+        }
+        return Promise.resolve({ ok: true, json: async () => ({ success: true }) });
+      });
+
+      render(<EntryForm />);
+
+      await fillDateInput(user, '2024-03-15');
+
+      await waitFor(() => {
+        expect(screen.getByText(/extended fast detected/i)).toBeInTheDocument();
+      });
+
+      expect(screen.getByText(/your last entry was 2 days ago/i)).toBeInTheDocument();
+      expect(screen.getByText(/13\/03\/2024/)).toBeInTheDocument();
+      expect(screen.getByText(/20:00/)).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /yes, i fasted/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /no, i ate but didn't log/i })).toBeInTheDocument();
+    });
+
+    it('should not show prompt when no gap detected', async () => {
+      const user = userEvent.setup();
+      
+      // Mock check-previous API with no gap
+      fetch.mockImplementation((url) => {
+        if (url.includes('check-previous')) {
+          return Promise.resolve({
+            ok: true,
+            json: async () => ({
+              hasGap: false,
+              daysSinceLast: 1,
+            }),
+          });
+        }
+        return Promise.resolve({ ok: true, json: async () => ({ success: true }) });
+      });
+
+      render(<EntryForm />);
+
+      await fillDateInput(user, '2024-03-15');
+
+      await waitFor(() => {
+        expect(fetch).toHaveBeenCalledWith(
+          expect.stringContaining('/api/entries/check-previous')
+        );
+      });
+
+      expect(screen.queryByText(/extended fast detected/i)).not.toBeInTheDocument();
+    });
+
+    it('should confirm extended fast when "Yes" clicked', async () => {
+      const user = userEvent.setup();
+      
+      // Mock check-previous API with gap
+      fetch.mockImplementation((url) => {
+        if (url.includes('check-previous')) {
+          return Promise.resolve({
+            ok: true,
+            json: async () => ({
+              hasGap: true,
+              daysSinceLast: 2,
+              previousEntry: mockPreviousEntry,
+            }),
+          });
+        }
+        return Promise.resolve({ ok: true, json: async () => ({ success: true }) });
+      });
+
+      render(<EntryForm />);
+
+      await fillDateInput(user, '2024-03-15');
+
+      await waitFor(() => {
+        expect(screen.getByText(/extended fast detected/i)).toBeInTheDocument();
+      });
+
+      const yesButton = screen.getByRole('button', { name: /yes, i fasted/i });
+      await user.click(yesButton);
+
+      await waitFor(() => {
+        expect(screen.queryByText(/extended fast detected/i)).not.toBeInTheDocument();
+        expect(screen.getByText(/extended fast confirmed/i)).toBeInTheDocument();
+      });
+
+      expect(screen.getByText(/fasting duration will be calculated from/i)).toBeInTheDocument();
+      expect(screen.getByText(/13\/03\/2024/)).toBeInTheDocument();
+    });
+
+    it('should dismiss prompt when "No" clicked', async () => {
+      const user = userEvent.setup();
+      
+      // Mock check-previous API with gap
+      fetch.mockImplementation((url) => {
+        if (url.includes('check-previous')) {
+          return Promise.resolve({
+            ok: true,
+            json: async () => ({
+              hasGap: true,
+              daysSinceLast: 2,
+              previousEntry: mockPreviousEntry,
+            }),
+          });
+        }
+        return Promise.resolve({ ok: true, json: async () => ({ success: true }) });
+      });
+
+      render(<EntryForm />);
+
+      await fillDateInput(user, '2024-03-15');
+
+      await waitFor(() => {
+        expect(screen.getByText(/extended fast detected/i)).toBeInTheDocument();
+      });
+
+      const noButton = screen.getByRole('button', { name: /no, i ate but didn't log/i });
+      await user.click(noButton);
+
+      await waitFor(() => {
+        expect(screen.queryByText(/extended fast detected/i)).not.toBeInTheDocument();
+      });
+
+      expect(screen.queryByText(/extended fast confirmed/i)).not.toBeInTheDocument();
+    });
+
+    it('should include extendedFastConfirmed in form submission when confirmed', async () => {
+      const handleSuccess = jest.fn();
+      const user = userEvent.setup();
+      
+      // Mock check-previous API with gap
+      fetch.mockImplementation((url) => {
+        if (url.includes('check-previous')) {
+          return Promise.resolve({
+            ok: true,
+            json: async () => ({
+              hasGap: true,
+              daysSinceLast: 2,
+              previousEntry: mockPreviousEntry,
+            }),
+          });
+        }
+        if (url.includes('/api/entries') && !url.includes('check-previous')) {
+          return Promise.resolve({
+            ok: true,
+            json: async () => ({
+              success: true,
+              entry: {
+                _id: 'new-entry-123',
+                date: '2024-03-15',
+                extendedFastConfirmed: true,
+              },
+            }),
+          });
+        }
+        return Promise.resolve({ ok: true, json: async () => ({ success: true }) });
+      });
+
+      render(<EntryForm onSuccess={handleSuccess} />);
+
+      await fillDateInput(user, '2024-03-15');
+
+      await waitFor(() => {
+        expect(screen.getByText(/extended fast detected/i)).toBeInTheDocument();
+      });
+
+      const yesButton = screen.getByRole('button', { name: /yes, i fasted/i });
+      await user.click(yesButton);
+
+      await waitFor(() => {
+        expect(screen.getByText(/extended fast confirmed/i)).toBeInTheDocument();
+      });
+
+      // Fill remaining required fields
+      await fillTimeInput(user, 'First Meal Time', '12:00');
+      await fillTimeInput(user, 'Last Meal Time', '20:00');
+
+      const submitButton = screen.getByRole('button', { name: /save entry/i });
+      await user.click(submitButton);
+
+      await waitFor(() => {
+        const entrySaveCall = fetch.mock.calls.find(
+          call => call[0] === '/api/entries' && call[1]?.method === 'POST'
+        );
+        expect(entrySaveCall).toBeDefined();
+        const requestBody = JSON.parse(entrySaveCall[1].body);
+        expect(requestBody.extendedFastConfirmed).toBe(true);
+      });
+    });
+
+    it('should not include extendedFastConfirmed when denied', async () => {
+      const handleSuccess = jest.fn();
+      const user = userEvent.setup();
+      
+      // Mock check-previous API with gap
+      fetch.mockImplementation((url) => {
+        if (url.includes('check-previous')) {
+          return Promise.resolve({
+            ok: true,
+            json: async () => ({
+              hasGap: true,
+              daysSinceLast: 2,
+              previousEntry: mockPreviousEntry,
+            }),
+          });
+        }
+        if (url.includes('/api/entries') && !url.includes('check-previous')) {
+          return Promise.resolve({
+            ok: true,
+            json: async () => ({
+              success: true,
+              entry: {
+                _id: 'new-entry-123',
+                date: '2024-03-15',
+                extendedFastConfirmed: false,
+              },
+            }),
+          });
+        }
+        return Promise.resolve({ ok: true, json: async () => ({ success: true }) });
+      });
+
+      render(<EntryForm onSuccess={handleSuccess} />);
+
+      await fillDateInput(user, '2024-03-15');
+
+      await waitFor(() => {
+        expect(screen.getByText(/extended fast detected/i)).toBeInTheDocument();
+      });
+
+      const noButton = screen.getByRole('button', { name: /no, i ate but didn't log/i });
+      await user.click(noButton);
+
+      // Fill remaining required fields
+      await fillTimeInput(user, 'First Meal Time', '12:00');
+      await fillTimeInput(user, 'Last Meal Time', '20:00');
+
+      const submitButton = screen.getByRole('button', { name: /save entry/i });
+      await user.click(submitButton);
+
+      await waitFor(() => {
+        const entrySaveCall = fetch.mock.calls.find(
+          call => call[0] === '/api/entries' && call[1]?.method === 'POST'
+        );
+        expect(entrySaveCall).toBeDefined();
+        const requestBody = JSON.parse(entrySaveCall[1].body);
+        expect(requestBody.extendedFastConfirmed).toBe(false);
+      });
+    });
+
+    it('should not show prompt when editing entry with confirmed extended fast', async () => {
+      const user = userEvent.setup();
+      
+      const existingEntry = {
+        _id: 'existing-123',
+        date: '2024-03-15',
+        firstMealTime: '12:00',
+        lastMealTime: '20:00',
+        extendedFastConfirmed: true,
+      };
+
+      // Mock check-previous API
+      fetch.mockImplementation((url) => {
+        if (url.includes('check-previous')) {
+          return Promise.resolve({
+            ok: true,
+            json: async () => ({
+              hasGap: true,
+              daysSinceLast: 2,
+              previousEntry: mockPreviousEntry,
+            }),
+          });
+        }
+        return Promise.resolve({ ok: true, json: async () => ({ success: true }) });
+      });
+
+      render(<EntryForm entry={existingEntry} />);
+
+      // The date should already be filled, but let's change it to trigger check
+      await fillDateInput(user, '2024-03-16');
+
+      // Should not show the prompt because entry already has extendedFastConfirmed
+      expect(screen.queryByText(/extended fast detected/i)).not.toBeInTheDocument();
+    });
+
+    it('should clear extended fast confirmation when date changes and no gap', async () => {
+      const user = userEvent.setup();
+      
+      // Mock check-previous API - first with gap, then without
+      let callCount = 0;
+      fetch.mockImplementation((url) => {
+        if (url.includes('check-previous')) {
+          callCount++;
+          if (callCount === 1) {
+            return Promise.resolve({
+              ok: true,
+              json: async () => ({
+                hasGap: true,
+                daysSinceLast: 2,
+                previousEntry: mockPreviousEntry,
+              }),
+            });
+          } else {
+            return Promise.resolve({
+              ok: true,
+              json: async () => ({
+                hasGap: false,
+                daysSinceLast: 1,
+              }),
+            });
+          }
+        }
+        return Promise.resolve({ ok: true, json: async () => ({ success: true }) });
+      });
+
+      render(<EntryForm />);
+
+      // First date with gap
+      await fillDateInput(user, '2024-03-15');
+
+      await waitFor(() => {
+        expect(screen.getByText(/extended fast detected/i)).toBeInTheDocument();
+      });
+
+      // Confirm extended fast
+      const yesButton = screen.getByRole('button', { name: /yes, i fasted/i });
+      await user.click(yesButton);
+
+      await waitFor(() => {
+        expect(screen.getByText(/extended fast confirmed/i)).toBeInTheDocument();
+      });
+
+      // Change date to one without gap
+      await fillDateInput(user, '2024-03-14');
+
+      await waitFor(() => {
+        expect(screen.queryByText(/extended fast confirmed/i)).not.toBeInTheDocument();
+      });
+    });
+
+    it('should handle API error gracefully during check-previous', async () => {
+      const user = userEvent.setup();
+      
+      // Mock check-previous API failure
+      fetch.mockImplementation((url) => {
+        if (url.includes('check-previous')) {
+          return Promise.reject(new Error('Network error'));
+        }
+        return Promise.resolve({ ok: true, json: async () => ({ success: true }) });
+      });
+
+      render(<EntryForm />);
+
+      await fillDateInput(user, '2024-03-15');
+
+      // Should not crash and should not show prompt
+      await waitFor(() => {
+        expect(fetch).toHaveBeenCalledWith(
+          expect.stringContaining('/api/entries/check-previous')
+        );
+      });
+
+      expect(screen.queryByText(/extended fast detected/i)).not.toBeInTheDocument();
+    });
+  });
 });
