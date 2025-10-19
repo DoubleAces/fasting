@@ -1,8 +1,8 @@
 /* Footer Component Styles */
 
 .footer {
-  background-color: var(--background-secondary, #f9fafb);
-  border-top: 1px solid var(--border-gray, #e5e7eb);
+  background-color: #1f2937;
+  border-top: 1px solid #374151;
   padding: 3rem 1.5rem 2rem;
   margin-top: auto;
 }
@@ -23,7 +23,7 @@
 }
 
 .tagline {
-  color: var(--text-secondary, #6b7280);
+  color: #9ca3af;
   font-size: 0.9375rem;
   line-height: 1.6;
   margin: 0;
@@ -46,7 +46,7 @@
 .linkHeading {
   font-size: 0.875rem;
   font-weight: 600;
-  color: var(--text-primary, #111827);
+  color: #f9fafb;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   margin: 0;
@@ -59,7 +59,7 @@
 }
 
 .footerLink {
-  color: var(--text-secondary, #6b7280);
+  color: #9ca3af;
   font-size: 0.9375rem;
   text-decoration: none;
   transition: color 0.2s ease;
@@ -68,7 +68,7 @@
 }
 
 .footerLink:hover {
-  color: var(--primary-600, #059669);
+  color: #10b981;
 }
 
 .footerLink:focus-visible {
@@ -80,11 +80,11 @@
 /* Copyright Section */
 .copyrightSection {
   padding-top: 1.5rem;
-  border-top: 1px solid var(--border-gray, #e5e7eb);
+  border-top: 1px solid #374151;
 }
 
 .copyright {
-  color: var(--text-secondary, #6b7280);
+  color: #9ca3af;
   font-size: 0.875rem;
   text-align: center;
   margin: 0;

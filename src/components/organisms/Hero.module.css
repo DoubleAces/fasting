@@ -1,7 +1,11 @@
 /* Hero Component Styles */
 
 .hero {
-  background: var(--background, #ffffff);
+  background: linear-gradient(
+    180deg,
+    #f0fdf4 0%,
+    #ffffff 100%
+  );
   padding: 4rem 1.5rem 5rem;
   position: relative;
   overflow: hidden;
@@ -17,7 +21,7 @@
   bottom: 0;
   background-image: radial-gradient(
     circle at 20% 50%,
-    rgba(5, 150, 105, 0.02) 0%,
+    rgba(5, 150, 105, 0.03) 0%,
     transparent 50%
   );
   pointer-events: none;
