@@ -313,3 +313,272 @@ test.describe('Registration Flow', () => {
     });
   });
 });
+
+// ============================================================================
+// LOGIN FLOW E2E TESTS (Phase 5)
+// ============================================================================
+
+test.describe('Login Flow', () => {
+  let testEmail;
+  let testPassword;
+
+  // Create a test user before login tests
+  test.beforeAll(async ({ browser }) => {
+    const timestamp = Date.now();
+    testEmail = `e2etest+login${timestamp}@example.com`;
+    testPassword = 'SecurePass123!';
+
+    // Create a test user via registration
+    const page = await browser.newPage();
+    await page.goto('/register');
+    
+    await page.getByLabel(/email/i).fill(testEmail);
+    await page.getByLabel(/^password/i).fill(testPassword);
+    await page.getByLabel(/confirm password/i).fill(testPassword);
+    await page.getByRole('button', { name: /create account/i }).click();
+    
+    // Wait for registration to complete
+    await expect(page).toHaveURL('/entries', { timeout: 10000 });
+    await page.close();
+  });
+
+  test.describe('Successful Login', () => {
+    test('should complete full login flow and redirect to entries', async ({ page }) => {
+      await page.goto('/login');
+
+      // Wait for form to load
+      await expect(page.getByRole('heading', { name: /welcome back/i })).toBeVisible();
+
+      // Fill in login form
+      await page.getByLabel(/email/i).fill(testEmail);
+      await page.getByLabel(/^password/i).fill(testPassword);
+
+      // Submit form
+      await page.getByRole('button', { name: /^log in$/i }).click();
+
+      // Wait for redirect to entries page
+      await expect(page).toHaveURL('/entries', { timeout: 10000 });
+    });
+
+    test('should show loading state during login', async ({ page }) => {
+      await page.goto('/login');
+
+      await page.getByLabel(/email/i).fill(testEmail);
+      await page.getByLabel(/^password/i).fill(testPassword);
+
+      // Click submit
+      await page.getByRole('button', { name: /^log in$/i }).click();
+
+      // Check for loading state (button text changes)
+      await expect(page.getByRole('button', { name: /logging in/i })).toBeVisible({ timeout: 2000 });
+    });
+
+    test('should persist login with remember me', async ({ page }) => {
+      await page.goto('/login');
+
+      await page.getByLabel(/email/i).fill(testEmail);
+      await page.getByLabel(/^password/i).fill(testPassword);
+      
+      // Check remember me
+      await page.getByLabel(/remember me/i).check();
+      await expect(page.getByLabel(/remember me/i)).toBeChecked();
+
+      await page.getByRole('button', { name: /^log in$/i }).click();
+
+      // Should redirect to entries
+      await expect(page).toHaveURL('/entries', { timeout: 10000 });
+    });
+  });
+
+  test.describe('Failed Login Attempts', () => {
+    test('should show error with incorrect password', async ({ page }) => {
+      await page.goto('/login');
+
+      await page.getByLabel(/email/i).fill(testEmail);
+      await page.getByLabel(/^password/i).fill('WrongPassword123!');
+
+      await page.getByRole('button', { name: /^log in$/i }).click();
+
+      // Should show error message
+      await expect(page.getByText(/invalid email or password/i)).toBeVisible({ timeout: 5000 });
+
+      // Should NOT redirect
+      await expect(page).toHaveURL('/login');
+    });
+
+    test('should show error with non-existent email', async ({ page }) => {
+      await page.goto('/login');
+
+      await page.getByLabel(/email/i).fill('nonexistent@example.com');
+      await page.getByLabel(/^password/i).fill('SomePassword123!');
+
+      await page.getByRole('button', { name: /^log in$/i }).click();
+
+      // Should show error message
+      await expect(page.getByText(/invalid email or password/i)).toBeVisible({ timeout: 5000 });
+
+      // Should NOT redirect
+      await expect(page).toHaveURL('/login');
+    });
+
+    test('should not leak user existence through error messages', async ({ page }) => {
+      await page.goto('/login');
+
+      // Try with existing email but wrong password
+      await page.getByLabel(/email/i).fill(testEmail);
+      await page.getByLabel(/^password/i).fill('WrongPassword123!');
+      await page.getByRole('button', { name: /^log in$/i }).click();
+      
+      const errorExisting = await page.getByText(/invalid email or password/i).textContent();
+
+      await page.goto('/login');
+
+      // Try with non-existent email
+      await page.getByLabel(/email/i).fill('nonexistent@example.com');
+      await page.getByLabel(/^password/i).fill('SomePassword123!');
+      await page.getByRole('button', { name: /^log in$/i }).click();
+      
+      const errorNonExisting = await page.getByText(/invalid email or password/i).textContent();
+
+      // Error messages should be identical
+      expect(errorExisting).toBe(errorNonExisting);
+    });
+  });
+
+  test.describe('Form Validation', () => {
+    test('should validate required fields', async ({ page }) => {
+      await page.goto('/login');
+
+      // Submit empty form
+      await page.getByRole('button', { name: /^log in$/i }).click();
+
+      // Should show validation errors
+      await expect(page.getByText(/email is required/i)).toBeVisible();
+      await expect(page.getByText(/password is required/i)).toBeVisible();
+    });
+
+    test('should validate email format', async ({ page }) => {
+      await page.goto('/login');
+
+      await page.getByLabel(/email/i).fill('invalid-email');
+      await page.getByLabel(/email/i).blur();
+
+      // Should show format error
+      await expect(page.getByText(/email must be a valid email address/i)).toBeVisible();
+    });
+
+    test('should clear validation errors when typing', async ({ page }) => {
+      await page.goto('/login');
+
+      // Trigger validation
+      await page.getByRole('button', { name: /^log in$/i }).click();
+      await expect(page.getByText(/email is required/i)).toBeVisible();
+
+      // Start typing
+      await page.getByLabel(/email/i).type('t');
+
+      // Error should disappear
+      await expect(page.getByText(/email is required/i)).not.toBeVisible();
+    });
+  });
+
+  test.describe('Remember Me Functionality', () => {
+    test('should have remember me checkbox', async ({ page }) => {
+      await page.goto('/login');
+
+      const checkbox = page.getByLabel(/remember me/i);
+      await expect(checkbox).toBeVisible();
+      await expect(checkbox).not.toBeChecked();
+    });
+
+    test('should toggle remember me checkbox', async ({ page }) => {
+      await page.goto('/login');
+
+      const checkbox = page.getByLabel(/remember me/i);
+      
+      await checkbox.check();
+      await expect(checkbox).toBeChecked();
+
+      await checkbox.uncheck();
+      await expect(checkbox).not.toBeChecked();
+    });
+  });
+
+  test.describe('Navigation and Links', () => {
+    test('should have link to forgot password page', async ({ page }) => {
+      await page.goto('/login');
+
+      const forgotLink = page.getByRole('link', { name: /forgot your password/i });
+      await expect(forgotLink).toBeVisible();
+      await expect(forgotLink).toHaveAttribute('href', '/reset-password');
+    });
+
+    test('should have link to sign up page', async ({ page }) => {
+      await page.goto('/login');
+
+      const signUpLink = page.getByRole('link', { name: /sign up/i });
+      await expect(signUpLink).toBeVisible();
+      await expect(signUpLink).toHaveAttribute('href', '/register');
+    });
+
+    test('should navigate to sign up page when clicking sign up link', async ({ page }) => {
+      await page.goto('/login');
+
+      await page.getByRole('link', { name: /sign up/i }).click();
+
+      await expect(page).toHaveURL('/register');
+    });
+  });
+
+  test.describe('Google OAuth', () => {
+    test('should have Google OAuth button', async ({ page }) => {
+      await page.goto('/login');
+
+      const googleButton = page.getByRole('button', { name: /continue with google/i });
+      await expect(googleButton).toBeVisible();
+    });
+
+    test('should show divider between login and OAuth', async ({ page }) => {
+      await page.goto('/login');
+
+      await expect(page.getByText(/^or$/i)).toBeVisible();
+    });
+
+    // Note: Full OAuth flow testing requires additional setup
+    // These tests verify the button exists and is clickable
+  });
+
+  test.describe('Accessibility', () => {
+    test('should have proper form labels', async ({ page }) => {
+      await page.goto('/login');
+
+      // All inputs should have associated labels
+      await expect(page.getByLabel(/email/i)).toBeVisible();
+      await expect(page.getByLabel(/^password/i)).toBeVisible();
+      await expect(page.getByLabel(/remember me/i)).toBeVisible();
+    });
+
+    test('should have proper autocomplete attributes', async ({ page }) => {
+      await page.goto('/login');
+
+      const emailInput = page.getByLabel(/email/i);
+      const passwordInput = page.getByLabel(/^password/i);
+
+      await expect(emailInput).toHaveAttribute('autocomplete', 'email');
+      await expect(passwordInput).toHaveAttribute('autocomplete', 'current-password');
+    });
+
+    test('should have descriptive page title', async ({ page }) => {
+      await page.goto('/login');
+
+      await expect(page).toHaveTitle(/log in|login/i);
+    });
+
+    test('should have proper heading hierarchy', async ({ page }) => {
+      await page.goto('/login');
+
+      const h1 = page.getByRole('heading', { level: 1 });
+      await expect(h1).toHaveText(/welcome back/i);
+    });
+  });
+});
