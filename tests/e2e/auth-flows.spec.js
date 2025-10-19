@@ -607,15 +607,15 @@ test.describe('Google OAuth Flow', () => {
     test('should have OAuth divider on login page', async ({ page }) => {
       await page.goto('/login');
 
-      // Check for "or" divider between OAuth and email login
-      await expect(page.getByText(/or/i)).toBeVisible();
+      // Check for "OR" divider between OAuth and email login (exact match)
+      await expect(page.getByText('OR', { exact: true })).toBeVisible();
     });
 
     test('should have OAuth divider on register page', async ({ page }) => {
       await page.goto('/register');
 
-      // Check for "or" divider between OAuth and email registration
-      await expect(page.getByText(/or/i)).toBeVisible();
+      // Check for "OR" divider between OAuth and email registration (exact match)
+      await expect(page.getByText('OR', { exact: true })).toBeVisible();
     });
   });
 
