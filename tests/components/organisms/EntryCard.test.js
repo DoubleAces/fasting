@@ -9,8 +9,8 @@ describe('EntryCard Component', () => {
     date: '2024-03-15',
     firstMealTime: '12:00',
     lastMealTime: '20:00',
-    fastingHours: 16,
-    eatingWindow: 8,
+    fastingDuration: 960, // 16 hours in minutes
+    eatingWindow: 480, // 8 hours in minutes
     hoursOfSleep: 7.5,
     morningWeight: 75.5,
     hungerLevel: 'Low',
@@ -25,19 +25,22 @@ describe('EntryCard Component', () => {
     it('should render entry date', () => {
       render(<EntryCard entry={mockEntry} />);
       
-      expect(screen.getByText(/march 15, 2024/i)).toBeInTheDocument();
+      // Date is formatted as dd/MM/yyyy
+      expect(screen.getByText('15/03/2024')).toBeInTheDocument();
     });
 
     it('should render fasting duration', () => {
       render(<EntryCard entry={mockEntry} />);
       
-      expect(screen.getByText(/16.*hours/i)).toBeInTheDocument();
+      // Fasting duration shown as "16h" not "16 hours"
+      expect(screen.getByText('16h')).toBeInTheDocument();
     });
 
     it('should render eating window', () => {
       render(<EntryCard entry={mockEntry} />);
       
-      expect(screen.getByText(/8.*hours/i)).toBeInTheDocument();
+      // Eating window shown as "8h" not "8 hours"
+      expect(screen.getByText('8h')).toBeInTheDocument();
     });
 
     it('should render meal times', () => {
@@ -212,15 +215,16 @@ describe('EntryCard Component', () => {
     it('should format date in readable format', () => {
       render(<EntryCard entry={mockEntry} />);
       
-      // Should show full date format like "March 15, 2024"
-      expect(screen.getByText(/march 15, 2024/i)).toBeInTheDocument();
+      // Date shown as dd/MM/yyyy format (15/03/2024)
+      expect(screen.getByText('15/03/2024')).toBeInTheDocument();
     });
 
     it('should handle different date formats', () => {
       const entryWithDifferentDate = { ...mockEntry, date: '2024-01-01' };
       render(<EntryCard entry={entryWithDifferentDate} />);
       
-      expect(screen.getByText(/january 1, 2024/i)).toBeInTheDocument();
+      // Date shown as dd/MM/yyyy format (01/01/2024)
+      expect(screen.getByText('01/01/2024')).toBeInTheDocument();
     });
   });
 
@@ -231,14 +235,15 @@ describe('EntryCard Component', () => {
         date: '2024-03-15',
         firstMealTime: '12:00',
         lastMealTime: '20:00',
-        fastingHours: 16,
-        eatingWindow: 8,
+        fastingDuration: 960, // 16 hours in minutes
+        eatingWindow: 480, // 8 hours in minutes
       };
 
       render(<EntryCard entry={minimalEntry} />);
       
-      expect(screen.getByText(/march 15, 2024/i)).toBeInTheDocument();
-      expect(screen.getByText(/16.*hours/i)).toBeInTheDocument();
+      // Date shown as dd/MM/yyyy, fasting as "16h"
+      expect(screen.getByText('15/03/2024')).toBeInTheDocument();
+      expect(screen.getByText('16h')).toBeInTheDocument();
     });
 
     it('should handle zero values correctly', () => {
