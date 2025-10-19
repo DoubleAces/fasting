@@ -192,10 +192,30 @@ const RegisterForm = ({ onSuccess, onError }) => {
   const handleGoogleSignup = async () => {
     try {
       const { signIn } = await import('next-auth/react');
-      await signIn('google', { callbackUrl: '/entries' });
+      
+      // Check if Google OAuth is configured
+      const result = await signIn('google', { 
+        callbackUrl: '/entries',
+        redirect: false, // Don't redirect immediately to catch errors
+      });
+      
+      // If there's an error, it will be caught below
+      if (result?.error) {
+        if (result.error === 'Configuration') {
+          setSubmitError('Google sign-in is not configured. Please contact the administrator or use email registration.');
+        } else {
+          setSubmitError(`Google sign-up failed: ${result.error}`);
+        }
+        return;
+      }
+      
+      // If successful, manually redirect
+      if (result?.ok) {
+        window.location.href = '/entries';
+      }
     } catch (error) {
       console.error('Google signup error:', error);
-      setSubmitError('Failed to initiate Google sign up. Please try again.');
+      setSubmitError('Failed to initiate Google sign up. Please check your configuration or try email registration.');
     }
   };
 

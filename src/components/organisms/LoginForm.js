@@ -168,10 +168,30 @@ const LoginForm = ({ onSuccess, onError }) => {
   const handleGoogleLogin = async () => {
     try {
       const { signIn } = await import('next-auth/react');
-      await signIn('google', { callbackUrl: '/entries' });
+      
+      // Check if Google OAuth is configured
+      const result = await signIn('google', { 
+        callbackUrl: '/entries',
+        redirect: false, // Don't redirect immediately to catch errors
+      });
+      
+      // If there's an error, it will be caught below
+      if (result?.error) {
+        if (result.error === 'Configuration') {
+          setSubmitError('Google sign-in is not configured. Please contact the administrator or use email login.');
+        } else {
+          setSubmitError(`Google login failed: ${result.error}`);
+        }
+        return;
+      }
+      
+      // If successful, manually redirect
+      if (result?.ok) {
+        window.location.href = '/entries';
+      }
     } catch (error) {
       console.error('Google login error:', error);
-      setSubmitError('Failed to initiate Google login. Please try again.');
+      setSubmitError('Failed to initiate Google login. Please check your configuration or try email login.');
     }
   };
 
