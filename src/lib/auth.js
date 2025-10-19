@@ -186,43 +186,59 @@ export const authConfig = {
 
       // Handle Google OAuth sign in
       if (account?.provider === 'google' && profile) {
-        await connectDB();
+        console.log('🔵 Google OAuth JWT callback triggered');
+        console.log('Profile:', profile);
+        
+        try {
+          await connectDB();
+          console.log('✅ Database connected');
 
-        // Check if user exists in database
-        let existingUser = await User.findByEmail(profile.email);
+          // Check if user exists in database
+          let existingUser = await User.findByEmail(profile.email);
 
-        if (!existingUser) {
-          // Create new user for first-time Google login
-          existingUser = await User.create({
-            email: profile.email,
-            name: profile.name,
-            picture: profile.picture,
-            authMethod: 'google',
-            googleId: profile.sub,
-            emailVerified: true,
-          });
+          if (!existingUser) {
+            console.log('🆕 Creating new user from Google OAuth');
+            // Create new user for first-time Google login
+            existingUser = await User.create({
+              email: profile.email,
+              name: profile.name,
+              picture: profile.picture,
+              authMethod: 'google',
+              googleId: profile.sub,
+              emailVerified: true,
+            });
+            console.log('✅ User created:', existingUser._id);
 
-          // Send welcome email (async, don't wait)
-          sendWelcomeEmail({
-            email: existingUser.email,
-            name: existingUser.name,
-          }).catch((err) => console.error('Failed to send welcome email:', err));
-        } else {
-          // Update existing user with Google info if not already linked
-          if (!existingUser.googleId) {
-            existingUser.googleId = profile.sub;
-            existingUser.picture = existingUser.picture || profile.picture;
-            existingUser.emailVerified = true;
-            await existingUser.save();
+            // Send welcome email (async, don't wait)
+            sendWelcomeEmail({
+              email: existingUser.email,
+              name: existingUser.name,
+            }).catch((err) => console.error('Failed to send welcome email:', err));
+          } else {
+            console.log('✅ Existing user found:', existingUser._id);
+            // Update existing user with Google info if not already linked
+            if (!existingUser.googleId) {
+              console.log('🔗 Linking Google account to existing user');
+              existingUser.googleId = profile.sub;
+              existingUser.picture = existingUser.picture || profile.picture;
+              existingUser.emailVerified = true;
+              await existingUser.save();
+            }
+
+            // Update last login
+            await existingUser.updateLastLogin();
           }
 
-          // Update last login
-          await existingUser.updateLastLogin();
+          // Add user ID to token
+          token.id = existingUser._id.toString();
+          token.authMethod = 'google';
+          console.log('✅ Token updated with user ID:', token.id);
+        } catch (error) {
+          console.error('❌ Error in Google OAuth JWT callback:', error);
+          console.error('Error details:', error.message);
+          console.error('Stack:', error.stack);
+          // Don't throw - let NextAuth handle the error
         }
-
-        // Add user ID to token
-        token.id = existingUser._id.toString();
-        token.authMethod = 'google';
       }
 
       return token;
@@ -265,6 +281,10 @@ export const authConfig = {
      * @returns {boolean} Whether to allow sign in
      */
     async signIn({ user, account, profile }) {
+      console.log('🔵 SignIn callback triggered');
+      console.log('Provider:', account?.provider);
+      console.log('User email:', user?.email || profile?.email);
+      
       // Allow all sign ins (additional checks can be added here)
       return true;
     },
