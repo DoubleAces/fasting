@@ -6,12 +6,64 @@ import EntryForm from '@/components/organisms/EntryForm';
 // Mock fetch for API calls
 global.fetch = jest.fn();
 
+// Helper function to fill date input (day/month/year fields)
+const fillDateInput = async (user, dateString) => {
+  const [year, month, day] = dateString.split('-');
+  const dayInput = screen.getByLabelText(/^day$/i);
+  const monthInput = screen.getByLabelText(/^month$/i);
+  const yearInput = screen.getByLabelText(/^year$/i);
+  
+  await user.clear(dayInput);
+  await user.type(dayInput, day);
+  await user.clear(monthInput);
+  await user.type(monthInput, month);
+  await user.clear(yearInput);
+  await user.type(yearInput, year);
+  
+  // Tab out to trigger validation
+  await user.tab();
+};
+
+// Helper function to fill time input (hour/minute/period selects)
+const fillTimeInput = async (user, label, timeString) => {
+  const [hours, minutes] = timeString.split(':');
+  
+  // Get the selects within the time input group
+  const timeLabel = screen.getByText(new RegExp(label, 'i'));
+  const container = timeLabel.closest('.flex.flex-col');
+  const hourSelect = container.querySelector('select[aria-label="Hour"]');
+  const minuteSelect = container.querySelector('select[aria-label="Minute"]');
+  
+  await user.selectOptions(hourSelect, hours);
+  await user.selectOptions(minuteSelect, minutes);
+  
+  // Tab out to ensure blur events fire
+  await user.tab();
+};
+
 describe('EntryForm Component', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    
+    // Default mock for successful entry save
     fetch.mockResolvedValue({
       ok: true,
       json: async () => ({ success: true, data: {} }),
+    });
+    
+    // Mock check-previous endpoint to prevent extended fast prompts in tests
+    fetch.mockImplementation((url) => {
+      if (url.includes('check-previous')) {
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({ hasGap: false, daysSinceLast: 0 }),
+        });
+      }
+      // Default success response for entry creation/update
+      return Promise.resolve({
+        ok: true,
+        json: async () => ({ success: true, data: {} }),
+      });
     });
   });
 
@@ -76,9 +128,18 @@ describe('EntryForm Component', () => {
     it('should pre-fill form with existing entry data', () => {
       render(<EntryForm entry={existingEntry} />);
 
-      expect(screen.getByDisplayValue('2024-03-15')).toBeInTheDocument();
-      expect(screen.getByDisplayValue('12:00')).toBeInTheDocument();
-      expect(screen.getByDisplayValue('20:00')).toBeInTheDocument();
+      // Date fields are prefilled
+      expect(screen.getByLabelText(/^day$/i)).toHaveValue('15');
+      expect(screen.getByLabelText(/^month$/i)).toHaveValue('03');
+      expect(screen.getByLabelText(/^year$/i)).toHaveValue('2024');
+      
+      // Time fields are prefilled (check hour selects)
+      const firstMealHour = screen.getAllByLabelText(/^hour$/i)[0];
+      const lastMealHour = screen.getAllByLabelText(/^hour$/i)[1];
+      expect(firstMealHour).toHaveValue('12');
+      expect(lastMealHour).toHaveValue('20');
+      
+      // Other fields
       expect(screen.getByDisplayValue('8')).toBeInTheDocument();
       expect(screen.getByDisplayValue('75.5')).toBeInTheDocument();
       expect(screen.getByDisplayValue('Had a healthy day')).toBeInTheDocument();
@@ -134,13 +195,15 @@ describe('EntryForm Component', () => {
       const user = userEvent.setup();
       render(<EntryForm />);
 
-      const firstMealInput = screen.getByLabelText(/first meal time/i);
-      await user.type(firstMealInput, '25:00');
-      await user.tab();
-
-      await waitFor(() => {
-        expect(screen.getByText(/invalid time format/i)).toBeInTheDocument();
-      });
+      // TimeInput now uses dropdowns, so we can't enter invalid time like "25:00"
+      // Instead, test that the component only allows valid hours/minutes
+      const container = screen.getByText(/first meal time/i).closest('.flex.flex-col');
+      const hourSelect = container.querySelector('select[aria-label="Hour"]');
+      
+      // Verify that hour options are limited to 00-23 (no invalid hours)
+      const hourOptions = Array.from(hourSelect.options).map(opt => opt.value).filter(v => v !== '');
+      expect(hourOptions).toEqual(expect.arrayContaining(['00', '12', '23']));
+      expect(hourOptions).not.toContain('25');
     });
 
     it('should show error for negative hours of sleep', async () => {
@@ -190,13 +253,9 @@ describe('EntryForm Component', () => {
       const handleSuccess = jest.fn();
       render(<EntryForm onSuccess={handleSuccess} />);
 
-      const dateInput = screen.getByLabelText(/date/i);
-      const firstMealInput = screen.getByLabelText(/first meal time/i);
-      const lastMealInput = screen.getByLabelText(/last meal time/i);
-
-      await user.type(dateInput, '2024-03-15');
-      await user.type(firstMealInput, '12:00');
-      await user.type(lastMealInput, '20:00');
+      await fillDateInput(user, '2024-03-15');
+      await fillTimeInput(user, 'First Meal Time', '12:00');
+      await fillTimeInput(user, 'Last Meal Time', '20:00');
 
       const submitButton = screen.getByRole('button', { name: /save entry/i });
       await user.click(submitButton);
@@ -220,9 +279,9 @@ describe('EntryForm Component', () => {
       render(<EntryForm onSuccess={handleSuccess} />);
 
       // Fill required fields
-      await user.type(screen.getByLabelText(/date/i), '2024-03-15');
-      await user.type(screen.getByLabelText(/first meal time/i), '12:00');
-      await user.type(screen.getByLabelText(/last meal time/i), '20:00');
+      await fillDateInput(user, '2024-03-15');
+      await fillTimeInput(user, 'First Meal Time', '12:00');
+      await fillTimeInput(user, 'Last Meal Time', '20:00');
 
       // Fill optional fields
       await user.type(screen.getByLabelText(/hours of sleep/i), '8');
@@ -241,7 +300,9 @@ describe('EntryForm Component', () => {
         }));
       });
 
-      const requestBody = JSON.parse(fetch.mock.calls[0][1].body);
+      // First call is check-previous, second (or later) is entry save
+      const entrySaveCall = fetch.mock.calls.find(call => call[0] === '/api/entries');
+      const requestBody = JSON.parse(entrySaveCall[1].body);
       expect(requestBody).toMatchObject({
         date: '2024-03-15',
         firstMealTime: '12:00',
@@ -263,13 +324,24 @@ describe('EntryForm Component', () => {
       const user = userEvent.setup();
       
       // Make fetch delay to simulate slow network
-      fetch.mockImplementation(() => new Promise(resolve => setTimeout(resolve, 100)));
+      fetch.mockImplementation((url) => {
+        if (url.includes('check-previous')) {
+          return Promise.resolve({
+            ok: true,
+            json: async () => ({ hasGap: false, daysSinceLast: 0 }),
+          });
+        }
+        return new Promise(resolve => setTimeout(() => resolve({
+          ok: true,
+          json: async () => ({ success: true, data: {} }),
+        }), 100));
+      });
       
       render(<EntryForm />);
 
-      await user.type(screen.getByLabelText(/date/i), '2024-03-15');
-      await user.type(screen.getByLabelText(/first meal time/i), '12:00');
-      await user.type(screen.getByLabelText(/last meal time/i), '20:00');
+      await fillDateInput(user, '2024-03-15');
+      await fillTimeInput(user, 'First Meal Time', '12:00');
+      await fillTimeInput(user, 'Last Meal Time', '20:00');
 
       const submitButton = screen.getByRole('button', { name: /save entry/i });
       await user.click(submitButton);
@@ -282,13 +354,24 @@ describe('EntryForm Component', () => {
       const user = userEvent.setup();
       
       // Make fetch delay
-      fetch.mockImplementation(() => new Promise(resolve => setTimeout(resolve, 100)));
+      fetch.mockImplementation((url) => {
+        if (url.includes('check-previous')) {
+          return Promise.resolve({
+            ok: true,
+            json: async () => ({ hasGap: false, daysSinceLast: 0 }),
+          });
+        }
+        return new Promise(resolve => setTimeout(() => resolve({
+          ok: true,
+          json: async () => ({ success: true, data: {} }),
+        }), 100));
+      });
       
       render(<EntryForm />);
 
-      await user.type(screen.getByLabelText(/date/i), '2024-03-15');
-      await user.type(screen.getByLabelText(/first meal time/i), '12:00');
-      await user.type(screen.getByLabelText(/last meal time/i), '20:00');
+      await fillDateInput(user, '2024-03-15');
+      await fillTimeInput(user, 'First Meal Time', '12:00');
+      await fillTimeInput(user, 'Last Meal Time', '20:00');
 
       const submitButton = screen.getByRole('button', { name: /save entry/i });
       await user.click(submitButton);
@@ -336,7 +419,13 @@ describe('EntryForm Component', () => {
       await user.click(submitButton);
 
       await waitFor(() => {
-        const requestBody = JSON.parse(fetch.mock.calls[0][1].body);
+        // When editing existing entry, check-previous might not be called,
+        // but let's find the PUT request to be safe
+        const updateCall = fetch.mock.calls.find(call => 
+          call[0].includes('/api/entries/') && call[1]?.method === 'PUT'
+        ) || fetch.mock.calls[0]; // Fallback to first call if no PUT found
+        
+        const requestBody = JSON.parse(updateCall[1].body);
         expect(requestBody.date).toBe('2024-03-15');
         expect(requestBody.firstMealTime).toBe('12:00');
         expect(requestBody.lastMealTime).toBe('20:00');
@@ -348,16 +437,25 @@ describe('EntryForm Component', () => {
     it('should show error message when API returns error', async () => {
       const user = userEvent.setup();
       
-      fetch.mockResolvedValueOnce({
-        ok: false,
-        json: async () => ({ error: 'An entry for this date already exists' }),
+      // Mock check-previous first, then error on entry save
+      fetch.mockImplementation((url) => {
+        if (url.includes('check-previous')) {
+          return Promise.resolve({
+            ok: true,
+            json: async () => ({ hasGap: false, daysSinceLast: 0 }),
+          });
+        }
+        return Promise.resolve({
+          ok: false,
+          json: async () => ({ error: 'An entry for this date already exists' }),
+        });
       });
 
       render(<EntryForm />);
 
-      await user.type(screen.getByLabelText(/date/i), '2024-03-15');
-      await user.type(screen.getByLabelText(/first meal time/i), '12:00');
-      await user.type(screen.getByLabelText(/last meal time/i), '20:00');
+      await fillDateInput(user, '2024-03-15');
+      await fillTimeInput(user, 'First Meal Time', '12:00');
+      await fillTimeInput(user, 'Last Meal Time', '20:00');
 
       const submitButton = screen.getByRole('button', { name: /save entry/i });
       await user.click(submitButton);
@@ -370,39 +468,60 @@ describe('EntryForm Component', () => {
     it('should show generic error message when API fails without details', async () => {
       const user = userEvent.setup();
       
-      fetch.mockRejectedValueOnce(new Error('Network error'));
+      // Mock check-previous first, then error on entry save
+      fetch.mockImplementation((url) => {
+        if (url.includes('check-previous')) {
+          return Promise.resolve({
+            ok: true,
+            json: async () => ({ hasGap: false, daysSinceLast: 0 }),
+          });
+        }
+        return Promise.reject(new Error('Network error'));
+      });
 
       render(<EntryForm />);
 
-      await user.type(screen.getByLabelText(/date/i), '2024-03-15');
-      await user.type(screen.getByLabelText(/first meal time/i), '12:00');
-      await user.type(screen.getByLabelText(/last meal time/i), '20:00');
+      await fillDateInput(user, '2024-03-15');
+      await fillTimeInput(user, 'First Meal Time', '12:00');
+      await fillTimeInput(user, 'Last Meal Time', '20:00');
 
       const submitButton = screen.getByRole('button', { name: /save entry/i });
       await user.click(submitButton);
 
+      // Wait for API error to appear - the error.message is "Network error"
       await waitFor(() => {
-        expect(screen.getByText(/failed to save entry|error/i)).toBeInTheDocument();
-      });
+        const errorElement = screen.queryByText(/network error/i);
+        expect(errorElement).toBeInTheDocument();
+      }, { timeout: 3000 });
     });
 
     it('should re-enable submit button after error', async () => {
       const user = userEvent.setup();
       
-      fetch.mockRejectedValueOnce(new Error('Network error'));
+      // Mock check-previous first, then error on entry save
+      fetch.mockImplementation((url) => {
+        if (url.includes('check-previous')) {
+          return Promise.resolve({
+            ok: true,
+            json: async () => ({ hasGap: false, daysSinceLast: 0 }),
+          });
+        }
+        return Promise.reject(new Error('Network error'));
+      });
 
       render(<EntryForm />);
 
-      await user.type(screen.getByLabelText(/date/i), '2024-03-15');
-      await user.type(screen.getByLabelText(/first meal time/i), '12:00');
-      await user.type(screen.getByLabelText(/last meal time/i), '20:00');
+      await fillDateInput(user, '2024-03-15');
+      await fillTimeInput(user, 'First Meal Time', '12:00');
+      await fillTimeInput(user, 'Last Meal Time', '20:00');
 
       const submitButton = screen.getByRole('button', { name: /save entry/i });
       await user.click(submitButton);
 
+      // Wait for error message - the error.message is "Network error"
       await waitFor(() => {
-        expect(screen.getByText(/failed to save entry|error/i)).toBeInTheDocument();
-      });
+        expect(screen.getByText(/network error/i)).toBeInTheDocument();
+      }, { timeout: 3000 });
 
       // Button should be re-enabled after error
       expect(submitButton).not.toBeDisabled();
@@ -426,12 +545,14 @@ describe('EntryForm Component', () => {
       const handleCancel = jest.fn();
       render(<EntryForm onCancel={handleCancel} />);
 
-      await user.type(screen.getByLabelText(/date/i), '2024-03-15');
+      await fillDateInput(user, '2024-03-15');
       
       const cancelButton = screen.getByRole('button', { name: /cancel/i });
       await user.click(cancelButton);
 
-      expect(fetch).not.toHaveBeenCalled();
+      // Check that entry save API was not called (check-previous will be called though)
+      const entrySaveCalls = fetch.mock.calls.filter(call => call[0] === '/api/entries');
+      expect(entrySaveCalls).toHaveLength(0);
     });
   });
 
@@ -472,16 +593,16 @@ describe('EntryForm Component', () => {
       const user = userEvent.setup();
       render(<EntryForm />);
 
-      // Trigger validation by filling an invalid time and blurring
-      const firstMealInput = screen.getByLabelText(/first meal time/i);
-      await user.type(firstMealInput, '25:00');
+      // Trigger validation error by entering negative sleep hours
+      const sleepInput = screen.getByLabelText(/hours of sleep/i);
+      await user.type(sleepInput, '-1');
       await user.tab();
 
       await waitFor(() => {
-        expect(firstMealInput).toHaveAttribute('aria-describedby');
-        expect(firstMealInput).toHaveAttribute('aria-invalid', 'true');
-        const errorId = firstMealInput.getAttribute('aria-describedby');
-        expect(screen.getByText(/invalid time format/i)).toHaveAttribute('id', errorId);
+        expect(sleepInput).toHaveAttribute('aria-describedby');
+        expect(sleepInput).toHaveAttribute('aria-invalid', 'true');
+        const errorId = sleepInput.getAttribute('aria-describedby');
+        expect(screen.getByText(/must be.*positive/i)).toHaveAttribute('id', errorId);
       });
     });
   });
@@ -530,9 +651,9 @@ describe('EntryForm Component', () => {
       const user = userEvent.setup();
       render(<EntryForm />);
 
-      await user.type(screen.getByLabelText(/date/i), '2024-03-15');
-      await user.type(screen.getByLabelText(/first meal time/i), '12:00');
-      await user.type(screen.getByLabelText(/last meal time/i), '20:00');
+      await fillDateInput(user, '2024-03-15');
+      await fillTimeInput(user, 'First Meal Time', '12:00');
+      await fillTimeInput(user, 'Last Meal Time', '20:00');
 
       const submitButton = screen.getByRole('button', { name: /save entry/i });
       
@@ -563,9 +684,9 @@ describe('EntryForm Component', () => {
       render(<EntryForm onSuccess={handleSuccess} />);
 
       // Fill required fields first
-      await user.type(screen.getByLabelText(/date/i), '2024-03-15');
-      await user.type(screen.getByLabelText(/first meal time/i), '12:00');
-      await user.type(screen.getByLabelText(/last meal time/i), '20:00');
+      await fillDateInput(user, '2024-03-15');
+      await fillTimeInput(user, 'First Meal Time', '12:00');
+      await fillTimeInput(user, 'Last Meal Time', '20:00');
       
       // Fill weight with decimal
       await user.type(screen.getByLabelText(/morning weight/i), '75.5');
@@ -575,7 +696,10 @@ describe('EntryForm Component', () => {
 
       await waitFor(() => {
         expect(fetch).toHaveBeenCalled();
-        const requestBody = JSON.parse(fetch.mock.calls[0][1].body);
+        // First call is check-previous, second call is entry save
+        const entrySaveCall = fetch.mock.calls.find(call => call[0] === '/api/entries');
+        expect(entrySaveCall).toBeDefined();
+        const requestBody = JSON.parse(entrySaveCall[1].body);
         expect(requestBody.morningWeight).toBe(75.5);
       });
     });
@@ -586,9 +710,9 @@ describe('EntryForm Component', () => {
       render(<EntryForm onSuccess={handleSuccess} />);
 
       // Fill required fields first
-      await user.type(screen.getByLabelText(/date/i), '2024-03-15');
-      await user.type(screen.getByLabelText(/first meal time/i), '12:00');
-      await user.type(screen.getByLabelText(/last meal time/i), '20:00');
+      await fillDateInput(user, '2024-03-15');
+      await fillTimeInput(user, 'First Meal Time', '12:00');
+      await fillTimeInput(user, 'Last Meal Time', '20:00');
       
       // Fill sleep with decimal
       await user.type(screen.getByLabelText(/hours of sleep/i), '7.5');
@@ -598,7 +722,10 @@ describe('EntryForm Component', () => {
 
       await waitFor(() => {
         expect(fetch).toHaveBeenCalled();
-        const requestBody = JSON.parse(fetch.mock.calls[0][1].body);
+        // First call is check-previous, second call is entry save
+        const entrySaveCall = fetch.mock.calls.find(call => call[0] === '/api/entries');
+        expect(entrySaveCall).toBeDefined();
+        const requestBody = JSON.parse(entrySaveCall[1].body);
         expect(requestBody.hoursOfSleep).toBe(7.5);
       });
     });
