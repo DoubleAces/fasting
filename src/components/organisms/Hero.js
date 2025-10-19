@@ -34,7 +34,7 @@ export default function Hero() {
 
           {/* CTA Buttons */}
           <div className={styles.ctaButtons}>
-            <Link href="/signup" variant="primary" className={styles.primaryCta}>
+            <Link href="/register" variant="primary" className={styles.primaryCta}>
               Get Started Free
             </Link>
             <Link href="/features" variant="secondary" className={styles.secondaryCta}>

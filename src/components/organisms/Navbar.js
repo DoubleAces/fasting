@@ -57,7 +57,7 @@ export default function Navbar() {
           <Link href="/login" variant="text">
             Log In
           </Link>
-          <Link href="/signup" variant="primary">
+          <Link href="/register" variant="primary">
             Sign Up
           </Link>
         </div>
@@ -101,7 +101,7 @@ export default function Navbar() {
             <Link href="/login" variant="secondary">
               Log In
             </Link>
-            <Link href="/signup" variant="primary">
+            <Link href="/register" variant="primary">
               Sign Up
             </Link>
           </div>
