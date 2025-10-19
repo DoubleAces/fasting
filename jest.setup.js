@@ -65,5 +65,8 @@ if (typeof global.IntersectionObserver === 'undefined') {
 }
 
 // Set up environment variables for tests
-process.env.MONGODB_URI = 'mongodb://localhost:27017/fasting-tracker-test';
+// Only set default MONGODB_URI if not already set (for unit tests without real DB)
+if (!process.env.MONGODB_URI) {
+  process.env.MONGODB_URI = 'mongodb://localhost:27017/fasting-tracker-test';
+}
 process.env.NODE_ENV = 'test';
