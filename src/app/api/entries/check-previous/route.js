@@ -1,14 +1,23 @@
 /**
  * GET /api/entries/check-previous?date=YYYY-MM-DD
- * Check for previous entry before the given date
+ * Check for previous entry before the given date for the authenticated user
  * Returns information about the most recent entry and whether there's a gap >24h
+ * 
+ * Authentication: Required
  */
 
 import { connectDB } from '@/lib/db';
 import Entry from '@/lib/models/Entry';
-import { withErrorHandler, okResponse } from '@/lib/api/errorHandler';
+import { withErrorHandler, okResponse, unauthorizedResponse } from '@/lib/api/errorHandler';
+import { auth } from '@/lib/auth';
 
 export const GET = withErrorHandler(async (request) => {
+  // Check authentication
+  const session = await auth();
+  if (!session?.user?.id) {
+    return unauthorizedResponse('Authentication required');
+  }
+
   // Connect to database
   await connectDB();
 
@@ -27,8 +36,9 @@ export const GET = withErrorHandler(async (request) => {
 
   const currentDate = new Date(dateStr);
 
-  // Find the most recent entry before this date
+  // Find the most recent entry before this date for this user
   const previousEntry = await Entry.findOne({
+    userId: session.user.id,
     date: { $lt: currentDate }
   })
     .sort({ date: -1 })
