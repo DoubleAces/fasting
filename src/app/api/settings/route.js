@@ -7,21 +7,25 @@
 
 import { connectDB } from '@/lib/db';
 import Settings from '@/lib/models/Settings';
-import { withErrorHandler, okResponse } from '@/lib/api/errorHandler';
+import { auth } from '@/lib/auth';
+import { withErrorHandler, okResponse, unauthorizedResponse } from '@/lib/api/errorHandler';
 
 export const GET = withErrorHandler(async (request) => {
+  // Check authentication
+  const session = await auth();
+  if (!session?.user?.id) {
+    return unauthorizedResponse('Authentication required to access settings');
+  }
+
   await connectDB();
 
-  // For now, use a default userId (will be replaced with auth in future)
-  const userId = 'default';
-
-  // Find or create default settings
-  let settings = await Settings.findOne({ userId });
+  // Find settings for authenticated user
+  let settings = await Settings.findOne({ userId: session.user.id });
 
   if (!settings) {
     // Return default settings without saving
     settings = {
-      userId,
+      userId: session.user.id,
       measurementSystem: 'metric',
       timeFormat: '24h'
     };
@@ -41,6 +45,12 @@ import { validateSettings } from '@/lib/validation/settingsSchema';
 import { badRequestResponse } from '@/lib/api/errorHandler';
 
 export const PUT = withErrorHandler(async (request) => {
+  // Check authentication
+  const session = await auth();
+  if (!session?.user?.id) {
+    return unauthorizedResponse('Authentication required to update settings');
+  }
+
   await connectDB();
 
   // Parse request body
@@ -56,13 +66,10 @@ export const PUT = withErrorHandler(async (request) => {
     return badRequestResponse('Validation failed', errors);
   }
 
-  // For now, use a default userId (will be replaced with auth in future)
-  const userId = value.userId || 'default';
-
-  // Update or create settings (upsert)
+  // Update or create settings for authenticated user (upsert)
   const settings = await Settings.findOneAndUpdate(
-    { userId },
-    { ...value, userId },
+    { userId: session.user.id },
+    { ...value, userId: session.user.id },
     { 
       new: true, 
       upsert: true, 
