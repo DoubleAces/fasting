@@ -101,7 +101,7 @@ export const registerSchema = Joi.object({
       'any.required': 'Confirm password is required',
     }),
 
-  name: Joi.string().trim().min(1).max(100).optional().messages({
+  name: Joi.string().trim().min(1).max(100).optional().allow('').messages({
     'string.min': 'Name must be at least 1 character',
     'string.max': 'Name cannot exceed 100 characters',
   }),
