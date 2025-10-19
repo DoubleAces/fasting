@@ -61,6 +61,7 @@ const emailValidator = Joi.string()
   .messages({
     'string.empty': 'Email is required',
     'string.email': 'Email must be a valid email address',
+    'any.required': 'Email is required',
   });
 
 // ============================================================================
@@ -87,7 +88,9 @@ const emailValidator = Joi.string()
 export const registerSchema = Joi.object({
   email: emailValidator,
 
-  password: passwordValidator.required(),
+  password: passwordValidator.required().messages({
+    'any.required': 'Password is required',
+  }),
 
   confirmPassword: Joi.string()
     .valid(Joi.ref('password'))
@@ -95,6 +98,7 @@ export const registerSchema = Joi.object({
     .messages({
       'string.empty': 'Confirm password is required',
       'any.only': 'Passwords do not match',
+      'any.required': 'Confirm password is required',
     }),
 
   name: Joi.string().trim().min(1).max(100).optional().messages({
@@ -127,6 +131,7 @@ export const loginSchema = Joi.object({
 
   password: Joi.string().required().messages({
     'string.empty': 'Password is required',
+    'any.required': 'Password is required',
   }),
 
   rememberMe: Joi.boolean().optional().default(false),
@@ -179,9 +184,12 @@ export const resetPasswordSchema = Joi.object({
       'string.empty': 'Reset token is required',
       'string.length': 'Invalid reset token format',
       'string.pattern.base': 'Invalid reset token format',
+      'any.required': 'Reset token is required',
     }),
 
-  password: passwordValidator.required(),
+  password: passwordValidator.required().messages({
+    'any.required': 'Password is required',
+  }),
 
   confirmPassword: Joi.string()
     .valid(Joi.ref('password'))
@@ -189,6 +197,7 @@ export const resetPasswordSchema = Joi.object({
     .messages({
       'string.empty': 'Confirm password is required',
       'any.only': 'Passwords do not match',
+      'any.required': 'Confirm password is required',
     }),
 });
 

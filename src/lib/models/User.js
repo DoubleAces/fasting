@@ -110,10 +110,11 @@ const userSchema = new mongoose.Schema(
      * - Stored as provided (preserves capitalization)
      * - Whitespace trimmed
      * - Maximum 100 characters
+     * - Optional field
      */
     name: {
       type: String,
-      required: [true, 'Name is required'],
+      required: false,
       trim: true,
       maxlength: [100, 'Name cannot exceed 100 characters'],
     },

@@ -91,6 +91,8 @@ export const faqSearchSchema = Joi.object({
 // EXPORTS
 // ============================================================================
 
+export { FAQ_CATEGORIES };
+
 export default {
   faqSearchSchema,
   FAQ_CATEGORIES,
