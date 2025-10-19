@@ -21,9 +21,16 @@ import { connectDB } from '@/lib/db';
 import User from '@/lib/models/User';
 import { hashPassword } from '@/lib/utils/password';
 import { registerSchema } from '@/lib/validation/authSchema';
+import { registerLimiter, checkRateLimit } from '@/lib/utils/rateLimiter';
 
 export async function POST(request) {
   try {
+    // Check rate limit (3 registrations per minute per IP)
+    const rateLimitResponse = checkRateLimit(registerLimiter, request);
+    if (rateLimitResponse) {
+      return rateLimitResponse;
+    }
+
     // Parse request body
     const body = await request.json();
     const { email, password, confirmPassword, name } = body;
