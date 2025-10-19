@@ -8,7 +8,7 @@ import { registerSchema } from '@/lib/validation/authSchema';
 /**
  * RegisterForm Organism Component
  * 
- * Registration form for creating new user accounts with email/password.
+ * Registration form for creating new user accounts with email/password or Google OAuth.
  * Handles client-side validation using Joi schema and API submission.
  * 
  * Features:
@@ -17,6 +17,7 @@ import { registerSchema } from '@/lib/validation/authSchema';
  * - Optional name field
  * - Real-time validation on blur
  * - Password strength indicators
+ * - Google OAuth registration
  * - Error handling and display
  * - Loading state during submission
  * 
@@ -186,6 +187,19 @@ const RegisterForm = ({ onSuccess, onError }) => {
   };
 
   /**
+   * Handle Google OAuth registration
+   */
+  const handleGoogleSignup = async () => {
+    try {
+      const { signIn } = await import('next-auth/react');
+      await signIn('google', { callbackUrl: '/entries' });
+    } catch (error) {
+      console.error('Google signup error:', error);
+      setSubmitError('Failed to initiate Google sign up. Please try again.');
+    }
+  };
+
+  /**
    * Calculate password strength
    */
   const getPasswordStrength = (password) => {
@@ -339,6 +353,39 @@ const RegisterForm = ({ onSuccess, onError }) => {
           style={{ width: '100%', marginTop: '0.5rem' }}
         >
           {isSubmitting ? 'Creating account...' : 'Create account'}
+        </Button>
+
+        {/* Divider */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '1rem',
+            margin: '1.5rem 0',
+          }}
+        >
+          <div style={{ flex: 1, height: '1px', backgroundColor: '#e5e7eb' }} />
+          <span style={{ color: '#6b7280', fontSize: '0.875rem' }}>OR</span>
+          <div style={{ flex: 1, height: '1px', backgroundColor: '#e5e7eb' }} />
+        </div>
+
+        {/* Google OAuth Button */}
+        <Button
+          type="button"
+          variant="secondary"
+          disabled={isSubmitting}
+          onClick={handleGoogleSignup}
+          style={{ width: '100%' }}
+        >
+          <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4"/>
+              <path d="M9.003 18c2.43 0 4.467-.806 5.956-2.18L12.05 13.56c-.806.54-1.836.86-3.047.86-2.344 0-4.328-1.584-5.036-3.711H.96v2.332C2.44 15.983 5.485 18 9.003 18z" fill="#34A853"/>
+              <path d="M3.964 10.71c-.18-.54-.282-1.117-.282-1.71 0-.593.102-1.17.282-1.71V4.958H.957C.347 6.173 0 7.548 0 9c0 1.452.348 2.827.957 4.042l3.007-2.332z" fill="#FBBC05"/>
+              <path d="M9.003 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.464.891 11.426 0 9.003 0 5.485 0 2.44 2.017.96 4.958L3.967 7.29c.708-2.127 2.692-3.71 5.036-3.71z" fill="#EA4335"/>
+            </svg>
+            Sign up with Google
+          </span>
         </Button>
 
         <p style={{ 
