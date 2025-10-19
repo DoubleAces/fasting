@@ -1,498 +1,194 @@
-import React from 'react';
-import { render, screen, waitFor } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
-import HomePage from '@/app/page';
+/**
+ * Tests: Home Page (Public Marketing Page)
+ * 
+ * Test coverage:
+ * - Component rendering
+ * - Hero section presence
+ * - FeaturesList section presence
+ * - Page structure
+ */
 
-// Mock fetch for API calls
-global.fetch = jest.fn();
+import { render, screen } from '@testing-library/react';
+import { usePathname } from 'next/navigation';
+import Home from '@/app/page';
 
 // Mock Next.js navigation
 jest.mock('next/navigation', () => ({
-  useRouter() {
-    return {
-      push: jest.fn(),
-      replace: jest.fn(),
-      prefetch: jest.fn(),
-    };
-  },
+  usePathname: jest.fn(),
 }));
 
-// Mock settings response
-const mockSettings = {
-  measurementSystem: 'metric',
-  timeFormat: '24h',
-  fastingGoal: 16
-};
-
-// Helper to fill DateInput component
-const fillDateInput = async (user, dateString) => {
-  const [year, month, day] = dateString.split('-');
-  await user.type(screen.getByLabelText(/^day$/i), day);
-  await user.type(screen.getByLabelText(/^month$/i), month);
-  await user.type(screen.getByLabelText(/^year$/i), year);
-  await user.tab(); // Trigger validation
-};
-
-// Helper to fill TimeInput component
-const fillTimeInput = async (user, label, timeString) => {
-  const [hours, minutes] = timeString.split(':');
-  const timeLabel = screen.getByText(new RegExp(label, 'i'));
-  const container = timeLabel.closest('.flex.flex-col');
-  const hourSelect = container.querySelector('select[aria-label="Hour"]');
-  const minuteSelect = container.querySelector('select[aria-label="Minute"]');
-  await user.selectOptions(hourSelect, hours);
-  await user.selectOptions(minuteSelect, minutes);
-  await user.tab();
-};
-
-describe('HomePage Component', () => {
+describe('Home Page', () => {
   beforeEach(() => {
-    fetch.mockClear();
+    usePathname.mockReturnValue('/');
   });
 
-  describe('Initial Render', () => {
-    it('should render page title', async () => {
-      fetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({ entries: [] }),
-      });
-
-      render(<HomePage />);
-
-      expect(screen.getByText(/fasting tracker/i)).toBeInTheDocument();
+  describe('Page Rendering', () => {
+    test('should render without crashing', () => {
+      const { container } = render(<Home />);
+      expect(container).toBeInTheDocument();
     });
 
-    it('should show loading state initially', () => {
-      fetch.mockImplementationOnce(() => new Promise(() => {})); // Never resolves
-
-      render(<HomePage />);
-
-      expect(screen.getByRole('status')).toBeInTheDocument();
-    });
-
-    it('should fetch recent entries on mount', async () => {
-      fetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({ entries: [] }),
-      });
-
-      render(<HomePage />);
-
-      await waitFor(() => {
-        expect(fetch).toHaveBeenCalledWith('/api/entries?limit=5');
-      });
-    });
-  });
-
-  describe('Entry Display', () => {
-    const mockEntries = [
-      {
-        _id: '1',
-        date: '2024-03-15',
-        firstMealTime: '12:00',
-        lastMealTime: '20:00',
-        fastingDuration: 960, // 16 hours in minutes
-        eatingWindow: 480,    // 8 hours in minutes
-      },
-      {
-        _id: '2',
-        date: '2024-03-14',
-        firstMealTime: '13:00',
-        lastMealTime: '21:00',
-        fastingDuration: 960, // 16 hours in minutes
-        eatingWindow: 480,    // 8 hours in minutes
-      },
-    ];
-
-    it('should display recent entries', async () => {
-      // Mock entries fetch
-      fetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({ entries: mockEntries }),
-      });
-      // Mock settings fetch
-      fetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({ 
-          measurementSystem: 'metric',
-          timeFormat: '24h',
-          fastingGoal: 16
-        }),
-      });
-
-      render(<HomePage />);
-
-      await waitFor(() => {
-        expect(screen.getByText('15/03/2024')).toBeInTheDocument();
-        expect(screen.getByText('14/03/2024')).toBeInTheDocument();
-      });
-    });
-
-    it('should show empty state when no entries', async () => {
-      // Mock entries fetch
-      fetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({ entries: [] }),
-      });
-      // Mock settings fetch
-      fetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({ 
-          measurementSystem: 'metric',
-          timeFormat: '24h',
-          fastingGoal: 16
-        }),
-      });
-
-      render(<HomePage />);
-
-      await waitFor(() => {
-        expect(screen.getByText(/no entries found/i)).toBeInTheDocument();
-      });
-    });
-
-    it('should display entry cards', async () => {
-      // Mock entries fetch
-      fetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({ entries: mockEntries }),
-      });
-      // Mock settings fetch
-      fetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({ 
-          measurementSystem: 'metric',
-          timeFormat: '24h',
-          fastingGoal: 16
-        }),
-      });
-
-      const { container } = render(<HomePage />);
-
-      await waitFor(() => {
-        const rows = container.querySelectorAll('tbody tr');
-        expect(rows.length).toBeGreaterThan(0);
-      });
-    });
-  });
-
-  describe('Add Entry Button', () => {
-    it('should show add entry button', async () => {
-      fetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({ entries: [] }),
-      });
-      fetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => mockSettings,
-      });
-
-      render(<HomePage />);
-
-      await waitFor(() => {
-        expect(screen.getByRole('button', { name: /add.*entry/i })).toBeInTheDocument();
-      });
-    });
-
-    it('should show entry form when add button clicked', async () => {
-      const user = userEvent.setup();
-      fetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({ entries: [] }),
-      });
-      fetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => mockSettings,
-      });
-
-      render(<HomePage />);
-
-      await waitFor(() => {
-        expect(screen.getByRole('button', { name: /add.*entry/i })).toBeInTheDocument();
-      });
-
-      const addButton = screen.getByRole('button', { name: /add.*entry/i });
-      await user.click(addButton);
-
-      expect(screen.getByLabelText(/date/i)).toBeInTheDocument();
-      expect(screen.getByLabelText(/first meal time/i)).toBeInTheDocument();
-    });
-  });
-
-  describe('Entry Actions', () => {
-    const mockEntries = [
-      {
-        _id: '1',
-        date: '2024-03-15',
-        firstMealTime: '12:00',
-        lastMealTime: '20:00',
-        fastingDuration: 960, // 16 hours in minutes
-        eatingWindow: 480,    // 8 hours in minutes
-      },
-    ];
-
-    it('should show edit buttons on entries', async () => {
-      fetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({ entries: mockEntries }),
-      });
-      fetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => mockSettings,
-      });
-
-      render(<HomePage />);
-
-      await waitFor(() => {
-        expect(screen.getByRole('button', { name: /edit/i })).toBeInTheDocument();
-      });
-    });
-
-    it('should show delete buttons on entries', async () => {
-      fetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({ entries: mockEntries }),
-      });
-      fetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => mockSettings,
-      });
-
-      render(<HomePage />);
-
-      await waitFor(() => {
-        expect(screen.getByRole('button', { name: /delete/i })).toBeInTheDocument();
-      });
-    });
-
-    it('should show entry form when edit clicked', async () => {
-      const user = userEvent.setup();
-      fetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({ entries: mockEntries }),
-      });
-      fetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => mockSettings,
-      });
-
-      render(<HomePage />);
-
-      await waitFor(() => {
-        expect(screen.getByRole('button', { name: /edit/i })).toBeInTheDocument();
-      });
-
-      const editButton = screen.getByRole('button', { name: /edit/i });
-      await user.click(editButton);
-
-      // Form should be populated with entry data
-      await waitFor(() => {
-        expect(screen.getByLabelText(/^day$/i)).toHaveValue('15');
-        expect(screen.getByLabelText(/^month$/i)).toHaveValue('03');
-        expect(screen.getByLabelText(/^year$/i)).toHaveValue('2024');
-      });
-    });
-
-    it('should delete entry when delete clicked', async () => {
-      const user = userEvent.setup();
+    test('should render Hero component', () => {
+      render(<Home />);
       
-      // Mock window.confirm
-      global.confirm = jest.fn(() => true);
+      // Hero has h1 with specific text
+      const heading = screen.getByRole('heading', { level: 1 });
+      expect(heading).toBeInTheDocument();
+      expect(heading).toHaveTextContent(/fasting journey/i);
+    });
+
+    test('should render FeaturesList component', () => {
+      render(<Home />);
       
-      // Initial fetch
-      fetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({ entries: mockEntries }),
-      });
-      fetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => mockSettings,
-      });
-
-      render(<HomePage />);
-
-      await waitFor(() => {
-        expect(screen.getByRole('button', { name: /delete/i })).toBeInTheDocument();
-      });
-
-      // Mock delete API call
-      fetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({ success: true }),
-      });
-
-      // Mock refresh fetch
-      fetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({ entries: [] }),
-      });
-
-      const deleteButton = screen.getByRole('button', { name: /delete/i });
-      await user.click(deleteButton);
-
-      await waitFor(() => {
-        expect(fetch).toHaveBeenCalledWith('/api/entries/1', expect.objectContaining({
-          method: 'DELETE',
-        }));
-      });
+      // FeaturesList has h2 with specific text
+      const heading = screen.getByRole('heading', { level: 2, name: /everything you need to succeed/i });
+      expect(heading).toBeInTheDocument();
     });
   });
 
-  describe('Form Submission', () => {
-    it('should create new entry and refresh list', async () => {
-      const user = userEvent.setup();
+  describe('Hero Section', () => {
+    test('should render hero headline', () => {
+      render(<Home />);
       
-      // Initial fetch - empty list
-      fetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({ entries: [] }),
-      });
-      fetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => mockSettings,
-      });
-
-      render(<HomePage />);
-
-      await waitFor(() => {
-        expect(screen.getByRole('button', { name: /add.*entry/i })).toBeInTheDocument();
-      });
-
-      // Open form
-      const addButton = screen.getByRole('button', { name: /add.*entry/i });
-      await user.click(addButton);
-
-      // Fill form
-      await fillDateInput(user, '2024-03-15');
-      await fillTimeInput(user, 'First Meal Time', '12:00');
-      await fillTimeInput(user, 'Last Meal Time', '20:00');
-
-      // Mock create API call
-      fetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({ 
-          entry: {
-            _id: '1',
-            date: '2024-03-15',
-            firstMealTime: '12:00',
-            lastMealTime: '20:00',
-            fastingDuration: 960,
-            eatingWindow: 480,
-          }
-        }),
-      });
-
-      // Mock refresh fetch
-      fetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({ 
-          entries: [{
-            _id: '1',
-            date: '2024-03-15',
-            firstMealTime: '12:00',
-            lastMealTime: '20:00',
-            fastingDuration: 960,
-            eatingWindow: 480,
-          }]
-        }),
-      });
-
-      const saveButton = screen.getByRole('button', { name: /save.*entry/i });
-      await user.click(saveButton);
-
-      await waitFor(() => {
-        expect(fetch).toHaveBeenCalledWith('/api/entries', expect.objectContaining({
-          method: 'POST',
-        }));
-      });
-
-      // Form should close and list should refresh
-      await waitFor(() => {
-        expect(screen.queryByLabelText(/date/i)).not.toBeInTheDocument();
-      });
+      const headline = screen.getByText(/take control of your/i);
+      expect(headline).toBeInTheDocument();
     });
 
-    it('should cancel form without saving', async () => {
-      const user = userEvent.setup();
+    test('should render Get Started CTA', () => {
+      render(<Home />);
       
-      fetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({ entries: [] }),
-      });
-      fetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => mockSettings,
-      });
+      const cta = screen.getByRole('link', { name: /get started free/i });
+      expect(cta).toBeInTheDocument();
+      expect(cta).toHaveAttribute('href', '/signup');
+    });
 
-      render(<HomePage />);
-
-      await waitFor(() => {
-        expect(screen.getByRole('button', { name: /add.*entry/i })).toBeInTheDocument();
-      });
-
-      // Open form
-      const addButton = screen.getByRole('button', { name: /add.*entry/i });
-      await user.click(addButton);
-
-      expect(screen.getByLabelText(/date/i)).toBeInTheDocument();
-
-      // Cancel
-      const cancelButton = screen.getByRole('button', { name: /cancel/i });
-      await user.click(cancelButton);
-
-      // Form should close
-      await waitFor(() => {
-        expect(screen.queryByLabelText(/date/i)).not.toBeInTheDocument();
-      });
-
-      // Should not have called create API
-      expect(fetch).toHaveBeenCalledTimes(2); // Initial entries fetch + settings fetch
+    test('should render Learn More CTA', () => {
+      render(<Home />);
+      
+      const cta = screen.getByRole('link', { name: /learn more/i });
+      expect(cta).toBeInTheDocument();
+      expect(cta).toHaveAttribute('href', '/features');
     });
   });
 
-  describe('Error Handling', () => {
-    it('should display error when fetch fails', async () => {
-      fetch.mockRejectedValueOnce(new Error('Network error'));
-
-      render(<HomePage />);
-
-      await waitFor(() => {
-        expect(screen.getByText(/network error/i)).toBeInTheDocument();
-      });
+  describe('Features Section', () => {
+    test('should render features heading', () => {
+      render(<Home />);
+      
+      const heading = screen.getByRole('heading', { name: /everything you need to succeed/i });
+      expect(heading).toBeInTheDocument();
     });
 
-    it('should display error when API returns error', async () => {
-      // Mock entries fetch failure
-      fetch.mockResolvedValueOnce({
-        ok: false,
-        json: async () => ({ error: 'Database connection failed' }),
-      });
-      // Mock settings fetch (will also fail or succeed - doesn't matter since entries failed first)
-      fetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => mockSettings,
-      });
+    test('should render all feature cards', () => {
+      render(<Home />);
+      
+      const articles = screen.getAllByRole('article');
+      expect(articles).toHaveLength(6);
+    });
 
-      render(<HomePage />);
+    test('should render Timer Tracking feature', () => {
+      render(<Home />);
+      
+      const feature = screen.getByRole('heading', { level: 3, name: 'Timer Tracking' });
+      expect(feature).toBeInTheDocument();
+    });
 
-      await waitFor(() => {
-        expect(screen.getByText(/database connection failed/i)).toBeInTheDocument();
-      });
+    test('should render Progress History feature', () => {
+      render(<Home />);
+      
+      const feature = screen.getByRole('heading', { level: 3, name: 'Progress History' });
+      expect(feature).toBeInTheDocument();
+    });
+
+    test('should render Custom Goals feature', () => {
+      render(<Home />);
+      
+      const feature = screen.getByRole('heading', { level: 3, name: 'Custom Goals' });
+      expect(feature).toBeInTheDocument();
     });
   });
 
-  describe('Responsive Layout', () => {
-    it('should render main container', async () => {
-      fetch.mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({ entries: [] }),
-      });
+  describe('Page Structure', () => {
+    test('should have proper heading hierarchy', () => {
+      render(<Home />);
+      
+      const h1 = screen.getAllByRole('heading', { level: 1 });
+      const h2 = screen.getAllByRole('heading', { level: 2 });
+      const h3 = screen.getAllByRole('heading', { level: 3 });
+      
+      expect(h1).toHaveLength(1); // Hero headline
+      expect(h2).toHaveLength(1); // Features heading
+      expect(h3).toHaveLength(6); // Feature titles
+    });
 
-      const { container } = render(<HomePage />);
+    test('should render sections in correct order', () => {
+      const { container } = render(<Home />);
+      
+      const sections = container.querySelectorAll('section');
+      expect(sections.length).toBeGreaterThanOrEqual(2); // Hero and Features
+    });
 
-      await waitFor(() => {
-        expect(container.querySelector('main')).toBeInTheDocument();
-      });
+    test('should have two main call-to-action buttons', () => {
+      render(<Home />);
+      
+      const links = screen.getAllByRole('link');
+      const ctaLinks = links.filter(link => 
+        link.textContent === 'Get Started Free' || link.textContent === 'Learn More'
+      );
+      
+      expect(ctaLinks).toHaveLength(2);
+    });
+  });
+
+  describe('SEO and Accessibility', () => {
+    test('should have accessible h1 heading', () => {
+      render(<Home />);
+      
+      const h1 = screen.getByRole('heading', { level: 1 });
+      expect(h1).toHaveAccessibleName(/take control of your fasting journey/i);
+    });
+
+    test('should have regions with proper labels', () => {
+      render(<Home />);
+      
+      const regions = screen.getAllByRole('region');
+      expect(regions.length).toBeGreaterThanOrEqual(2);
+    });
+
+    test('should have accessible navigation links', () => {
+      render(<Home />);
+      
+      const getStarted = screen.getByRole('link', { name: /get started free/i });
+      const learnMore = screen.getByRole('link', { name: /learn more/i });
+      
+      expect(getStarted).toHaveAccessibleName('Get Started Free');
+      expect(learnMore).toHaveAccessibleName('Learn More');
+    });
+  });
+
+  describe('Content', () => {
+    test('should display value proposition in hero', () => {
+      render(<Home />);
+      
+      const content = screen.getByText(/track your fasting windows/i);
+      expect(content).toBeInTheDocument();
+    });
+
+    test('should display features subheading', () => {
+      render(<Home />);
+      
+      const subheading = screen.getByText(/powerful features designed to help you/i);
+      expect(subheading).toBeInTheDocument();
+    });
+
+    test('should have feature descriptions', () => {
+      render(<Home />);
+      
+      const timerDescription = screen.getByText(/start and stop your fasting timer/i);
+      const historyDescription = screen.getByText(/view your complete fasting history/i);
+      
+      expect(timerDescription).toBeInTheDocument();
+      expect(historyDescription).toBeInTheDocument();
     });
   });
 });
