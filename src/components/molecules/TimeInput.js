@@ -42,7 +42,8 @@ const TimeInput = ({
       // Convert 24h to 12h
       const period = hour24 >= 12 ? 'PM' : 'AM';
       const hour12 = hour24 === 0 ? 12 : hour24 > 12 ? hour24 - 12 : hour24;
-      return { hour: hour12.toString(), minute, period };
+      // Pad hour to match select options
+      return { hour: hour12.toString().padStart(2, '0'), minute, period };
     } else {
       // 24h format
       return { hour: hourStr || '', minute, period: 'AM' };
