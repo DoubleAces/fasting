@@ -171,7 +171,7 @@ const RegisterForm = ({ onSuccess, onError }) => {
       
       // Success - call callback
       if (onSuccess) {
-        onSuccess(data);
+        onSuccess(data, formData.password); // Pass password for auto-login
       }
     } catch (error) {
       console.error('Registration error:', error);
