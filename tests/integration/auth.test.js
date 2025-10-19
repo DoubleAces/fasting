@@ -416,9 +416,19 @@ describe('Session Management Integration Tests', () => {
   const testPassword = 'SecurePass123!';
 
   beforeAll(async () => {
-    // Ensure MongoDB connection
+    // Ensure MongoDB connection (reuse existing if available)
     if (mongoose.connection.readyState === 0) {
-      await mongoose.connect(process.env.MONGODB_URI);
+      await mongoose.connect(process.env.MONGODB_URI, {
+        maxPoolSize: 10,
+        serverSelectionTimeoutMS: 5000,
+      });
+    }
+  });
+
+  afterAll(async () => {
+    // Close MongoDB connection
+    if (mongoose.connection.readyState !== 0) {
+      await mongoose.connection.close();
     }
   });
 
