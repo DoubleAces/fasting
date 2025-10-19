@@ -558,6 +558,7 @@ test.describe('Login Flow', () => {
       await expect(page.getByLabel(/remember me/i)).toBeVisible();
     });
 
+
     test('should have proper autocomplete attributes', async ({ page }) => {
       await page.goto('/login');
 
@@ -582,3 +583,213 @@ test.describe('Login Flow', () => {
     });
   });
 });
+
+// ============================================================================
+// GOOGLE OAUTH E2E TESTS (Phase 6)
+// ============================================================================
+
+test.describe('Google OAuth Flow', () => {
+  test.describe('OAuth UI Elements', () => {
+    test('should display Google sign in button on login page', async ({ page }) => {
+      await page.goto('/login');
+
+      const googleButton = page.getByRole('button', { name: /continue with google/i });
+      await expect(googleButton).toBeVisible();
+    });
+
+    test('should display Google sign up button on register page', async ({ page }) => {
+      await page.goto('/register');
+
+      const googleButton = page.getByRole('button', { name: /sign up with google/i });
+      await expect(googleButton).toBeVisible();
+    });
+
+    test('should have OAuth divider on login page', async ({ page }) => {
+      await page.goto('/login');
+
+      // Check for "or" divider between OAuth and email login
+      await expect(page.getByText(/or/i)).toBeVisible();
+    });
+
+    test('should have OAuth divider on register page', async ({ page }) => {
+      await page.goto('/register');
+
+      // Check for "or" divider between OAuth and email registration
+      await expect(page.getByText(/or/i)).toBeVisible();
+    });
+  });
+
+  test.describe('OAuth Error Handling', () => {
+    test('should display OAuth sign in error', async ({ page }) => {
+      await page.goto('/login?error=OAuthSignin');
+
+      await expect(page.getByText(/error connecting to oauth provider/i)).toBeVisible();
+    });
+
+    test('should display OAuth callback error', async ({ page }) => {
+      await page.goto('/login?error=OAuthCallback');
+
+      await expect(page.getByText(/error during oauth authentication/i)).toBeVisible();
+    });
+
+    test('should display account not linked error', async ({ page }) => {
+      await page.goto('/login?error=OAuthAccountNotLinked');
+
+      await expect(page.getByText(/already registered with a different login method/i)).toBeVisible();
+    });
+
+    test('should display OAuth create account error', async ({ page }) => {
+      await page.goto('/login?error=OAuthCreateAccount');
+
+      await expect(page.getByText(/could not create oauth account/i)).toBeVisible();
+    });
+
+    test('should display email create account error', async ({ page }) => {
+      await page.goto('/login?error=EmailCreateAccount');
+
+      await expect(page.getByText(/could not create account/i)).toBeVisible();
+    });
+
+    test('should display access denied error', async ({ page }) => {
+      await page.goto('/login?error=AccessDenied');
+
+      await expect(page.getByText(/access denied/i)).toBeVisible();
+    });
+
+    test('should display credentials sign in error', async ({ page }) => {
+      await page.goto('/login?error=CredentialsSignin');
+
+      await expect(page.getByText(/invalid email or password/i)).toBeVisible();
+    });
+
+    test('should display session required error', async ({ page }) => {
+      await page.goto('/login?error=SessionRequired');
+
+      await expect(page.getByText(/please sign in to continue/i)).toBeVisible();
+    });
+
+    test('should display default error for unknown error code', async ({ page }) => {
+      await page.goto('/login?error=UnknownError');
+
+      await expect(page.getByText(/an error occurred during authentication/i)).toBeVisible();
+    });
+  });
+
+  test.describe('OAuth Button Interaction', () => {
+    test('should have functional Google button on login page', async ({ page }) => {
+      await page.goto('/login');
+
+      const googleButton = page.getByRole('button', { name: /continue with google/i });
+      
+      // Button should be enabled and clickable
+      await expect(googleButton).toBeEnabled();
+      await expect(googleButton).not.toHaveAttribute('disabled');
+    });
+
+    test('should have functional Google button on register page', async ({ page }) => {
+      await page.goto('/register');
+
+      const googleButton = page.getByRole('button', { name: /sign up with google/i });
+      
+      // Button should be enabled and clickable
+      await expect(googleButton).toBeEnabled();
+      await expect(googleButton).not.toHaveAttribute('disabled');
+    });
+
+    test('should have proper button styling on login page', async ({ page }) => {
+      await page.goto('/login');
+
+      const googleButton = page.getByRole('button', { name: /continue with google/i });
+      
+      // Check button is visible and has proper role
+      await expect(googleButton).toBeVisible();
+      await expect(googleButton).toHaveRole('button');
+    });
+
+    test('should have proper button styling on register page', async ({ page }) => {
+      await page.goto('/register');
+
+      const googleButton = page.getByRole('button', { name: /sign up with google/i });
+      
+      // Check button is visible and has proper role
+      await expect(googleButton).toBeVisible();
+      await expect(googleButton).toHaveRole('button');
+    });
+  });
+
+  test.describe('OAuth Error Recovery', () => {
+    test('should allow retry after OAuth error', async ({ page }) => {
+      // Start with error
+      await page.goto('/login?error=OAuthSignin');
+      
+      await expect(page.getByText(/error connecting to oauth provider/i)).toBeVisible();
+
+      // User should still be able to use the form
+      const googleButton = page.getByRole('button', { name: /continue with google/i });
+      await expect(googleButton).toBeVisible();
+      await expect(googleButton).toBeEnabled();
+    });
+
+    test('should clear error on navigation', async ({ page }) => {
+      // Start with error
+      await page.goto('/login?error=OAuthSignin');
+      await expect(page.getByText(/error connecting to oauth provider/i)).toBeVisible();
+
+      // Navigate to register
+      await page.getByRole('link', { name: /sign up/i }).click();
+      await expect(page).toHaveURL(/\/register/);
+
+      // Error should not appear on register page
+      await expect(page.getByText(/error connecting to oauth provider/i)).not.toBeVisible();
+    });
+
+    test('should allow email login after OAuth error', async ({ page }) => {
+      await page.goto('/login?error=OAuthAccountNotLinked');
+      
+      // Error displayed
+      await expect(page.getByText(/already registered with a different login method/i)).toBeVisible();
+
+      // Should still be able to use email login
+      await page.getByLabel(/email/i).fill('test@example.com');
+      await page.getByLabel(/^password/i).fill('Password123!');
+      
+      const loginButton = page.getByRole('button', { name: /^log in$/i });
+      await expect(loginButton).toBeEnabled();
+    });
+  });
+
+  test.describe('OAuth Accessibility', () => {
+    test('should have accessible OAuth button on login page', async ({ page }) => {
+      await page.goto('/login');
+
+      const googleButton = page.getByRole('button', { name: /continue with google/i });
+      
+      // Check accessibility
+      await expect(googleButton).toHaveRole('button');
+      await expect(googleButton).toHaveAttribute('type', 'button');
+    });
+
+    test('should have accessible OAuth button on register page', async ({ page }) => {
+      await page.goto('/register');
+
+      const googleButton = page.getByRole('button', { name: /sign up with google/i });
+      
+      // Check accessibility
+      await expect(googleButton).toHaveRole('button');
+      await expect(googleButton).toHaveAttribute('type', 'button');
+    });
+
+    test('should announce OAuth errors to screen readers', async ({ page }) => {
+      await page.goto('/login?error=OAuthSignin');
+
+      // Error message should be in an accessible container
+      const errorMessage = page.getByText(/error connecting to oauth provider/i);
+      await expect(errorMessage).toBeVisible();
+      
+      // Check that error has appropriate ARIA or semantic markup
+      const errorContainer = page.locator('[role="alert"], .error, [aria-live]').first();
+      await expect(errorContainer).toBeVisible();
+    });
+  });
+});
+
