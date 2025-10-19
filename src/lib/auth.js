@@ -113,9 +113,12 @@ export const authConfig = {
           prompt: 'consent',
           access_type: 'offline',
           response_type: 'code',
+          scope: 'openid profile email',
         },
       },
       profile(profile) {
+        console.log('🔵 Google profile callback triggered');
+        console.log('Profile data:', profile);
         // Map Google profile to our user schema
         return {
           id: profile.sub,
@@ -352,4 +355,22 @@ export const authConfig = {
  * Initialize NextAuth with configuration.
  * This is used in the API route handler.
  */
-export const { handlers, auth, signIn, signOut } = NextAuth(authConfig);
+let authInstance;
+try {
+  console.log('🔵 Initializing NextAuth...');
+  console.log('Environment check:', {
+    hasGoogleClientId: !!process.env.GOOGLE_CLIENT_ID,
+    hasGoogleClientSecret: !!process.env.GOOGLE_CLIENT_SECRET,
+    hasNextAuthSecret: !!process.env.NEXTAUTH_SECRET,
+    hasNextAuthUrl: !!process.env.NEXTAUTH_URL,
+  });
+  
+  authInstance = NextAuth(authConfig);
+  console.log('✅ NextAuth initialized successfully');
+} catch (error) {
+  console.error('❌ NextAuth initialization error:', error);
+  console.error('Stack:', error.stack);
+  throw error;
+}
+
+export const { handlers, auth, signIn, signOut } = authInstance;
