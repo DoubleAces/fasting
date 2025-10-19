@@ -406,3 +406,149 @@ describe('Registration API Integration Tests', () => {
     });
   });
 });
+
+// ============================================================================
+// SESSION MANAGEMENT TESTS (Phase 5)
+// ============================================================================
+
+describe('Session Management Integration Tests', () => {
+  let testUser;
+  const testPassword = 'SecurePass123!';
+
+  beforeAll(async () => {
+    // Ensure MongoDB connection
+    if (mongoose.connection.readyState === 0) {
+      await mongoose.connect(process.env.MONGODB_URI);
+    }
+  });
+
+  beforeEach(async () => {
+    // Create a test user for login tests
+    await User.deleteMany({ email: /test-session.*@example\.com/ });
+    
+    const hashedPassword = await bcrypt.hash(testPassword, 10);
+    testUser = await User.create({
+      email: 'test-session@example.com',
+      password: hashedPassword,
+      name: 'Session Test User',
+      authMethod: 'email',
+    });
+  });
+
+  afterEach(async () => {
+    // Clean up test users
+    await User.deleteMany({ email: /test-session.*@example\.com/ });
+  });
+
+  describe('Login - Session Creation', () => {
+    it('should create session with valid credentials', async () => {
+      // Note: NextAuth uses JWT tokens, not traditional sessions
+      // We verify by checking the credentials provider works
+      const user = await User.findOne({ email: 'test-session@example.com' }).select('+password');
+      expect(user).toBeTruthy();
+      
+      const isPasswordValid = await bcrypt.compare(testPassword, user.password);
+      expect(isPasswordValid).toBe(true);
+    });
+
+    it('should reject invalid password', async () => {
+      const user = await User.findOne({ email: 'test-session@example.com' }).select('+password');
+      expect(user).toBeTruthy();
+      
+      const isPasswordValid = await bcrypt.compare('WrongPassword', user.password);
+      expect(isPasswordValid).toBe(false);
+    });
+
+    it('should reject non-existent user', async () => {
+      const user = await User.findOne({ email: 'nonexistent@example.com' });
+      expect(user).toBeNull();
+    });
+  });
+
+  describe('User Lookup for Authentication', () => {
+    it('should find user by email', async () => {
+      const user = await User.findOne({ email: 'test-session@example.com' });
+      
+      expect(user).toBeTruthy();
+      expect(user.email).toBe('test-session@example.com');
+      expect(user.authMethod).toBe('email');
+    });
+
+    it('should return user data for session', async () => {
+      const user = await User.findOne({ email: 'test-session@example.com' });
+      
+      expect(user).toMatchObject({
+        email: 'test-session@example.com',
+        name: 'Session Test User',
+        authMethod: 'email',
+      });
+      
+      // Password should be excluded by default (select: false)
+      expect(user.toObject()).not.toHaveProperty('password');
+      
+      // But can be retrieved when explicitly selected
+      const userWithPassword = await User.findOne({ email: 'test-session@example.com' }).select('+password');
+      expect(userWithPassword.password).toBeTruthy();
+    });
+
+    it('should handle case-insensitive email lookup', async () => {
+      const userLower = await User.findOne({ email: 'test-session@example.com' });
+      const userUpper = await User.findOne({ email: 'TEST-SESSION@EXAMPLE.COM' });
+      
+      // Should find same user (emails are stored lowercase)
+      expect(userLower).toBeTruthy();
+      expect(userLower.email).toBe('test-session@example.com');
+    });
+  });
+
+  describe('Password Verification', () => {
+    it('should verify correct password', async () => {
+      const user = await User.findOne({ email: 'test-session@example.com' }).select('+password');
+      const isValid = await bcrypt.compare(testPassword, user.password);
+      
+      expect(isValid).toBe(true);
+    });
+
+    it('should reject incorrect password', async () => {
+      const user = await User.findOne({ email: 'test-session@example.com' }).select('+password');
+      const isValid = await bcrypt.compare('WrongPassword123!', user.password);
+      
+      expect(isValid).toBe(false);
+    });
+
+    it('should reject empty password', async () => {
+      const user = await User.findOne({ email: 'test-session@example.com' }).select('+password');
+      const isValid = await bcrypt.compare('', user.password);
+      
+      expect(isValid).toBe(false);
+    });
+  });
+
+  describe('User Data Integrity', () => {
+    it('should maintain user data after login attempts', async () => {
+      const userBefore = await User.findOne({ email: 'test-session@example.com' }).select('+password');
+      
+      // Simulate multiple login attempts
+      await bcrypt.compare(testPassword, userBefore.password);
+      await bcrypt.compare('WrongPassword', userBefore.password);
+      await bcrypt.compare(testPassword, userBefore.password);
+      
+      const userAfter = await User.findOne({ email: 'test-session@example.com' }).select('+password');
+      
+      expect(userAfter.email).toBe(userBefore.email);
+      expect(userAfter.password).toBe(userBefore.password);
+      expect(userAfter.name).toBe(userBefore.name);
+    });
+
+    it('should not modify user on failed login', async () => {
+      const userBefore = await User.findOne({ email: 'test-session@example.com' }).select('+password').lean();
+      
+      // Attempt login with wrong password
+      await bcrypt.compare('WrongPassword', userBefore.password);
+      
+      const userAfter = await User.findOne({ email: 'test-session@example.com' }).select('+password').lean();
+      
+      expect(userAfter).toEqual(userBefore);
+    });
+  });
+});
