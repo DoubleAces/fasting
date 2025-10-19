@@ -29,18 +29,21 @@ export async function POST(request) {
     const { email, password, confirmPassword, name } = body;
 
     // Validate input
-    const validation = registerSchema.safeParse({
-      email,
-      password,
-      confirmPassword,
-      name,
-    });
+    const validation = registerSchema.validate(
+      {
+        email,
+        password,
+        confirmPassword,
+        name,
+      },
+      { abortEarly: false } // Return all errors, not just the first
+    );
 
-    if (!validation.success) {
+    if (validation.error) {
       return NextResponse.json(
         {
           error: 'Validation failed',
-          details: validation.error.errors.map((err) => ({
+          details: validation.error.details.map((err) => ({
             field: err.path[0],
             message: err.message,
           })),

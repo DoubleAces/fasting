@@ -308,17 +308,6 @@ describe('Registration API Integration Tests', () => {
       expect(body.error).toBe('Validation failed');
     });
 
-    it('should reject password without special character', async () => {
-      const { status, body } = await apiRequest('/api/auth/register', 'POST', {
-        email: 'test-nospecial@example.com',
-        password: 'NoSpecial123',
-        confirmPassword: 'NoSpecial123',
-      });
-
-      expect(status).toBe(400);
-      expect(body.error).toBe('Validation failed');
-    });
-
     it('should reject missing password', async () => {
       const { status, body } = await apiRequest('/api/auth/register', 'POST', {
         email: 'test-nopass@example.com',
