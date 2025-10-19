@@ -358,7 +358,7 @@ describe('Entry Validation Schema', () => {
 
     describe('energyLevel', () => {
       it('should accept valid values', () => {
-        const validValues = ['Low', 'Medium', 'High Energy'];
+        const validValues = ['Low Energy', 'Medium Energy', 'High Energy'];
         
         validValues.forEach(value => {
           const entry = {

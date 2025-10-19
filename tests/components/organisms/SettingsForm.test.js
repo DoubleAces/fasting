@@ -10,7 +10,7 @@ describe('SettingsForm Component', () => {
   const mockSettings = {
     _id: '123',
     userId: 'user-123',
-    weightUnit: 'kg',
+    measurementSystem: 'metric',
     timeFormat: '24h',
     fastingGoal: 16,
   };
@@ -133,7 +133,13 @@ describe('SettingsForm Component', () => {
   describe('Form Submission - Create', () => {
     it('should submit new settings with correct data', async () => {
       const user = userEvent.setup();
-      const mockResponse = { success: true, settings: mockSettings };
+      const mockResponse = { 
+        _id: '123',
+        userId: 'user-123',
+        measurementSystem: 'imperial',
+        timeFormat: '12h',
+        fastingGoal: 18,
+      };
       fetch.mockResolvedValueOnce({
         ok: true,
         json: async () => mockResponse,
@@ -156,10 +162,10 @@ describe('SettingsForm Component', () => {
 
       await waitFor(() => {
         expect(fetch).toHaveBeenCalledWith('/api/settings', {
-          method: 'POST',
+          method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            weightUnit: 'lbs',
+            measurementSystem: 'imperial',
             timeFormat: '12h',
             fastingGoal: 18,
           }),
@@ -167,7 +173,7 @@ describe('SettingsForm Component', () => {
       });
 
       await waitFor(() => {
-        expect(handleSuccess).toHaveBeenCalledWith(mockResponse.settings);
+        expect(handleSuccess).toHaveBeenCalledWith(mockResponse);
       });
     });
 
@@ -224,7 +230,7 @@ describe('SettingsForm Component', () => {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            weightUnit: 'kg',
+            measurementSystem: 'metric',
             timeFormat: '24h',
             fastingGoal: 18,
           }),

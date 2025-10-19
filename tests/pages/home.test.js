@@ -17,6 +17,34 @@ jest.mock('next/navigation', () => ({
   },
 }));
 
+// Mock settings response
+const mockSettings = {
+  measurementSystem: 'metric',
+  timeFormat: '24h',
+  fastingGoal: 16
+};
+
+// Helper to fill DateInput component
+const fillDateInput = async (user, dateString) => {
+  const [year, month, day] = dateString.split('-');
+  await user.type(screen.getByLabelText(/^day$/i), day);
+  await user.type(screen.getByLabelText(/^month$/i), month);
+  await user.type(screen.getByLabelText(/^year$/i), year);
+  await user.tab(); // Trigger validation
+};
+
+// Helper to fill TimeInput component
+const fillTimeInput = async (user, label, timeString) => {
+  const [hours, minutes] = timeString.split(':');
+  const timeLabel = screen.getByText(new RegExp(label, 'i'));
+  const container = timeLabel.closest('.flex.flex-col');
+  const hourSelect = container.querySelector('select[aria-label="Hour"]');
+  const minuteSelect = container.querySelector('select[aria-label="Minute"]');
+  await user.selectOptions(hourSelect, hours);
+  await user.selectOptions(minuteSelect, minutes);
+  await user.tab();
+};
+
 describe('HomePage Component', () => {
   beforeEach(() => {
     fetch.mockClear();
@@ -63,37 +91,57 @@ describe('HomePage Component', () => {
         date: '2024-03-15',
         firstMealTime: '12:00',
         lastMealTime: '20:00',
-        fastingHours: 16,
-        eatingWindow: 8,
+        fastingDuration: 960, // 16 hours in minutes
+        eatingWindow: 480,    // 8 hours in minutes
       },
       {
         _id: '2',
         date: '2024-03-14',
         firstMealTime: '13:00',
         lastMealTime: '21:00',
-        fastingHours: 16,
-        eatingWindow: 8,
+        fastingDuration: 960, // 16 hours in minutes
+        eatingWindow: 480,    // 8 hours in minutes
       },
     ];
 
     it('should display recent entries', async () => {
+      // Mock entries fetch
       fetch.mockResolvedValueOnce({
         ok: true,
         json: async () => ({ entries: mockEntries }),
+      });
+      // Mock settings fetch
+      fetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ 
+          measurementSystem: 'metric',
+          timeFormat: '24h',
+          fastingGoal: 16
+        }),
       });
 
       render(<HomePage />);
 
       await waitFor(() => {
-        expect(screen.getByText(/march 15, 2024/i)).toBeInTheDocument();
-        expect(screen.getByText(/march 14, 2024/i)).toBeInTheDocument();
+        expect(screen.getByText('15/03/2024')).toBeInTheDocument();
+        expect(screen.getByText('14/03/2024')).toBeInTheDocument();
       });
     });
 
     it('should show empty state when no entries', async () => {
+      // Mock entries fetch
       fetch.mockResolvedValueOnce({
         ok: true,
         json: async () => ({ entries: [] }),
+      });
+      // Mock settings fetch
+      fetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ 
+          measurementSystem: 'metric',
+          timeFormat: '24h',
+          fastingGoal: 16
+        }),
       });
 
       render(<HomePage />);
@@ -104,16 +152,26 @@ describe('HomePage Component', () => {
     });
 
     it('should display entry cards', async () => {
+      // Mock entries fetch
       fetch.mockResolvedValueOnce({
         ok: true,
         json: async () => ({ entries: mockEntries }),
+      });
+      // Mock settings fetch
+      fetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ 
+          measurementSystem: 'metric',
+          timeFormat: '24h',
+          fastingGoal: 16
+        }),
       });
 
       const { container } = render(<HomePage />);
 
       await waitFor(() => {
-        const articles = container.querySelectorAll('article');
-        expect(articles.length).toBeGreaterThan(0);
+        const rows = container.querySelectorAll('tbody tr');
+        expect(rows.length).toBeGreaterThan(0);
       });
     });
   });
@@ -123,6 +181,10 @@ describe('HomePage Component', () => {
       fetch.mockResolvedValueOnce({
         ok: true,
         json: async () => ({ entries: [] }),
+      });
+      fetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockSettings,
       });
 
       render(<HomePage />);
@@ -137,6 +199,10 @@ describe('HomePage Component', () => {
       fetch.mockResolvedValueOnce({
         ok: true,
         json: async () => ({ entries: [] }),
+      });
+      fetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockSettings,
       });
 
       render(<HomePage />);
@@ -160,8 +226,8 @@ describe('HomePage Component', () => {
         date: '2024-03-15',
         firstMealTime: '12:00',
         lastMealTime: '20:00',
-        fastingHours: 16,
-        eatingWindow: 8,
+        fastingDuration: 960, // 16 hours in minutes
+        eatingWindow: 480,    // 8 hours in minutes
       },
     ];
 
@@ -169,6 +235,10 @@ describe('HomePage Component', () => {
       fetch.mockResolvedValueOnce({
         ok: true,
         json: async () => ({ entries: mockEntries }),
+      });
+      fetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockSettings,
       });
 
       render(<HomePage />);
@@ -182,6 +252,10 @@ describe('HomePage Component', () => {
       fetch.mockResolvedValueOnce({
         ok: true,
         json: async () => ({ entries: mockEntries }),
+      });
+      fetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockSettings,
       });
 
       render(<HomePage />);
@@ -197,6 +271,10 @@ describe('HomePage Component', () => {
         ok: true,
         json: async () => ({ entries: mockEntries }),
       });
+      fetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockSettings,
+      });
 
       render(<HomePage />);
 
@@ -209,17 +287,26 @@ describe('HomePage Component', () => {
 
       // Form should be populated with entry data
       await waitFor(() => {
-        expect(screen.getByLabelText(/date/i)).toHaveValue('2024-03-15');
+        expect(screen.getByLabelText(/^day$/i)).toHaveValue('15');
+        expect(screen.getByLabelText(/^month$/i)).toHaveValue('03');
+        expect(screen.getByLabelText(/^year$/i)).toHaveValue('2024');
       });
     });
 
     it('should delete entry when delete clicked', async () => {
       const user = userEvent.setup();
       
+      // Mock window.confirm
+      global.confirm = jest.fn(() => true);
+      
       // Initial fetch
       fetch.mockResolvedValueOnce({
         ok: true,
         json: async () => ({ entries: mockEntries }),
+      });
+      fetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockSettings,
       });
 
       render(<HomePage />);
@@ -260,6 +347,10 @@ describe('HomePage Component', () => {
         ok: true,
         json: async () => ({ entries: [] }),
       });
+      fetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockSettings,
+      });
 
       render(<HomePage />);
 
@@ -272,9 +363,9 @@ describe('HomePage Component', () => {
       await user.click(addButton);
 
       // Fill form
-      await user.type(screen.getByLabelText(/date/i), '2024-03-15');
-      await user.type(screen.getByLabelText(/first meal time/i), '12:00');
-      await user.type(screen.getByLabelText(/last meal time/i), '20:00');
+      await fillDateInput(user, '2024-03-15');
+      await fillTimeInput(user, 'First Meal Time', '12:00');
+      await fillTimeInput(user, 'Last Meal Time', '20:00');
 
       // Mock create API call
       fetch.mockResolvedValueOnce({
@@ -285,8 +376,8 @@ describe('HomePage Component', () => {
             date: '2024-03-15',
             firstMealTime: '12:00',
             lastMealTime: '20:00',
-            fastingHours: 16,
-            eatingWindow: 8,
+            fastingDuration: 960,
+            eatingWindow: 480,
           }
         }),
       });
@@ -300,8 +391,8 @@ describe('HomePage Component', () => {
             date: '2024-03-15',
             firstMealTime: '12:00',
             lastMealTime: '20:00',
-            fastingHours: 16,
-            eatingWindow: 8,
+            fastingDuration: 960,
+            eatingWindow: 480,
           }]
         }),
       });
@@ -328,6 +419,10 @@ describe('HomePage Component', () => {
         ok: true,
         json: async () => ({ entries: [] }),
       });
+      fetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockSettings,
+      });
 
       render(<HomePage />);
 
@@ -351,7 +446,7 @@ describe('HomePage Component', () => {
       });
 
       // Should not have called create API
-      expect(fetch).toHaveBeenCalledTimes(1); // Only initial fetch
+      expect(fetch).toHaveBeenCalledTimes(2); // Initial entries fetch + settings fetch
     });
   });
 
@@ -367,9 +462,15 @@ describe('HomePage Component', () => {
     });
 
     it('should display error when API returns error', async () => {
+      // Mock entries fetch failure
       fetch.mockResolvedValueOnce({
         ok: false,
         json: async () => ({ error: 'Database connection failed' }),
+      });
+      // Mock settings fetch (will also fail or succeed - doesn't matter since entries failed first)
+      fetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockSettings,
       });
 
       render(<HomePage />);

@@ -155,8 +155,8 @@ describe('SettingsPage Component', () => {
 
       await waitFor(() => {
         expect(fetch).toHaveBeenCalledWith('/api/settings', expect.objectContaining({
-          method: 'POST',
-          body: expect.stringContaining('lbs'),
+          method: 'PUT',
+          body: expect.stringContaining('imperial'),
         }));
       });
     });
