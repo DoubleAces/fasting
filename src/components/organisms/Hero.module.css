@@ -1,11 +1,7 @@
 /* Hero Component Styles */
 
 .hero {
-  background: linear-gradient(
-    135deg,
-    var(--primary-50, #f0fdf4) 0%,
-    var(--background, #ffffff) 100%
-  );
+  background: var(--background, #ffffff);
   padding: 4rem 1.5rem 5rem;
   position: relative;
   overflow: hidden;
@@ -21,7 +17,7 @@
   bottom: 0;
   background-image: radial-gradient(
     circle at 20% 50%,
-    rgba(5, 150, 105, 0.05) 0%,
+    rgba(5, 150, 105, 0.02) 0%,
     transparent 50%
   );
   pointer-events: none;
@@ -64,9 +60,10 @@
 .subheadline {
   font-size: 1.125rem;
   line-height: 1.7;
-  color: var(--text-secondary, #6b7280);
+  color: var(--text-primary, #111827);
   margin: 0;
   max-width: 600px;
+  font-weight: 400;
 }
 
 /* CTA Buttons */

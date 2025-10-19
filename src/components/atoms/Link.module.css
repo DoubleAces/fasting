@@ -19,7 +19,7 @@
 /* Text Variant (Default) */
 .text {
   color: var(--primary-600, #059669);
-  padding: 0;
+  padding: 0.625rem 1.25rem;
   background: none;
 }
 
