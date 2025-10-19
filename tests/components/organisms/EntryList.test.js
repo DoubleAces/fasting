@@ -43,20 +43,21 @@ describe('EntryList Component', () => {
     it('should render list of entries', () => {
       render(<EntryList entries={mockEntries} />);
       
-      // Should render all entries
-      expect(screen.getByText(/march 15, 2024/i)).toBeInTheDocument();
-      expect(screen.getByText(/march 14, 2024/i)).toBeInTheDocument();
-      expect(screen.getByText(/march 13, 2024/i)).toBeInTheDocument();
+      // Should render all entries in table format (dd/MM/yyyy)
+      expect(screen.getByText('15/03/2024')).toBeInTheDocument();
+      expect(screen.getByText('14/03/2024')).toBeInTheDocument();
+      expect(screen.getByText('13/03/2024')).toBeInTheDocument();
     });
 
-    it('should render correct number of entry cards', () => {
+    it('should render correct number of table rows', () => {
       const { container } = render(<EntryList entries={mockEntries} />);
       
-      const articles = container.querySelectorAll('article');
-      expect(articles).toHaveLength(3);
+      // Count tbody rows (excludes header row)
+      const rows = container.querySelectorAll('tbody tr');
+      expect(rows).toHaveLength(3);
     });
 
-    it('should pass entry data to EntryCard components', () => {
+    it('should display entry data in table cells', () => {
       render(<EntryList entries={mockEntries} />);
       
       // Check specific data from different entries
@@ -82,8 +83,9 @@ describe('EntryList Component', () => {
     it('should not render any entry cards in empty state', () => {
       const { container } = render(<EntryList entries={[]} />);
       
-      const articles = container.querySelectorAll('article');
-      expect(articles).toHaveLength(0);
+      // No table rows in empty state
+      const rows = container.querySelectorAll('tbody tr');
+      expect(rows).toHaveLength(0);
     });
   });
 
@@ -97,7 +99,8 @@ describe('EntryList Component', () => {
     it('should not show entries when loading', () => {
       render(<EntryList entries={mockEntries} loading={true} />);
       
-      expect(screen.queryByText(/march 15, 2024/i)).not.toBeInTheDocument();
+      // Dates should not appear when loading
+      expect(screen.queryByText('15/03/2024')).not.toBeInTheDocument();
     });
 
     it('should not show loading spinner when loading is false', () => {
@@ -165,19 +168,19 @@ describe('EntryList Component', () => {
     it('should display entries in order provided by default', () => {
       const { container } = render(<EntryList entries={mockEntries} />);
       
-      const articles = container.querySelectorAll('article');
-      expect(within(articles[0]).getByText(/march 15/i)).toBeInTheDocument();
-      expect(within(articles[1]).getByText(/march 14/i)).toBeInTheDocument();
-      expect(within(articles[2]).getByText(/march 13/i)).toBeInTheDocument();
+      const rows = container.querySelectorAll('tbody tr');
+      expect(within(rows[0]).getByText('15/03/2024')).toBeInTheDocument();
+      expect(within(rows[1]).getByText('14/03/2024')).toBeInTheDocument();
+      expect(within(rows[2]).getByText('13/03/2024')).toBeInTheDocument();
     });
 
     it('should maintain entry order when no sortBy specified', () => {
       const reversedEntries = [...mockEntries].reverse();
       const { container } = render(<EntryList entries={reversedEntries} />);
       
-      const articles = container.querySelectorAll('article');
-      expect(within(articles[0]).getByText(/march 13/i)).toBeInTheDocument();
-      expect(within(articles[2]).getByText(/march 15/i)).toBeInTheDocument();
+      const rows = container.querySelectorAll('tbody tr');
+      expect(within(rows[0]).getByText('13/03/2024')).toBeInTheDocument();
+      expect(within(rows[2]).getByText('15/03/2024')).toBeInTheDocument();
     });
   });
 
@@ -188,20 +191,20 @@ describe('EntryList Component', () => {
       expect(container.firstChild).toHaveClass('custom-list');
     });
 
-    it('should use grid layout for entries', () => {
+    it('should use table layout for entries', () => {
       const { container } = render(<EntryList entries={mockEntries} />);
       
-      // Should have a container with grid classes
-      const gridContainer = container.querySelector('[class*="grid"]');
-      expect(gridContainer).toBeInTheDocument();
+      // Should have a table element
+      const table = container.querySelector('table');
+      expect(table).toBeInTheDocument();
     });
 
-    it('should space entries appropriately', () => {
+    it('should have proper table structure', () => {
       const { container } = render(<EntryList entries={mockEntries} />);
       
-      // Should have gap classes for spacing
-      const gridContainer = container.querySelector('[class*="gap"]');
-      expect(gridContainer).toBeInTheDocument();
+      // Should have thead and tbody
+      expect(container.querySelector('thead')).toBeInTheDocument();
+      expect(container.querySelector('tbody')).toBeInTheDocument();
     });
   });
 
@@ -233,8 +236,8 @@ describe('EntryList Component', () => {
       const singleEntry = [mockEntries[0]];
       const { container } = render(<EntryList entries={singleEntry} />);
       
-      const articles = container.querySelectorAll('article');
-      expect(articles).toHaveLength(1);
+      const rows = container.querySelectorAll('tbody tr');
+      expect(rows).toHaveLength(1);
     });
 
     it('should handle many entries', () => {
@@ -249,8 +252,8 @@ describe('EntryList Component', () => {
 
       const { container } = render(<EntryList entries={manyEntries} />);
       
-      const articles = container.querySelectorAll('article');
-      expect(articles).toHaveLength(20);
+      const rows = container.querySelectorAll('tbody tr');
+      expect(rows).toHaveLength(20);
     });
 
     it('should handle entries with minimal data', () => {
@@ -267,7 +270,7 @@ describe('EntryList Component', () => {
 
       render(<EntryList entries={minimalEntries} />);
       
-      expect(screen.getByText(/march 15/i)).toBeInTheDocument();
+      expect(screen.getByText('15/03/2024')).toBeInTheDocument();
     });
 
     it('should not break with null entries', () => {
@@ -333,7 +336,7 @@ describe('EntryList Component', () => {
         />
       );
 
-      expect(screen.getByText(/march 15/i)).toBeInTheDocument();
+      expect(screen.getByText('15/03/2024')).toBeInTheDocument();
       expect(screen.getAllByRole('button', { name: /edit/i })).toHaveLength(3);
       expect(screen.getAllByRole('button', { name: /delete/i })).toHaveLength(3);
     });
