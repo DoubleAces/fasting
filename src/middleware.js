@@ -19,10 +19,13 @@
  * - /faq - FAQ page
  * - /reset-password - Password reset page
  * - /api/auth/* - NextAuth endpoints
+ * 
+ * Note: This middleware runs in Edge Runtime, so we cannot import
+ * database connections, bcrypt, or other Node.js-only modules.
  */
 
-import { auth } from '@/lib/auth';
 import { NextResponse } from 'next/server';
+import { getToken } from 'next-auth/jwt';
 
 /**
  * Define protected routes that require authentication
@@ -43,6 +46,7 @@ const publicRoutes = ['/', '/faq', '/reset-password'];
  * Middleware function
  * 
  * Runs on every request to check authentication and handle redirects.
+ * Uses NextAuth's getToken() which is Edge Runtime compatible.
  * 
  * @param {Request} request - The incoming request
  * @returns {Response} The response (redirect or continue)
@@ -50,9 +54,14 @@ const publicRoutes = ['/', '/faq', '/reset-password'];
 export default async function middleware(request) {
   const { pathname } = request.nextUrl;
 
-  // Get session from NextAuth
-  const session = await auth();
-  const isAuthenticated = !!session?.user;
+  // Get JWT token (Edge Runtime compatible)
+  // This works without importing database or bcrypt
+  const token = await getToken({
+    req: request,
+    secret: process.env.NEXTAUTH_SECRET,
+  });
+  
+  const isAuthenticated = !!token;
 
   // Check if current route is protected
   const isProtectedRoute = protectedRoutes.some((route) =>
@@ -87,7 +96,7 @@ export default async function middleware(request) {
  * Specifies which routes this middleware should run on.
  * 
  * Matcher options:
- * - Includes all routes except static files, _next internal routes, and API routes (except /api/auth)
+ * - Includes all routes except static files, _next internal routes, and API routes
  * - Uses negative lookahead to exclude patterns
  */
 export const config = {
