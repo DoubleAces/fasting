@@ -4,14 +4,16 @@
  * Navigation bar that adapts based on authentication status.
  * Shows different links and buttons for authenticated vs unauthenticated users.
  * 
- * Unauthenticated:
- * - Home, Features, FAQ links
- * - Sign Up, Log In buttons
+ * Common Links (All Users):
+ * - Home, Features, FAQ
  * 
- * Authenticated:
- * - Home, My Entries, Settings links
- * - User email display
+ * Authenticated Only:
+ * - My Entries, Settings links
+ * - User email/name display
  * - Sign Out button
+ * 
+ * Unauthenticated Only:
+ * - Sign Up, Log In buttons
  * 
  * Features:
  * - Logo linking to homepage
@@ -57,22 +59,21 @@ export default function Navbar() {
             Home
           </NavLink>
           
-          {isAuthenticated ? (
+          <NavLink href="/features" exact={true}>
+            Features
+          </NavLink>
+          
+          <NavLink href="/faq" exact={true}>
+            FAQ
+          </NavLink>
+          
+          {isAuthenticated && (
             <>
               <NavLink href="/entries" exact={true}>
                 My Entries
               </NavLink>
               <NavLink href="/settings" exact={true}>
                 Settings
-              </NavLink>
-            </>
-          ) : (
-            <>
-              <NavLink href="/features" exact={true}>
-                Features
-              </NavLink>
-              <NavLink href="/faq" exact={true}>
-                FAQ
               </NavLink>
             </>
           )}
@@ -130,22 +131,21 @@ export default function Navbar() {
               Home
             </NavLink>
             
-            {isAuthenticated ? (
+            <NavLink href="/features" exact={true}>
+              Features
+            </NavLink>
+            
+            <NavLink href="/faq" exact={true}>
+              FAQ
+            </NavLink>
+            
+            {isAuthenticated && (
               <>
                 <NavLink href="/entries" exact={true}>
                   My Entries
                 </NavLink>
                 <NavLink href="/settings" exact={true}>
                   Settings
-                </NavLink>
-              </>
-            ) : (
-              <>
-                <NavLink href="/features" exact={true}>
-                  Features
-                </NavLink>
-                <NavLink href="/faq" exact={true}>
-                  FAQ
                 </NavLink>
               </>
             )}
