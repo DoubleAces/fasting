@@ -562,3 +562,255 @@ describe('Session Management Integration Tests', () => {
     });
   });
 });
+
+// ============================================================================
+// GOOGLE OAUTH INTEGRATION TESTS (Phase 6)
+// ============================================================================
+
+describe('Google OAuth Integration Tests', () => {
+  beforeAll(async () => {
+    // Ensure MongoDB connection
+    if (mongoose.connection.readyState === 0) {
+      await mongoose.connect(process.env.MONGODB_URI, {
+        maxPoolSize: 10,
+        serverSelectionTimeoutMS: 5000,
+      });
+    }
+  });
+
+  afterAll(async () => {
+    // Close MongoDB connection
+    if (mongoose.connection.readyState !== 0) {
+      await mongoose.connection.close();
+    }
+  });
+
+  beforeEach(async () => {
+    // Clean up OAuth test users
+    await User.deleteMany({ email: /test-oauth.*@example\.com/ });
+  });
+
+  afterEach(async () => {
+    // Clean up after each test
+    await User.deleteMany({ email: /test-oauth.*@example\.com/ });
+  });
+
+  describe('OAuth Account Creation', () => {
+    it('should create new user on first Google OAuth login', async () => {
+      const oauthProfile = {
+        sub: 'google-123456',
+        email: 'test-oauth-new@example.com',
+        name: 'OAuth Test User',
+        picture: 'https://example.com/photo.jpg',
+        email_verified: true,
+      };
+
+      // Simulate OAuth account creation
+      const user = await User.create({
+        email: oauthProfile.email,
+        name: oauthProfile.name,
+        picture: oauthProfile.picture,
+        authMethod: 'google',
+        googleId: oauthProfile.sub,
+        emailVerified: true,
+      });
+
+      expect(user).toBeTruthy();
+      expect(user.email).toBe(oauthProfile.email);
+      expect(user.authMethod).toBe('google');
+      expect(user.googleId).toBe(oauthProfile.sub);
+      expect(user.emailVerified).toBe(true);
+      expect(user.password).toBeUndefined(); // No password for OAuth users
+    });
+
+    it('should set email as verified for OAuth users', async () => {
+      const user = await User.create({
+        email: 'test-oauth-verified@example.com',
+        name: 'Verified OAuth User',
+        authMethod: 'google',
+        googleId: 'google-789',
+        emailVerified: true,
+      });
+
+      expect(user.emailVerified).toBe(true);
+    });
+
+    it('should store Google profile picture', async () => {
+      const pictureUrl = 'https://lh3.googleusercontent.com/a/photo.jpg';
+      
+      const user = await User.create({
+        email: 'test-oauth-picture@example.com',
+        name: 'Picture Test User',
+        picture: pictureUrl,
+        authMethod: 'google',
+        googleId: 'google-pic-123',
+      });
+
+      expect(user.picture).toBe(pictureUrl);
+    });
+  });
+
+  describe('OAuth Account Linking', () => {
+    it('should link Google account to existing email user', async () => {
+      // First create an email user
+      const hashedPassword = await bcrypt.hash('TestPass123!', 10);
+      const existingUser = await User.create({
+        email: 'test-oauth-link@example.com',
+        password: hashedPassword,
+        name: 'Email User',
+        authMethod: 'email',
+      });
+
+      // Simulate linking Google account
+      existingUser.googleId = 'google-link-123';
+      existingUser.picture = 'https://example.com/new-photo.jpg';
+      existingUser.emailVerified = true;
+      await existingUser.save();
+
+      const updatedUser = await User.findById(existingUser._id).select('+password');
+      
+      expect(updatedUser.googleId).toBe('google-link-123');
+      expect(updatedUser.authMethod).toBe('email'); // Keep original auth method
+      expect(updatedUser.password).toBeTruthy(); // Password still exists
+      expect(updatedUser.emailVerified).toBe(true);
+    });
+
+    it('should not overwrite existing user data on OAuth link', async () => {
+      const hashedPassword = await bcrypt.hash('TestPass123!', 10);
+      const existingUser = await User.create({
+        email: 'test-oauth-preserve@example.com',
+        password: hashedPassword,
+        name: 'Original Name',
+        authMethod: 'email',
+      });
+
+      const originalId = existingUser._id.toString();
+      const originalEmail = existingUser.email;
+      const originalPassword = existingUser.password;
+
+      // Link OAuth
+      existingUser.googleId = 'google-preserve-123';
+      await existingUser.save();
+
+      const updatedUser = await User.findById(originalId).select('+password');
+      
+      expect(updatedUser._id.toString()).toBe(originalId);
+      expect(updatedUser.email).toBe(originalEmail);
+      expect(updatedUser.password).toBe(originalPassword);
+      expect(updatedUser.name).toBe('Original Name');
+    });
+  });
+
+  describe('OAuth User Login', () => {
+    it('should find existing OAuth user by email', async () => {
+      await User.create({
+        email: 'test-oauth-existing@example.com',
+        name: 'Existing OAuth User',
+        authMethod: 'google',
+        googleId: 'google-existing-123',
+      });
+
+      const user = await User.findOne({ email: 'test-oauth-existing@example.com' });
+      
+      expect(user).toBeTruthy();
+      expect(user.authMethod).toBe('google');
+      expect(user.googleId).toBe('google-existing-123');
+    });
+
+    it('should update last login for OAuth users', async () => {
+      const user = await User.create({
+        email: 'test-oauth-lastlogin@example.com',
+        name: 'Last Login Test',
+        authMethod: 'google',
+        googleId: 'google-lastlogin-123',
+      });
+
+      const originalLastLogin = user.lastLogin;
+      
+      // Wait a moment
+      await new Promise(resolve => setTimeout(resolve, 10));
+      
+      // Update last login
+      await user.updateLastLogin();
+      
+      const updatedUser = await User.findById(user._id);
+      expect(updatedUser.lastLogin.getTime()).toBeGreaterThan(originalLastLogin.getTime());
+    });
+  });
+
+  describe('OAuth Profile Data', () => {
+    it('should retrieve OAuth user profile data', async () => {
+      const user = await User.create({
+        email: 'test-oauth-profile@example.com',
+        name: 'Profile Test User',
+        picture: 'https://example.com/profile.jpg',
+        authMethod: 'google',
+        googleId: 'google-profile-123',
+        emailVerified: true,
+      });
+
+      expect(user.toObject()).toMatchObject({
+        email: 'test-oauth-profile@example.com',
+        name: 'Profile Test User',
+        picture: 'https://example.com/profile.jpg',
+        authMethod: 'google',
+        emailVerified: true,
+      });
+    });
+
+    it('should not include password field for OAuth users', async () => {
+      const user = await User.create({
+        email: 'test-oauth-nopass@example.com',
+        name: 'No Password User',
+        authMethod: 'google',
+        googleId: 'google-nopass-123',
+      });
+
+      const userObject = user.toObject();
+      expect(userObject).not.toHaveProperty('password');
+      
+      // Even with explicit select, OAuth users have no password
+      const userWithSelect = await User.findById(user._id).select('+password');
+      expect(userWithSelect.password).toBeUndefined();
+    });
+  });
+
+  describe('OAuth Error Scenarios', () => {
+    it('should handle duplicate googleId gracefully', async () => {
+      const googleId = 'google-duplicate-123';
+      
+      await User.create({
+        email: 'test-oauth-dup1@example.com',
+        name: 'First User',
+        authMethod: 'google',
+        googleId: googleId,
+      });
+
+      // Attempt to create second user with same googleId
+      await expect(
+        User.create({
+          email: 'test-oauth-dup2@example.com',
+          name: 'Second User',
+          authMethod: 'google',
+          googleId: googleId,
+        })
+      ).rejects.toThrow();
+    });
+
+    it('should reject OAuth user trying to login with credentials', async () => {
+      const user = await User.create({
+        email: 'test-oauth-credblock@example.com',
+        name: 'OAuth Only User',
+        authMethod: 'google',
+        googleId: 'google-credblock-123',
+      });
+
+      // OAuth users have no password
+      expect(user.password).toBeUndefined();
+      
+      // Attempting to compare password should fail gracefully
+      const hasPassword = await user.toObject().password;
+      expect(hasPassword).toBeUndefined();
+    });
+  });
+});

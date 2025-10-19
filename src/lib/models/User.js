@@ -11,6 +11,7 @@
  * - googleId: Unique Google OAuth ID (sparse index)
  * - name: User's display name
  * - picture: Profile picture URL
+ * - emailVerified: Email verification status (always true for OAuth)
  * - rememberMe: Session preference
  * - registrationDate: Account creation timestamp
  * - lastLogin: Last login timestamp
@@ -127,6 +128,18 @@ const userSchema = new mongoose.Schema(
     picture: {
       type: String,
       default: null,
+    },
+
+    /**
+     * Email verification status
+     * - true: Email has been verified
+     * - false: Email not yet verified
+     * - Always true for OAuth users (verified by provider)
+     * - May be false for email/password users until verified
+     */
+    emailVerified: {
+      type: Boolean,
+      default: false,
     },
 
     // ============================================================================
