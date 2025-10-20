@@ -40,7 +40,7 @@ const authRoutes = ['/login', '/register'];
 /**
  * Define public routes (password reset is public to allow unauthenticated access)
  */
-const publicRoutes = ['/', '/faq', '/reset-password'];
+const publicRoutes = ['/', '/faq', '/reset-password', '/features'];
 
 /**
  * Middleware function
@@ -55,7 +55,7 @@ export default async function middleware(request) {
   const { pathname } = request.nextUrl;
 
   // Get JWT token (Edge Runtime compatible)
-  // This works without importing database or bcrypt
+  // For NextAuth v5, we need to check both the session token and the secure token
   const token = await getToken({
     req: request,
     secret: process.env.NEXTAUTH_SECRET,
@@ -63,7 +63,13 @@ export default async function middleware(request) {
   
   const isAuthenticated = !!token;
 
-  console.log('🔵 Middleware:', { pathname, isAuthenticated, hasToken: !!token });
+  console.log('🔵 Middleware:', { 
+    pathname, 
+    isAuthenticated, 
+    hasToken: !!token,
+    tokenEmail: token?.email,
+    cookies: request.cookies.getAll().map(c => c.name)
+  });
 
   // Check if current route is protected
   const isProtectedRoute = protectedRoutes.some((route) =>
