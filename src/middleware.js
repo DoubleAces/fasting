@@ -63,6 +63,8 @@ export default async function middleware(request) {
   
   const isAuthenticated = !!token;
 
+  console.log('🔵 Middleware:', { pathname, isAuthenticated, hasToken: !!token });
+
   // Check if current route is protected
   const isProtectedRoute = protectedRoutes.some((route) =>
     pathname.startsWith(route)
@@ -74,6 +76,7 @@ export default async function middleware(request) {
   // CASE 1: Protected route without authentication
   // Redirect to login with callback URL to return after login
   if (isProtectedRoute && !isAuthenticated) {
+    console.log('🔴 Redirecting to login - protected route without auth');
     const loginUrl = new URL('/login', request.url);
     loginUrl.searchParams.set('callbackUrl', pathname);
     return NextResponse.redirect(loginUrl);
@@ -82,6 +85,7 @@ export default async function middleware(request) {
   // CASE 2: Auth route with authentication
   // Redirect to /entries (user is already logged in)
   if (isAuthRoute && isAuthenticated) {
+    console.log('🟢 Redirecting to /entries - auth route with authentication');
     return NextResponse.redirect(new URL('/entries', request.url));
   }
 
