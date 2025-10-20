@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import LoginForm from '@/components/organisms/LoginForm';
 import ErrorMessage from '@/components/atoms/ErrorMessage';
 
@@ -28,7 +28,7 @@ import ErrorMessage from '@/components/atoms/ErrorMessage';
  * Note: Metadata set via document title since this is a client component
  */
 
-export default function LoginPage() {
+function LoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [oauthError, setOauthError] = useState('');
@@ -102,5 +102,13 @@ export default function LoginPage() {
       {/* Login Form */}
       <LoginForm onSuccess={handleSuccess} onError={handleError} />
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div style={{ maxWidth: '400px', margin: '0 auto', padding: '2rem 1rem', textAlign: 'center' }}>Loading...</div>}>
+      <LoginContent />
+    </Suspense>
   );
 }
