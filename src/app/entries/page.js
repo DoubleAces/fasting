@@ -5,21 +5,35 @@
  * This is the default landing page after successful authentication.
  */
 
-import { auth } from '@/lib/auth';
-import { redirect } from 'next/navigation';
+'use client';
 
-export const metadata = {
-  title: 'My Entries - Fasting Tracker',
-  description: 'View and manage your fasting entries',
-};
+import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 
-export default async function EntriesPage() {
-  // Get the current session
-  const session = await auth();
+export default function EntriesPage() {
+  const { data: session, status } = useSession();
+  const router = useRouter();
 
-  // If not authenticated, redirect to login
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      router.push('/login');
+    }
+  }, [status, router]);
+
+  // Show loading state while checking authentication
+  if (status === 'loading') {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-gray-600">Loading...</div>
+      </div>
+    );
+  }
+
+  // Don't render until we have a session
   if (!session?.user) {
-    redirect('/login');
+    return null;
   }
 
   return (
@@ -40,19 +54,32 @@ export default async function EntriesPage() {
           <h2 className="text-xl font-semibold mb-4">Your Profile</h2>
           <div className="space-y-2">
             <div className="flex items-center gap-4">
-              {session.user.picture && (
+              {session.user.picture ? (
                 <img 
                   src={session.user.picture} 
-                  alt={session.user.name}
-                  className="w-16 h-16 rounded-full"
+                  alt={session.user.name || 'Profile'}
+                  className="w-16 h-16 rounded-full object-cover"
+                  onError={(e) => {
+                    e.target.style.display = 'none';
+                    e.target.nextElementSibling.style.display = 'flex';
+                  }}
                 />
+              ) : (
+                <div className="w-16 h-16 rounded-full bg-green-500 flex items-center justify-center text-white text-2xl font-bold">
+                  {(session.user.name || session.user.email)?.[0]?.toUpperCase()}
+                </div>
               )}
+              <div className="w-16 h-16 rounded-full bg-green-500 items-center justify-center text-white text-2xl font-bold" style={{ display: 'none' }}>
+                {(session.user.name || session.user.email)?.[0]?.toUpperCase()}
+              </div>
               <div>
                 <p className="font-medium">{session.user.name}</p>
                 <p className="text-sm text-gray-600">{session.user.email}</p>
-                <p className="text-xs text-gray-500 mt-1">
-                  Auth Method: {session.user.authMethod || 'email'}
-                </p>
+                {session.user.authMethod && (
+                  <p className="text-xs text-gray-500 mt-1">
+                    Auth Method: {session.user.authMethod}
+                  </p>
+                )}
               </div>
             </div>
           </div>

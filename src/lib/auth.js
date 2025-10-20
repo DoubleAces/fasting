@@ -235,18 +235,24 @@ export const authConfig = {
             if (!existingUser.googleId) {
               console.log('🔗 Linking Google account to existing user');
               existingUser.googleId = profile.sub;
-              existingUser.picture = existingUser.picture || profile.picture;
               existingUser.emailVerified = true;
-              await existingUser.save();
             }
+            
+            // Always update picture to latest from Google
+            if (profile.picture) {
+              existingUser.picture = profile.picture;
+            }
+            
+            await existingUser.save();
 
             // Update last login
             await existingUser.updateLastLogin();
           }
 
-          // Add user ID to token
+          // Add user data to token (including picture)
           token.id = existingUser._id.toString();
           token.authMethod = 'google';
+          token.picture = existingUser.picture; // Add picture to token
           console.log('✅ Token updated with user ID:', token.id);
         } catch (error) {
           console.error('❌ Error in Google OAuth JWT callback:', error);
