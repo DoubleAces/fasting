@@ -11,8 +11,11 @@
 
 import { connectDB } from '@/lib/db';
 import Entry from '@/lib/models/Entry';
-import { withErrorHandler, okResponse, unauthorizedResponse } from '@/lib/api/errorHandler';
+import { withErrorHandler, okResponse, unauthorizedResponse, createdResponse, badRequestResponse, ApiError } from '@/lib/api/errorHandler';
 import { auth } from '@/lib/auth';
+import { validateEntry } from '@/lib/validation/entrySchema';
+import { calculateFastingDuration } from '@/lib/utils/fastingCalculator';
+import { getYesterday, formatDate } from '@/lib/utils/dateUtils';
 
 export const GET = withErrorHandler(async (request) => {
   // Check authentication
@@ -56,11 +59,6 @@ export const GET = withErrorHandler(async (request) => {
  * 
  * Authentication: Required
  */
-
-import { validateEntry } from '@/lib/validation/entrySchema';
-import { calculateFastingDuration } from '@/lib/utils/fastingCalculator';
-import { getYesterday, formatDate } from '@/lib/utils/dateUtils';
-import { createdResponse, badRequestResponse, unauthorizedResponse, ApiError } from '@/lib/api/errorHandler';
 
 export const POST = withErrorHandler(async (request) => {
   // Check authentication
