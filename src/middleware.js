@@ -55,10 +55,14 @@ export default async function middleware(request) {
   const { pathname } = request.nextUrl;
 
   // Get JWT token (Edge Runtime compatible)
-  // Let getToken() automatically detect the cookie name
+  // Auth.js uses __Secure-authjs.session-token in production (not __Host-)
   const token = await getToken({
     req: request,
     secret: process.env.NEXTAUTH_SECRET,
+    secureCookie: process.env.NODE_ENV === 'production',
+    cookieName: process.env.NODE_ENV === 'production'
+      ? '__Secure-authjs.session-token'
+      : 'authjs.session-token',
   });
   
   const isAuthenticated = !!token;
