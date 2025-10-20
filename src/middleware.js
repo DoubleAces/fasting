@@ -55,10 +55,15 @@ export default async function middleware(request) {
   const { pathname } = request.nextUrl;
 
   // Get JWT token (Edge Runtime compatible)
-  // For NextAuth v5, we need to check both the session token and the secure token
+  // Auth.js (NextAuth v5) uses 'authjs.session-token' as the cookie name
+  // In production with __Host- prefix: __Host-authjs.session-token
   const token = await getToken({
     req: request,
     secret: process.env.NEXTAUTH_SECRET,
+    secureCookie: process.env.NODE_ENV === 'production',
+    cookieName: process.env.NODE_ENV === 'production'
+      ? '__Host-authjs.session-token'
+      : 'authjs.session-token',
   });
   
   const isAuthenticated = !!token;

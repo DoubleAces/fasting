@@ -149,24 +149,6 @@ export const authConfig = {
   },
 
   // ============================================================================
-  // COOKIES CONFIGURATION
-  // ============================================================================
-
-  cookies: {
-    sessionToken: {
-      name: process.env.NODE_ENV === 'production' 
-        ? `__Secure-next-auth.session-token`
-        : `next-auth.session-token`,
-      options: {
-        httpOnly: true,
-        sameSite: 'lax',
-        path: '/',
-        secure: process.env.NODE_ENV === 'production',
-      },
-    },
-  },
-
-  // ============================================================================
   // TRUST HOST (Required for Vercel deployment)
   // ============================================================================
 
