@@ -1,13 +1,22 @@
 /**
  * GET /api/entries/[id]
- * Retrieve a specific daily entry by its MongoDB ObjectId
+ * Retrieve a specific daily entry by its MongoDB ObjectId for the authenticated user
+ * 
+ * Authentication: Required
  */
 
 import { connectDB } from '@/lib/db';
 import Entry from '@/lib/models/Entry';
-import { withErrorHandler, okResponse, notFoundResponse } from '@/lib/api/errorHandler';
+import { withErrorHandler, okResponse, notFoundResponse, unauthorizedResponse, forbiddenResponse } from '@/lib/api/errorHandler';
+import { auth } from '@/lib/auth';
 
 export const GET = withErrorHandler(async (request, { params }) => {
+  // Check authentication
+  const session = await auth();
+  if (!session?.user?.id) {
+    return unauthorizedResponse('Authentication required');
+  }
+
   await connectDB();
 
   const entry = await Entry.findById(params.id);
@@ -16,15 +25,22 @@ export const GET = withErrorHandler(async (request, { params }) => {
     return notFoundResponse('Entry');
   }
 
+  // Verify the entry belongs to the authenticated user
+  if (entry.userId.toString() !== session.user.id) {
+    return forbiddenResponse('You do not have permission to access this entry');
+  }
+
   return okResponse(entry);
 });
 
 /**
  * PUT /api/entries/[id]
- * Update an existing entry
+ * Update an existing entry for the authenticated user
  * 
  * Recalculates fasting duration for this entry and the next day's entry
  * if meal times change
+ * 
+ * Authentication: Required
  */
 
 import { validateEntry } from '@/lib/validation/entrySchema';
@@ -33,12 +49,23 @@ import { getYesterday, getTomorrow, formatDate } from '@/lib/utils/dateUtils';
 import { badRequestResponse } from '@/lib/api/errorHandler';
 
 export const PUT = withErrorHandler(async (request, { params }) => {
+  // Check authentication
+  const session = await auth();
+  if (!session?.user?.id) {
+    return unauthorizedResponse('Authentication required');
+  }
+
   await connectDB();
 
   // Check if entry exists
   const existingEntry = await Entry.findById(params.id);
   if (!existingEntry) {
     return notFoundResponse('Entry');
+  }
+
+  // Verify the entry belongs to the authenticated user
+  if (existingEntry.userId.toString() !== session.user.id) {
+    return forbiddenResponse('You do not have permission to update this entry');
   }
 
   // Parse and validate request body
@@ -58,30 +85,55 @@ export const PUT = withErrorHandler(async (request, { params }) => {
   
   const dateChanged = formatDate(existingEntry.date) !== formatDate(value.date);
   const firstMealChanged = existingEntry.firstMealTime !== value.firstMealTime;
+  const extendedFastChanged = existingEntry.extendedFastConfirmed !== value.extendedFastConfirmed;
   
-  if (dateChanged || firstMealChanged) {
+  if (dateChanged || firstMealChanged || extendedFastChanged) {
     try {
-      // Get the date for the day before this entry
-      const currentDate = new Date(value.date);
-      const previousDate = new Date(currentDate);
-      previousDate.setDate(previousDate.getDate() - 1);
-      const previousDateFormatted = formatDate(previousDate);
-      
-      const previousEntry = await Entry.findOne({
-        date: new Date(previousDateFormatted),
-        _id: { $ne: params.id } // Exclude current entry
-      });
+      // If user confirmed extended fast, find the most recent previous entry for this user
+      if (value.extendedFastConfirmed) {
+        const previousEntry = await Entry.findOne({
+          userId: session.user.id,
+          date: { $lt: new Date(value.date) },
+          _id: { $ne: params.id } // Exclude current entry
+        })
+          .sort({ date: -1 })
+          .limit(1);
 
-      if (previousEntry && previousEntry.lastMealTime && value.firstMealTime) {
-        const result = calculateFastingDuration(
-          previousEntry.lastMealTime,
-          value.firstMealTime,
-          previousEntry.date,
-          value.date
-        );
-        fastingDuration = result.totalMinutes;
+        if (previousEntry && previousEntry.lastMealTime && value.firstMealTime) {
+          const result = calculateFastingDuration(
+            previousEntry.lastMealTime,
+            value.firstMealTime,
+            previousEntry.date,
+            value.date
+          );
+          fastingDuration = result.totalMinutes;
+        } else {
+          fastingDuration = null;
+        }
       } else {
-        fastingDuration = null; // No previous day to calculate from
+        // Standard behavior: only check previous day (yesterday) for this user
+        const currentDate = new Date(value.date);
+        const previousDate = new Date(currentDate);
+        previousDate.setDate(previousDate.getDate() - 1);
+        const previousDateFormatted = formatDate(previousDate);
+        
+        const previousEntry = await Entry.findOne({
+          userId: session.user.id,
+          date: new Date(previousDateFormatted),
+          _id: { $ne: params.id } // Exclude current entry
+        });
+
+        if (previousEntry && previousEntry.lastMealTime && value.firstMealTime) {
+          const result = calculateFastingDuration(
+            previousEntry.lastMealTime,
+            value.firstMealTime,
+            previousEntry.date,
+            value.date
+          );
+          fastingDuration = result.totalMinutes;
+        } else {
+          fastingDuration = null; // No previous day to calculate from
+        }
       }
     } catch (calcError) {
       console.warn('Could not calculate fasting duration:', calcError.message);
@@ -96,7 +148,7 @@ export const PUT = withErrorHandler(async (request, { params }) => {
     { new: true, runValidators: true }
   );
 
-  // Recalculate next day's fasting duration if last meal time changed
+  // Recalculate next day's fasting duration if last meal time changed (for this user only)
   const lastMealChanged = existingEntry.lastMealTime !== value.lastMealTime;
   
   if (dateChanged || lastMealChanged) {
@@ -108,6 +160,7 @@ export const PUT = withErrorHandler(async (request, { params }) => {
       const nextDateFormatted = formatDate(nextDate);
       
       const nextEntry = await Entry.findOne({
+        userId: session.user.id,
         date: new Date(nextDateFormatted)
       });
 
@@ -134,22 +187,38 @@ export const PUT = withErrorHandler(async (request, { params }) => {
 
 /**
  * DELETE /api/entries/[id]
- * Delete an entry
+ * Delete an entry for the authenticated user
  * 
  * Recalculates fasting duration for the next day's entry if it exists
+ * 
+ * Authentication: Required
  */
 
 export const DELETE = withErrorHandler(async (request, { params }) => {
+  // Check authentication
+  const session = await auth();
+  if (!session?.user?.id) {
+    return unauthorizedResponse('Authentication required');
+  }
+
   await connectDB();
 
-  // Find and delete entry
-  const entry = await Entry.findByIdAndDelete(params.id);
+  // Find entry
+  const entry = await Entry.findById(params.id);
   
   if (!entry) {
     return notFoundResponse('Entry');
   }
 
-  // Recalculate next day's fasting duration
+  // Verify the entry belongs to the authenticated user
+  if (entry.userId.toString() !== session.user.id) {
+    return forbiddenResponse('You do not have permission to delete this entry');
+  }
+
+  // Delete the entry
+  await Entry.findByIdAndDelete(params.id);
+
+  // Recalculate next day's fasting duration for this user
   try {
     // Get the date for the day after the deleted entry
     const deletedDate = new Date(entry.date);
@@ -158,16 +227,18 @@ export const DELETE = withErrorHandler(async (request, { params }) => {
     const nextDateFormatted = formatDate(nextDate);
     
     const nextEntry = await Entry.findOne({
+      userId: session.user.id,
       date: new Date(nextDateFormatted)
     });
 
     if (nextEntry) {
-      // Try to find the new previous day (the day before the deleted entry)
+      // Try to find the new previous day (the day before the deleted entry) for this user
       const previousDate = new Date(deletedDate);
       previousDate.setDate(previousDate.getDate() - 1);
       const previousDateFormatted = formatDate(previousDate);
       
       const newPreviousEntry = await Entry.findOne({
+        userId: session.user.id,
         date: new Date(previousDateFormatted)
       });
 

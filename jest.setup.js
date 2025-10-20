@@ -8,6 +8,11 @@ config({ path: resolve(process.cwd(), '.env.local') });
 // Learn more: https://github.com/testing-library/jest-dom
 import '@testing-library/jest-dom';
 
+// Polyfill for TextEncoder/TextDecoder (needed for mongodb-memory-server)
+import { TextEncoder, TextDecoder } from 'util';
+global.TextEncoder = TextEncoder;
+global.TextDecoder = TextDecoder;
+
 // Mock Next.js router
 jest.mock('next/navigation', () => ({
   useRouter() {
@@ -60,5 +65,8 @@ if (typeof global.IntersectionObserver === 'undefined') {
 }
 
 // Set up environment variables for tests
-process.env.MONGODB_URI = 'mongodb://localhost:27017/fasting-tracker-test';
+// Only set default MONGODB_URI if not already set (for unit tests without real DB)
+if (!process.env.MONGODB_URI) {
+  process.env.MONGODB_URI = 'mongodb://localhost:27017/fasting-tracker-test';
+}
 process.env.NODE_ENV = 'test';

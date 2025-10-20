@@ -1,6 +1,4 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
 /* Custom CSS Variables */
 :root {
@@ -10,14 +8,7 @@
   --border-color: #e5e7eb;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-    --card-background: #1f2937;
-    --border-color: #374151;
-  }
-}
+/* Dark mode disabled for now - will be implemented as a user preference toggle later */
 
 /* Base Styles */
 html,
@@ -36,13 +27,24 @@ body {
 
 /* Focus Styles for Accessibility */
 *:focus-visible {
-  @apply outline-2 outline-offset-2 outline-primary-600;
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
 }
 
 /* Skip to Main Content Link (Accessibility) */
 .skip-to-main {
-  @apply absolute -top-full left-0 z-50 bg-primary-600 text-white px-4 py-2 rounded;
-  @apply focus:top-0;
+  position: absolute;
+  top: -100%;
+  left: 0;
+  z-index: 50;
+  background-color: #2563eb;
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 0.25rem;
+}
+
+.skip-to-main:focus {
+  top: 0;
 }
 
 /* Touch Target Minimum Size (44x44px for WCAG 2.1 AA) */
@@ -63,55 +65,3 @@ input[type="submit"],
     min-height: 48px;
   }
 }
-
-/* Custom Utilities */
-@layer utilities {
-  .text-balance {
-    text-wrap: balance;
-  }
-}
-
-/* Component Classes */
-@layer components {
-  .btn {
-    @apply inline-flex items-center justify-center px-4 py-2 rounded-lg font-medium;
-    @apply transition-colors duration-200 min-h-touch min-w-touch;
-    @apply focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2;
-  }
-  
-  .btn-primary {
-    @apply btn bg-primary-600 text-white hover:bg-primary-700;
-    @apply focus-visible:ring-primary-600;
-  }
-  
-  .btn-secondary {
-    @apply btn bg-gray-200 text-gray-900 hover:bg-gray-300;
-    @apply dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600;
-    @apply focus-visible:ring-gray-500;
-  }
-  
-  .btn-danger {
-    @apply btn bg-error-600 text-white hover:bg-error-700;
-    @apply focus-visible:ring-error-600;
-  }
-  
-  .input {
-    @apply w-full px-4 py-2 border border-gray-300 rounded-lg;
-    @apply focus:ring-2 focus:ring-primary-600 focus:border-transparent;
-    @apply dark:bg-gray-800 dark:border-gray-600 dark:text-white;
-  }
-  
-  .label {
-    @apply block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300;
-  }
-  
-  .card {
-    @apply bg-white dark:bg-gray-800 rounded-lg shadow p-6;
-    @apply border border-gray-200 dark:border-gray-700;
-  }
-  
-  .error-message {
-    @apply text-sm text-error-600 dark:text-error-400 mt-1;
-  }
-}
-

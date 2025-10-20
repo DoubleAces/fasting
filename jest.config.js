@@ -69,7 +69,7 @@ const config = {
   
   // Transform ignore patterns for ES modules
   transformIgnorePatterns: [
-    '/node_modules/(?!(bson|mongodb|mongoose|@babel)/)',
+    '/node_modules/(?!(bson|mongodb|mongoose|@babel|next-auth|@auth)/)',
   ],
   
   // Clear mocks between tests

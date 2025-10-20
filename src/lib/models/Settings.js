@@ -24,13 +24,13 @@ const settingsSchema = new mongoose.Schema(
   {
     /**
      * User identifier
-     * Default: 'default' (for single-user application)
-     * Future-proof: can support multiple users
+     * Reference to User model
+     * Each user has unique settings
      */
     userId: {
-      type: String,
-      default: 'default',
-      required: true,
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      required: [true, 'User ID is required'],
       unique: true,
       index: true,
     },
@@ -78,24 +78,25 @@ const settingsSchema = new mongoose.Schema(
 settingsSchema.index({ userId: 1 }, { unique: true });
 
 /**
- * Static method: Get or create default settings
+ * Static method: Get or create user settings
  * 
- * Returns the default settings document (userId: 'default').
+ * Returns the settings document for a specific user.
  * Creates it with default values if it doesn't exist.
  * 
- * @returns {Promise<Settings>} Default settings document
+ * @param {string|ObjectId} userId - User ID
+ * @returns {Promise<Settings>} User settings document
  * 
  * @example
- * const settings = await Settings.getOrCreateDefault();
+ * const settings = await Settings.getUserSettings(req.user.id);
  * console.log(settings.measurementSystem); // 'metric'
  * console.log(settings.timeFormat); // '24h'
  */
-settingsSchema.statics.getOrCreateDefault = async function () {
-  let settings = await this.findOne({ userId: 'default' });
+settingsSchema.statics.getUserSettings = async function (userId) {
+  let settings = await this.findOne({ userId });
 
   if (!settings) {
     settings = await this.create({
-      userId: 'default',
+      userId,
       measurementSystem: 'metric',
       timeFormat: '24h',
     });
@@ -107,11 +108,11 @@ settingsSchema.statics.getOrCreateDefault = async function () {
 /**
  * Static method: Find settings by userId
  * 
- * @param {string} userId - User identifier
+ * @param {string|ObjectId} userId - User identifier
  * @returns {Promise<Settings|null>} Settings document or null if not found
  * 
  * @example
- * const settings = await Settings.findByUserId('user123');
+ * const settings = await Settings.findByUserId(userId);
  * if (settings) {
  *   console.log(settings.measurementSystem);
  * }

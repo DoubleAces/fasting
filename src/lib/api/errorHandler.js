@@ -151,3 +151,29 @@ export function createdResponse(data) {
 export function okResponse(data) {
   return Response.json(data, { status: 200 });
 }
+
+/**
+ * Create a 401 Unauthorized response
+ * 
+ * @param {string} message - Error message
+ * @returns {Response} Next.js Response object
+ */
+export function unauthorizedResponse(message = 'Unauthorized') {
+  return Response.json(
+    { error: message },
+    { status: 401 }
+  );
+}
+
+/**
+ * Create a 403 Forbidden response
+ * 
+ * @param {string} message - Error message
+ * @returns {Response} Next.js Response object
+ */
+export function forbiddenResponse(message = 'Forbidden') {
+  return Response.json(
+    { error: message },
+    { status: 403 }
+  );
+}

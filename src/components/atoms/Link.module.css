@@ -1,0 +1,92 @@
+/* Link Component Styles */
+
+.link {
+  display: inline-block;
+  text-decoration: none;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  border: none;
+  font-family: inherit;
+  line-height: 1.5;
+}
+
+.link:focus-visible {
+  outline: 2px solid var(--primary-600, #059669);
+  outline-offset: 2px;
+}
+
+/* Text Variant (Default) */
+.text {
+  color: var(--primary-600, #059669);
+  padding: 0.625rem 1.25rem;
+  background: none;
+}
+
+.text:hover:not(.disabled) {
+  color: var(--primary-700, #047857);
+  text-decoration: underline;
+}
+
+.text:active:not(.disabled) {
+  color: var(--primary-800, #065f46);
+}
+
+/* Primary Variant (Button Style) */
+.primary {
+  background-color: var(--primary-600, #059669);
+  color: white;
+  padding: 0.625rem 1.25rem;
+  border-radius: 0.5rem;
+  font-weight: 600;
+}
+
+.primary:hover:not(.disabled) {
+  background-color: var(--primary-700, #047857);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.primary:active:not(.disabled) {
+  background-color: var(--primary-800, #065f46);
+  transform: translateY(0);
+  box-shadow: 0 2px 4px -1px rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.06);
+}
+
+/* Secondary Variant (Button Style) */
+.secondary {
+  background-color: transparent;
+  color: var(--primary-600, #059669);
+  padding: 0.625rem 1.25rem;
+  border-radius: 0.5rem;
+  border: 2px solid var(--primary-600, #059669);
+  font-weight: 600;
+}
+
+.secondary:hover:not(.disabled) {
+  background-color: var(--primary-50, #f0fdf4);
+  border-color: var(--primary-700, #047857);
+  color: var(--primary-700, #047857);
+}
+
+.secondary:active:not(.disabled) {
+  background-color: var(--primary-100, #dcfce7);
+  border-color: var(--primary-800, #065f46);
+  color: var(--primary-800, #065f46);
+}
+
+/* Disabled State */
+.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .primary,
+  .secondary {
+    padding: 0.5rem 1rem;
+    font-size: 0.9375rem;
+  }
+}

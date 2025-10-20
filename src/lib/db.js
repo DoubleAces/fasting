@@ -113,21 +113,24 @@ export function getConnectionState() {
 }
 
 // Handle connection events
-if (typeof window === 'undefined') {
-  // Server-side only
-  mongoose.connection.on('error', (err) => {
-    console.error('MongoDB connection error:', err);
-  });
+// Only set up event listeners in Node.js runtime (not Edge Runtime)
+if (typeof window === 'undefined' && typeof EdgeRuntime === 'undefined') {
+  // Check if mongoose and connection are available (not in Edge Runtime)
+  if (mongoose && mongoose.connection) {
+    mongoose.connection.on('error', (err) => {
+      console.error('MongoDB connection error:', err);
+    });
 
-  mongoose.connection.on('disconnected', () => {
-    console.log('MongoDB disconnected');
-  });
+    mongoose.connection.on('disconnected', () => {
+      console.log('MongoDB disconnected');
+    });
 
-  // Graceful shutdown
-  process.on('SIGINT', async () => {
-    await disconnectDB();
-    process.exit(0);
-  });
+    // Graceful shutdown
+    process.on('SIGINT', async () => {
+      await disconnectDB();
+      process.exit(0);
+    });
+  }
 }
 
 export default connectDB;

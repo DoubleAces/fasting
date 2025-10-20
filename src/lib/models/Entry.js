@@ -7,11 +7,18 @@ import mongoose from 'mongoose';
 
 const entrySchema = new mongoose.Schema(
   {
-    // Date is the unique identifier for each entry (one entry per day)
+    // User reference - each entry belongs to a user
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      required: [true, 'User ID is required'],
+      index: true,
+    },
+
+    // Date is the unique identifier for each entry (one entry per day per user)
     date: {
       type: Date,
       required: [true, 'Date is required'],
-      unique: true,
       index: true,
     },
 
@@ -38,11 +45,17 @@ const entrySchema = new mongoose.Schema(
       },
     },
 
-    // Calculated fasting duration in hours (can be null if previous day missing)
+    // Calculated fasting duration in MINUTES (can be null if previous entry missing)
     fastingDuration: {
       type: Number,
       min: 0,
       default: null,
+    },
+
+    // Flag indicating user confirmed an extended fast (>24h gap from previous entry)
+    extendedFastConfirmed: {
+      type: Boolean,
+      default: false,
     },
 
     // Health metrics
@@ -107,8 +120,11 @@ const entrySchema = new mongoose.Schema(
 );
 
 // Indexes for efficient queries
-entrySchema.index({ date: -1 }); // Sort by date descending (most recent first)
+entrySchema.index({ userId: 1, date: -1 }); // User entries by date descending
 entrySchema.index({ createdAt: -1 }); // Sort by creation time
+
+// Unique constraint: One entry per user per day
+entrySchema.index({ userId: 1, date: 1 }, { unique: true });
 
 // Virtual for formatted fasting duration
 entrySchema.virtual('fastingDurationFormatted').get(function () {
@@ -139,9 +155,10 @@ entrySchema.methods.isComplete = function () {
   );
 };
 
-// Static method to find entries by date range
-entrySchema.statics.findByDateRange = function (startDate, endDate) {
+// Static method to find entries by date range for a user
+entrySchema.statics.findByDateRange = function (userId, startDate, endDate) {
   return this.find({
+    userId,
     date: {
       $gte: startDate,
       $lte: endDate,
@@ -149,15 +166,15 @@ entrySchema.statics.findByDateRange = function (startDate, endDate) {
   }).sort({ date: -1 });
 };
 
-// Static method to get most recent entry
-entrySchema.statics.getMostRecent = function () {
-  return this.findOne().sort({ date: -1 });
+// Static method to get most recent entry for a user
+entrySchema.statics.getMostRecent = function (userId) {
+  return this.findOne({ userId }).sort({ date: -1 });
 };
 
-// Static method to get entry by date string (YYYY-MM-DD)
-entrySchema.statics.findByDateString = function (dateString) {
+// Static method to get entry by date string (YYYY-MM-DD) for a user
+entrySchema.statics.findByDateString = function (userId, dateString) {
   const date = new Date(dateString);
-  return this.findOne({ date });
+  return this.findOne({ userId, date });
 };
 
 // Pre-save hook to normalize date to start of day (midnight UTC)
