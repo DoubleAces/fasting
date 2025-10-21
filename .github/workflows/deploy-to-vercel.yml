@@ -1,0 +1,24 @@
+name: Trigger Vercel Deploy Hook
+
+on:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Vercel Deploy Hook
+        env:
+          VERCEL_HOOK: ${{ secrets.VERCEL_DEPLOY_HOOK }}
+        run: |
+          if [ -z "$VERCEL_HOOK" ]; then
+            echo "VERCEL_DEPLOY_HOOK secret is not set. Please add it in repo Settings → Secrets & variables → Actions." >&2
+            exit 1
+          fi
+
+          echo "Triggering Vercel deploy..."
+          # POST an empty JSON body to the hook to start a deploy
+          curl -s -X POST "$VERCEL_HOOK" -H "Content-Type: application/json" -d '{}' -w "\nHTTP STATUS: %{http_code}\n"
