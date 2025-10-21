@@ -238,6 +238,43 @@ faqItemSchema.statics.getByCategory = function (category) {
   }).sort({ order: 1 });
 };
 
+/**
+ * Get all FAQ items grouped by category
+ * 
+ * Retrieves all published FAQs organized by category with simplified structure
+ * for frontend display. Each category contains an array of question/answer pairs.
+ * 
+ * @returns {Promise<Array>} Array of category objects with questions
+ * 
+ * @example
+ * const groupedFAQs = await FAQItem.getAllGrouped();
+ * // Returns: [
+ * //   { category: 'Getting Started', questions: [{ question: '...', answer: '...' }, ...] },
+ * //   { category: 'Account & Security', questions: [...] }
+ * // ]
+ */
+faqItemSchema.statics.getAllGrouped = async function () {
+  const faqs = await this.find({ isPublished: true }).sort({ category: 1, order: 1 });
+  
+  // Group FAQs by category
+  const grouped = faqs.reduce((acc, faq) => {
+    if (!acc[faq.category]) {
+      acc[faq.category] = [];
+    }
+    acc[faq.category].push({
+      question: faq.question,
+      answer: faq.answer,
+    });
+    return acc;
+  }, {});
+
+  // Convert to array format
+  return Object.entries(grouped).map(([category, questions]) => ({
+    category,
+    questions,
+  }));
+};
+
 // ============================================================================
 // PRE-SAVE HOOKS
 // ============================================================================
@@ -255,6 +292,6 @@ faqItemSchema.pre('save', function (next) {
 // ============================================================================
 
 const FAQItem =
-  mongoose.models.FAQItem || mongoose.model('FAQItem', faqItemSchema);
+  mongoose.models.FAQItem || mongoose.model('FAQItem', faqItemSchema, 'faqitems');
 
 export default FAQItem;
