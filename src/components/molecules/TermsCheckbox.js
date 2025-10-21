@@ -5,7 +5,7 @@ import Link from 'next/link';
 /**
  * TermsCheckbox Molecule Component
  * 
- * Checkbox for accepting Terms and Conditions with link to full terms page.
+ * Checkbox for accepting Terms and Conditions and Privacy Policy with links to full pages.
  * Required for user registration.
  * 
  * @param {boolean} checked - Whether the checkbox is checked
@@ -46,6 +46,15 @@ export default function TermsCheckbox({ checked, onChange, error }) {
             className="font-medium text-blue-600 hover:text-blue-700 underline dark:text-blue-400 dark:hover:text-blue-300"
           >
             Terms and Conditions
+          </Link>
+          {' '}and{' '}
+          <Link
+            href="/privacy"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-medium text-blue-600 hover:text-blue-700 underline dark:text-blue-400 dark:hover:text-blue-300"
+          >
+            Privacy Policy
           </Link>
         </span>
       </label>
