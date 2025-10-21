@@ -1,178 +1,190 @@
-/**
- * Navbar Component (Organism)
- * 
- * Navigation bar that adapts based on authentication status.
- * Shows different links and buttons for authenticated vs unauthenticated users.
- * 
- * Common Links (All Users):
- * - Home, Features, FAQ
- * 
- * Authenticated Only:
- * - My Entries, Settings links
- * - User email/name display
- * - Sign Out button
- * 
- * Unauthenticated Only:
- * - Sign Up, Log In buttons
- * 
- * Features:
- * - Logo linking to homepage
- * - Navigation links with active state
- * - Mobile hamburger menu
- * - Smooth transitions
+﻿/**
+ * Navbar Component - Apple-Inspired Design
+ * Modern navigation with glassmorphism, gradient logo, and smooth animations
  */
 
 'use client';
 
-import { useState } from 'react';
-import { useSession } from 'next-auth/react';
-import Logo from '@/components/atoms/Logo';
-import NavLink from '@/components/molecules/NavLink';
-import Link from '@/components/atoms/Link';
-import LogoutButton from '@/components/atoms/LogoutButton';
-import styles from './Navbar.module.css';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { useSession, signOut } from 'next-auth/react';
 
 export default function Navbar() {
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const pathname = usePathname();
   const { data: session, status } = useSession();
-  
-  // Show authenticated menu while loading to prevent flicker
-  // Only hide if explicitly unauthenticated
-  const isAuthenticated = status === 'authenticated';
-  const showAuthenticatedMenu = status === 'authenticated' || status === 'loading';
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
 
-  const toggleMobileMenu = () => {
-    setIsMobileMenuOpen(prev => !prev);
-  };
+  // Handle scroll for navbar shadow
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 10);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
-  const closeMobileMenu = () => {
-    setIsMobileMenuOpen(false);
-  };
+  // Close mobile menu when route changes
+  useEffect(() => {
+    setMobileMenuOpen(false);
+  }, [pathname]);
+
+  const isActive = (path) => pathname === path;
+
+  const publicLinks = [
+    { href: '/', label: 'Home' },
+    { href: '/features', label: 'Features' },
+    { href: '/faq', label: 'FAQ' },
+  ];
+
+  const authLinks = session
+    ? [
+        { href: '/entries', label: 'My Entries' },
+        { href: '/settings', label: 'Settings' },
+      ]
+    : [
+        { href: '/login', label: 'Login' },
+        { href: '/register', label: 'Get Started' },
+      ];
 
   return (
-    <nav className={styles.navbar} role="navigation" aria-label="Main navigation">
-      <div className={styles.container}>
-        {/* Logo */}
-        <div className={styles.logoWrapper}>
-          <Logo size="medium" />
-        </div>
+    <nav
+      className={`sticky top-0 z-50 backdrop-blur-lg bg-white/80 transition-shadow duration-300 ${
+        scrolled ? 'shadow-soft-lg' : 'shadow-soft'
+      }`}
+    >
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between items-center h-16">
+          <Link href="/" className="flex items-center gap-3 group">
+            <div className="w-10 h-10 bg-gradient-to-br from-primary-500 to-accent-600 rounded-xl flex items-center justify-center shadow-soft transform transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3">
+              <span className="text-white font-bold text-xl">F</span>
+            </div>
+            <span className="text-xl font-semibold bg-gradient-to-r from-primary-600 to-accent-600 bg-clip-text text-transparent hidden sm:block">
+              Fasting Tracker
+            </span>
+          </Link>
 
-        {/* Desktop Navigation Links */}
-        <div className={styles.navLinks}>
-          <NavLink href="/" exact={true}>
-            Home
-          </NavLink>
-          
-          <NavLink href="/features" exact={true}>
-            Features
-          </NavLink>
-          
-          <NavLink href="/faq" exact={true}>
-            FAQ
-          </NavLink>
-          
-          {showAuthenticatedMenu && (
-            <>
-              <NavLink href="/entries" exact={true}>
-                My Entries
-              </NavLink>
-              <NavLink href="/settings" exact={true}>
-                Settings
-              </NavLink>
-            </>
-          )}
-        </div>
-
-        {/* Desktop Auth Section */}
-        <div className={styles.authButtons}>
-          {showAuthenticatedMenu ? (
-            <>
-              {session?.user?.email && (
-                <span className={styles.userEmail} title={session.user.email}>
-                  {session.user.name || session.user.email}
-                </span>
-              )}
-              <LogoutButton />
-            </>
-          ) : (
-            <>
-              <Link href="/login" variant="text">
-                Log In
+          <div className="hidden md:flex items-center gap-2">
+            {publicLinks.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
+                  isActive(link.href)
+                    ? 'bg-primary-50 text-primary-700'
+                    : 'text-gray-700 hover:bg-gray-50 hover:text-primary-600'
+                }`}
+              >
+                {link.label}
               </Link>
-              <Link href="/register" variant="primary">
-                Sign Up
-              </Link>
-            </>
-          )}
-        </div>
+            ))}
 
-        {/* Mobile Menu Button */}
-        <button
-          className={styles.mobileMenuButton}
-          onClick={toggleMobileMenu}
-          aria-label={isMobileMenuOpen ? 'Close menu' : 'Open menu'}
-          aria-expanded={isMobileMenuOpen}
-          aria-controls="mobile-menu"
-        >
-          <span className={styles.hamburgerIcon}>
-            <span className={isMobileMenuOpen ? styles.hamburgerLineOpen : styles.hamburgerLine}></span>
-            <span className={isMobileMenuOpen ? styles.hamburgerLineOpen : styles.hamburgerLine}></span>
-            <span className={isMobileMenuOpen ? styles.hamburgerLineOpen : styles.hamburgerLine}></span>
-          </span>
-        </button>
-      </div>
+            <div className="h-6 w-px bg-gray-200 mx-2" />
 
-      {/* Mobile Menu */}
-      {isMobileMenuOpen && (
-        <div 
-          id="mobile-menu" 
-          className={styles.mobileMenu}
-          role="dialog"
-          aria-modal="false"
-        >
-          <div className={styles.mobileNavLinks} onClick={closeMobileMenu}>
-            <NavLink href="/" exact={true}>
-              Home
-            </NavLink>
-            
-            <NavLink href="/features" exact={true}>
-              Features
-            </NavLink>
-            
-            <NavLink href="/faq" exact={true}>
-              FAQ
-            </NavLink>
-            
-            {showAuthenticatedMenu && (
+            {status === 'loading' ? (
+              <div className="w-20 h-9 bg-gray-100 rounded-xl animate-pulse" />
+            ) : (
               <>
-                <NavLink href="/entries" exact={true}>
-                  My Entries
-                </NavLink>
-                <NavLink href="/settings" exact={true}>
-                  Settings
-                </NavLink>
+                {authLinks.map((link) => (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
+                      isActive(link.href)
+                        ? 'bg-primary-50 text-primary-700'
+                        : link.label === 'Get Started'
+                        ? 'bg-gradient-to-r from-primary-500 to-accent-600 text-white hover:shadow-soft-lg hover:scale-105'
+                        : 'text-gray-700 hover:bg-gray-50 hover:text-primary-600'
+                    }`}
+                  >
+                    {link.label}
+                  </Link>
+                ))}
+
+                {session && (
+                  <button
+                    onClick={() => signOut({ callbackUrl: '/' })}
+                    className="px-4 py-2 rounded-xl text-sm font-medium text-gray-700 hover:bg-red-50 hover:text-red-600 transition-all duration-200"
+                  >
+                    Logout
+                  </button>
+                )}
               </>
             )}
           </div>
-          
-          <div className={styles.mobileAuthButtons}>
-            {showAuthenticatedMenu ? (
-              <>
-                {session?.user?.email && (
-                  <div className={styles.mobileUserInfo}>
-                    Logged in as: {session.user.name || session.user.email}
-                  </div>
-                )}
-                <LogoutButton className={styles.mobileLogoutButton} />
-              </>
+
+          <button
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className="md:hidden p-2 rounded-xl text-gray-700 hover:bg-gray-50 transition-colors duration-200"
+            aria-label="Toggle menu"
+          >
+            <svg
+              className="w-6 h-6"
+              fill="none"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              {mobileMenuOpen ? (
+                <path d="M6 18L18 6M6 6l12 12" />
+              ) : (
+                <path d="M4 6h16M4 12h16M4 18h16" />
+              )}
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      {mobileMenuOpen && (
+        <div className="md:hidden border-t border-gray-200 bg-white/95 backdrop-blur-lg animate-slide-up">
+          <div className="px-4 py-4 space-y-1">
+            {publicLinks.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={`block px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${
+                  isActive(link.href)
+                    ? 'bg-primary-50 text-primary-700'
+                    : 'text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                {link.label}
+              </Link>
+            ))}
+
+            <div className="h-px bg-gray-200 my-2" />
+
+            {status === 'loading' ? (
+              <div className="h-12 bg-gray-100 rounded-xl animate-pulse" />
             ) : (
               <>
-                <Link href="/login" variant="secondary">
-                  Log In
-                </Link>
-                <Link href="/register" variant="primary">
-                  Sign Up
-                </Link>
+                {authLinks.map((link) => (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    className={`block px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${
+                      isActive(link.href)
+                        ? 'bg-primary-50 text-primary-700'
+                        : link.label === 'Get Started'
+                        ? 'bg-gradient-to-r from-primary-500 to-accent-600 text-white text-center'
+                        : 'text-gray-700 hover:bg-gray-50'
+                    }`}
+                  >
+                    {link.label}
+                  </Link>
+                ))}
+
+                {session && (
+                  <button
+                    onClick={() => signOut({ callbackUrl: '/' })}
+                    className="w-full text-left px-4 py-3 rounded-xl text-sm font-medium text-gray-700 hover:bg-red-50 hover:text-red-600 transition-all duration-200"
+                  >
+                    Logout
+                  </button>
+                )}
               </>
             )}
           </div>

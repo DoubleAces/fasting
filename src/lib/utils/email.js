@@ -2,14 +2,17 @@
  * Email Utility Functions
  * 
  * Provides email sending functionality for authentication and notifications.
+ * Uses Resend (https://resend.com) for reliable email delivery.
  * 
  * Features:
  * - sendWelcomeEmail: Send welcome email to new users
  * - sendPasswordResetEmail: Send password reset link to users
- * - Email template formatting and rendering
+ * - Development mode: Console logging + dev URL display
+ * - Production mode: Real emails via Resend
  * 
- * Note: These are placeholder implementations. In production, integrate with
- * an email service provider like SendGrid, AWS SES, Resend, or Nodemailer.
+ * Environment Variables:
+ * - RESEND_API_KEY: Resend API key (get from https://resend.com/api-keys)
+ * - NODE_ENV: 'development' or 'production'
  * 
  * Usage:
  * ```javascript
@@ -30,6 +33,13 @@
  * });
  * ```
  */
+
+import { Resend } from 'resend';
+
+// Initialize Resend client (only if API key is available)
+const resend = process.env.RESEND_API_KEY 
+  ? new Resend(process.env.RESEND_API_KEY)
+  : null;
 
 /**
  * Send welcome email to newly registered user
@@ -90,7 +100,10 @@ export async function sendWelcomeEmail({ email, name }) {
  * Send password reset email with reset link
  * 
  * Sends an email containing a secure password reset link.
- * The link should expire after a set time (e.g., 1 hour).
+ * The link expires after 24 hours.
+ * 
+ * In development mode: Logs to console and returns devResetUrl for yellow box
+ * In production mode: Sends real email via Resend
  * 
  * @param {Object} params - Email parameters
  * @param {string} params.email - Recipient email address
@@ -145,29 +158,150 @@ export async function sendPasswordResetEmail({
     throw new Error('Invalid reset token format (expected 64-char hex)');
   }
 
-  // TODO: Replace with actual email service integration
-  console.log('📧 [EMAIL PLACEHOLDER] Sending password reset email...');
-  console.log(`   To: ${email}`);
-  console.log(`   Name: ${name || 'User'}`);
-  console.log('   Subject: Reset Your Password - Fasting Tracker');
-  console.log(`   Reset URL: ${resetUrl}`);
-  console.log(`   Token: ${resetToken.substring(0, 10)}...`);
-  console.log('   Template: password-reset-email');
-  console.log('   Expires: 1 hour');
+  // Determine if we should send real emails
+  const shouldSendRealEmails = process.env.SEND_REAL_EMAILS === 'true';
+  
+  // Debug: Log environment
+  console.log('\n� SENDING PASSWORD RESET EMAIL...');
+  console.log('�🔍 Email Debug:', {
+    NODE_ENV: process.env.NODE_ENV,
+    SEND_REAL_EMAILS: process.env.SEND_REAL_EMAILS,
+    hasResendKey: !!resend,
+    willSendEmail: shouldSendRealEmails && !!resend
+  });
 
-  // Simulate email sending delay
-  await new Promise((resolve) => setTimeout(resolve, 100));
+  // Development mode - console logging + dev URL
+  if (!shouldSendRealEmails) {
+    console.log('\n🔔 SENDING PASSWORD RESET EMAIL (DEV MODE)...');
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log(`📧 To: ${email}`);
+    console.log(`👤 Name: ${name || 'User'}`);
+    console.log(`🔗 Reset URL: ${resetUrl}`);
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
+    
+    return { 
+      success: true, 
+      devResetUrl: resetUrl,
+      messageId: `dev-${Date.now()}`,
+      recipient: email
+    };
+  }
 
-  // Return mock success response
-  return {
-    success: true,
-    messageId: `mock-reset-${Date.now()}`,
-    recipient: email,
-    template: 'password-reset-email',
-    resetToken: resetToken.substring(0, 10) + '...', // Don't expose full token in logs
-    timestamp: new Date().toISOString(),
-    expiresIn: '1 hour',
-  };
+  // Production mode - send real email via Resend
+  console.log('\n📧 SENDING REAL EMAIL via Resend...');
+  
+  if (!resend) {
+    console.error('❌ RESEND_API_KEY not configured!');
+    throw new Error('Email service not configured. Please add RESEND_API_KEY to environment variables.');
+  }
+
+  try {
+    const { data, error } = await resend.emails.send({
+      from: 'Fasting Tracker <onboarding@resend.dev>',
+      to: email,
+      subject: 'Reset Your Password - Fasting Tracker',
+      html: `
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Reset Your Password</title>
+        </head>
+        <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background-color: #f5f5f5;">
+          <div style="max-width: 600px; margin: 40px auto; background-color: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); overflow: hidden;">
+            <!-- Header -->
+            <div style="background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%); padding: 40px 30px; text-align: center;">
+              <h1 style="color: white; margin: 0; font-size: 28px; font-weight: 600;">Password Reset Request</h1>
+            </div>
+            
+            <!-- Content -->
+            <div style="padding: 40px 30px;">
+              <p style="font-size: 16px; margin: 0 0 20px;">Hi ${name || 'there'},</p>
+              
+              <p style="font-size: 16px; margin: 0 0 20px;">
+                We received a request to reset your password for your Fasting Tracker account.
+              </p>
+              
+              <p style="font-size: 16px; margin: 0 0 30px;">
+                Click the button below to reset your password:
+              </p>
+              
+              <!-- Button -->
+              <div style="text-align: center; margin: 40px 0;">
+                <a href="${resetUrl}" 
+                   style="display: inline-block; background-color: #4F46E5; color: white; text-decoration: none; padding: 14px 40px; border-radius: 6px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 6px rgba(79, 70, 229, 0.3);">
+                  Reset Password
+                </a>
+              </div>
+              
+              <p style="font-size: 14px; color: #666; margin: 30px 0 10px;">
+                Or copy and paste this URL into your browser:
+              </p>
+              <p style="font-size: 13px; color: #4F46E5; word-break: break-all; background-color: #f5f5f5; padding: 12px; border-radius: 4px; margin: 0 0 30px;">
+                ${resetUrl}
+              </p>
+              
+              <!-- Warning Box -->
+              <div style="background-color: #FEF3C7; border-left: 4px solid #F59E0B; padding: 16px; border-radius: 4px; margin: 30px 0;">
+                <p style="margin: 0; font-size: 14px; color: #92400E;">
+                  <strong>⏰ This link will expire in 24 hours.</strong>
+                </p>
+              </div>
+              
+              <p style="font-size: 14px; color: #666; margin: 20px 0 0;">
+                If you didn't request this password reset, you can safely ignore this email. 
+                Your password will not be changed.
+              </p>
+            </div>
+            
+            <!-- Footer -->
+            <div style="background-color: #f5f5f5; padding: 30px; text-align: center; border-top: 1px solid #e5e5e5;">
+              <p style="color: #666; font-size: 12px; margin: 0 0 10px;">
+                This is an automated email from Fasting Tracker.
+              </p>
+              <p style="color: #999; font-size: 11px; margin: 0;">
+                Please do not reply to this email.
+              </p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `,
+      // Plain text version for email clients that don't support HTML
+      text: `
+Hi ${name || 'there'},
+
+We received a request to reset your password for your Fasting Tracker account.
+
+Reset your password by clicking this link:
+${resetUrl}
+
+This link will expire in 24 hours.
+
+If you didn't request this password reset, you can safely ignore this email. Your password will not be changed.
+
+---
+This is an automated email from Fasting Tracker. Please do not reply to this email.
+      `.trim()
+    });
+
+    if (error) {
+      console.error('❌ Resend API error:', error);
+      throw new Error(`Failed to send email: ${error.message}`);
+    }
+
+    console.log('✅ Email sent successfully via Resend:', data.id);
+    return { 
+      success: true, 
+      messageId: data.id,
+      recipient: email
+    };
+    
+  } catch (error) {
+    console.error('❌ Email sending exception:', error);
+    throw error;
+  }
 }
 
 /**
@@ -175,7 +309,7 @@ export async function sendPasswordResetEmail({
  * 
  * Helper function to render email templates with user data.
  * In production, use a template engine like Handlebars or React Email.
- * 
+ *
  * @param {string} templateName - Name of the email template
  * @param {Object} data - Template data
  * @returns {Object} Formatted email with subject and body

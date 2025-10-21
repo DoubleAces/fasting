@@ -1,67 +1,74 @@
-/**
- * Footer Component (Organism)
- * 
- * Site footer with logo, navigation links, and copyright.
- * Responsive layout for mobile and desktop.
- * 
- * Features:
- * - Logo and tagline
- * - Navigation links (Features, FAQ, Privacy, Terms)
- * - Copyright notice with current year
- * - Responsive grid layout
- * - Accessible footer landmark
+﻿/**
+ * Footer Component - Apple-Inspired Design
+ * Modern footer with gradient logo and clean navigation
  */
 
-import Logo from '@/components/atoms/Logo';
-import Link from '@/components/atoms/Link';
-import styles from './Footer.module.css';
+import Link from 'next/link';
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className={styles.footer} role="contentinfo">
-      <div className={styles.container}>
-        {/* Logo and Tagline Section */}
-        <div className={styles.brandSection}>
-          <Logo size="medium" noLink={false} />
-          <p className={styles.tagline}>
-            Track your fasting journey with ease and achieve your health goals.
-          </p>
-        </div>
+    <footer className="bg-gray-900 text-gray-300 border-t border-gray-800">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+          
+          {/* Brand Section */}
+          <div className="md:col-span-2">
+            <Link href="/" className="flex items-center gap-3 mb-4 group w-fit">
+              <div className="w-10 h-10 bg-gradient-to-br from-primary-500 to-accent-600 rounded-xl flex items-center justify-center shadow-soft transform transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3">
+                <span className="text-white font-bold text-xl">F</span>
+              </div>
+              <span className="text-xl font-semibold text-white">
+                Fasting Tracker
+              </span>
+            </Link>
+            <p className="text-gray-400 max-w-sm mb-4">
+              Track your fasting journey with ease and achieve your health goals.
+            </p>
+            <p className="text-sm text-gray-500">
+               {currentYear} Fasting Tracker. All rights reserved.
+            </p>
+          </div>
 
-        {/* Navigation Links Section */}
-        <div className={styles.linksSection}>
-          <div className={styles.linkColumn}>
-            <h3 className={styles.linkHeading}>Product</h3>
-            <nav className={styles.linkList} aria-label="Product links">
-              <Link href="/features" variant="text" className={styles.footerLink}>
+          {/* Product Links */}
+          <div>
+            <h3 className="text-white font-semibold mb-4">PRODUCT</h3>
+            <nav className="flex flex-col gap-3">
+              <Link 
+                href="/features" 
+                className="text-gray-400 hover:text-primary-400 transition-colors duration-200"
+              >
                 Features
               </Link>
-              <Link href="/faq" variant="text" className={styles.footerLink}>
+              <Link 
+                href="/faq" 
+                className="text-gray-400 hover:text-primary-400 transition-colors duration-200"
+              >
                 FAQ
               </Link>
             </nav>
           </div>
 
-          <div className={styles.linkColumn}>
-            <h3 className={styles.linkHeading}>Legal</h3>
-            <nav className={styles.linkList} aria-label="Legal links">
-              <Link href="/privacy" variant="text" className={styles.footerLink}>
+          {/* Legal Links */}
+          <div>
+            <h3 className="text-white font-semibold mb-4">LEGAL</h3>
+            <nav className="flex flex-col gap-3">
+              <Link 
+                href="/privacy" 
+                className="text-gray-400 hover:text-primary-400 transition-colors duration-200"
+              >
                 Privacy Policy
               </Link>
-              <Link href="/terms" variant="text" className={styles.footerLink}>
+              <Link 
+                href="/terms" 
+                className="text-gray-400 hover:text-primary-400 transition-colors duration-200"
+              >
                 Terms of Service
               </Link>
             </nav>
           </div>
-        </div>
 
-        {/* Copyright Section */}
-        <div className={styles.copyrightSection}>
-          <p className={styles.copyright}>
-            © {currentYear} Fasting Tracker. All rights reserved.
-          </p>
         </div>
       </div>
     </footer>

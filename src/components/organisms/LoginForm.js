@@ -260,7 +260,7 @@ const LoginForm = ({ onSuccess, onError }) => {
 
       {/* Forgot Password Link */}
       <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
-        <Link href="/reset-password" variant="text">
+        <Link href="/forgot-password" variant="text">
           Forgot your password?
         </Link>
       </div>

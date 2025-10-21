@@ -89,41 +89,25 @@ export default function RegisterPage() {
   };
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      backgroundColor: '#f9fafb',
-      padding: '1rem',
-    }}>
-      <div style={{
-        width: '100%',
-        maxWidth: '28rem',
-        backgroundColor: 'white',
-        padding: '2rem',
-        borderRadius: '0.75rem',
-        boxShadow: '0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)',
-      }}>
-        {isRedirecting ? (
-          <div style={{ textAlign: 'center', padding: '2rem 0' }}>
-            <div style={{
-              width: '3rem',
-              height: '3rem',
-              border: '4px solid #e5e7eb',
-              borderTopColor: '#3b82f6',
-              borderRadius: '50%',
-              animation: 'spin 1s linear infinite',
-              margin: '0 auto 1rem',
-            }}></div>
-            <p style={{ color: '#6b7280', fontSize: '0.875rem' }}>
-              Creating your account...
-            </p>
-          </div>
-        ) : (
-          <RegisterForm onSuccess={handleSuccess} onError={handleError} />
-        )}
-      </div>
+    <div style={{ maxWidth: '400px', margin: '0 auto', padding: '2rem 1rem' }}>
+      {isRedirecting ? (
+        <div style={{ textAlign: 'center', padding: '2rem 0' }}>
+          <div style={{
+            width: '3rem',
+            height: '3rem',
+            border: '4px solid #e5e7eb',
+            borderTopColor: '#a855f7',
+            borderRadius: '50%',
+            animation: 'spin 1s linear infinite',
+            margin: '0 auto 1rem',
+          }}></div>
+          <p style={{ color: '#6b7280', fontSize: '0.875rem' }}>
+            Creating your account...
+          </p>
+        </div>
+      ) : (
+        <RegisterForm onSuccess={handleSuccess} onError={handleError} />
+      )}
 
       <style jsx>{`
         @keyframes spin {

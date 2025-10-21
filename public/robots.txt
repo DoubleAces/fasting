@@ -1,0 +1,24 @@
+# Fasting Tracker - Robots.txt
+# Updated: 2025-10-21
+
+# Allow all bots to index public pages
+User-agent: *
+Allow: /
+Allow: /features
+Allow: /faq
+
+# Disallow authentication pages (duplicate content, private)
+Disallow: /login
+Disallow: /register
+Disallow: /forgot-password
+Disallow: /reset-password
+
+# Disallow protected user pages
+Disallow: /entries
+Disallow: /settings
+
+# Disallow API routes
+Disallow: /api/
+
+# Sitemap location
+Sitemap: https://fastingtracker.app/sitemap.xml

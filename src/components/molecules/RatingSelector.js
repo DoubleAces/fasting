@@ -88,8 +88,8 @@ const RatingSelector = ({
                 }}
                 className={`
                   flex items-center cursor-pointer min-h-[44px] px-4 py-2 rounded-lg border-2 transition-all
-                  ${isChecked ? 'border-blue-500 bg-blue-50' : 'border-gray-300 bg-white'}
-                  ${disabled ? 'opacity-50 cursor-not-allowed' : 'hover:border-blue-400'}
+                  ${isChecked ? 'border-primary-500 bg-primary-50' : 'border-gray-300 bg-white'}
+                  ${disabled ? 'opacity-50 cursor-not-allowed' : 'hover:border-primary-400'}
                   ${hasError && !isChecked ? 'border-red-300' : ''}
                 `.trim()}
               >
@@ -106,7 +106,7 @@ const RatingSelector = ({
                       handleChange(option.value);
                     }
                   }}
-                  className="w-4 h-4 text-blue-600 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                  className="w-4 h-4 text-primary-600 focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
                   {...props}
                 />
                 <span className="ml-2 text-sm font-medium text-gray-900">

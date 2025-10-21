@@ -217,8 +217,8 @@ const userSchema = new mongoose.Schema(
     // Automatic timestamps
     timestamps: true,
 
-    // Collection name
-    collection: 'users',
+    // Collection name - matches existing "Users" collection
+    collection: 'Users',
   }
 );
 
@@ -284,6 +284,7 @@ userSchema.methods.updateLastLogin = function () {
  * Find active user by email
  * 
  * @param {string} email - Email address (case-insensitive)
+ * @param {boolean} includePassword - Whether to include password field (default: false)
  * @returns {Promise<User|null>} User document or null if not found
  * 
  * @example
@@ -291,12 +292,23 @@ userSchema.methods.updateLastLogin = function () {
  * if (user) {
  *   console.log('User found:', user.name);
  * }
+ * 
+ * // For authentication, include password
+ * const userWithPassword = await User.findByEmail('user@example.com', true);
+ * const isValid = await userWithPassword.comparePassword('password123');
  */
-userSchema.statics.findByEmail = function (email) {
-  return this.findOne({
+userSchema.statics.findByEmail = function (email, includePassword = false) {
+  const query = this.findOne({
     email: email.toLowerCase(),
     isActive: true,
   });
+  
+  // Include password field if needed for authentication
+  if (includePassword) {
+    query.select('+password');
+  }
+  
+  return query;
 };
 
 /**

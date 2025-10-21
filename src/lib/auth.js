@@ -58,8 +58,8 @@ export const authConfig = {
           // Connect to database
           await connectDB();
 
-          // Find user by email
-          const user = await User.findByEmail(email);
+          // Find user by email (include password for authentication)
+          const user = await User.findByEmail(email, true);
 
           if (!user) {
             throw new Error('Invalid email or password');

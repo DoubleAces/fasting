@@ -63,8 +63,67 @@ export const metadata = {
 };
 
 export default function Home() {
+  // Structured data (JSON-LD) for search engines
+  const structuredData = {
+    '@context': 'https://schema.org',
+    '@graph': [
+      {
+        '@type': 'WebSite',
+        '@id': 'https://fastingtracker.app/#website',
+        url: 'https://fastingtracker.app',
+        name: 'Fasting Tracker',
+        description: 'Track your intermittent fasting journey with our intuitive fasting tracker app.',
+        publisher: {
+          '@id': 'https://fastingtracker.app/#organization',
+        },
+        potentialAction: {
+          '@type': 'SearchAction',
+          target: {
+            '@type': 'EntryPoint',
+            urlTemplate: 'https://fastingtracker.app/search?q={search_term_string}',
+          },
+          'query-input': 'required name=search_term_string',
+        },
+      },
+      {
+        '@type': 'Organization',
+        '@id': 'https://fastingtracker.app/#organization',
+        name: 'Fasting Tracker',
+        url: 'https://fastingtracker.app',
+        logo: {
+          '@type': 'ImageObject',
+          url: 'https://fastingtracker.app/logo.png',
+          width: 512,
+          height: 512,
+        },
+        sameAs: [
+          'https://twitter.com/fastingtracker',
+          'https://facebook.com/fastingtracker',
+        ],
+      },
+      {
+        '@type': 'WebApplication',
+        name: 'Fasting Tracker',
+        applicationCategory: 'HealthApplication',
+        operatingSystem: 'Web Browser',
+        offers: {
+          '@type': 'Offer',
+          price: '0',
+          priceCurrency: 'USD',
+        },
+        description: 'Track your fasting windows, monitor your progress, and achieve your health goals.',
+      },
+    ],
+  };
+
   return (
     <>
+      {/* JSON-LD Structured Data */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+      />
+      
       <Hero />
       <FeaturesList />
     </>

@@ -62,8 +62,8 @@ const Input = ({
     : [
         'border',
         'border-gray-300',
-        'focus:ring-blue-500',
-        'focus:border-blue-500',
+        'focus:ring-primary-500',
+        'focus:border-primary-500',
       ];
 
   // State styles

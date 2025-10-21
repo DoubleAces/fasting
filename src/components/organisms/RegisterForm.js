@@ -236,7 +236,7 @@ const RegisterForm = ({ onSuccess, onError }) => {
 
   return (
     <form onSubmit={handleSubmit} noValidate>
-      <div style={{ marginBottom: '1.5rem' }}>
+      <div style={{ marginBottom: '1.5rem', textAlign: 'center' }}>
         <h2 style={{ fontSize: '1.875rem', fontWeight: '700', marginBottom: '0.5rem' }}>
           Create your account
         </h2>

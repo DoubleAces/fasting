@@ -1,5 +1,5 @@
-/**
- * Entries Page
+﻿/**
+ * Entries Page - Fasting Tracker Dashboard
  * 
  * Main dashboard for logged-in users to view and manage their fasting entries.
  * This is the default landing page after successful authentication.
@@ -9,11 +9,20 @@
 
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import EntryList from '@/components/organisms/EntryList';
+import EntryForm from '@/components/organisms/EntryForm';
+import Button from '@/components/atoms/Button';
 
 export default function EntriesPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const [entries, setEntries] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [showForm, setShowForm] = useState(false);
+  const [editingEntry, setEditingEntry] = useState(null);
+  const [settings, setSettings] = useState(null);
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -22,10 +31,87 @@ export default function EntriesPage() {
     }
   }, [status, router]);
 
+  // Fetch entries and settings when authenticated
+  useEffect(() => {
+    if (session?.user) {
+      fetchEntries();
+      fetchSettings();
+    }
+  }, [session]);
+
+  const fetchEntries = async () => {
+    try {
+      setLoading(true);
+      setError('');
+      const response = await fetch('/api/entries');
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch entries');
+      }
+      
+      const data = await response.json();
+      setEntries(data.entries || []);
+    } catch (err) {
+      console.error('Error fetching entries:', err);
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchSettings = async () => {
+    try {
+      const response = await fetch('/api/settings');
+      if (response.ok) {
+        const data = await response.json();
+        setSettings(data.settings);
+      }
+    } catch (err) {
+      console.error('Error fetching settings:', err);
+    }
+  };
+
+  const handleEdit = (entry) => {
+    setEditingEntry(entry);
+    setShowForm(true);
+  };
+
+  const handleDelete = async (entryId) => {
+    if (!confirm('Are you sure you want to delete this entry?')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/entries/${entryId}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete entry');
+      }
+
+      await fetchEntries();
+    } catch (err) {
+      console.error('Error deleting entry:', err);
+      alert('Failed to delete entry. Please try again.');
+    }
+  };
+
+  const handleFormSuccess = async () => {
+    setShowForm(false);
+    setEditingEntry(null);
+    await fetchEntries();
+  };
+
+  const handleFormCancel = () => {
+    setShowForm(false);
+    setEditingEntry(null);
+  };
+
   // Show loading state while checking authentication
   if (status === 'loading') {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-purple-50 flex items-center justify-center">
         <div className="text-gray-600">Loading...</div>
       </div>
     );
@@ -37,84 +123,56 @@ export default function EntriesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-purple-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">
-            Welcome back, {session.user.name || session.user.email}!
+          <h1 className="text-4xl font-bold text-gray-900 mb-2">
+            Welcome back, <span className="gradient-text">{session.user.name || 'there'}</span>!
           </h1>
-          <p className="mt-2 text-gray-600">
+          <p className="text-lg text-gray-600">
             Track your fasting journey and monitor your progress.
           </p>
         </div>
 
-        {/* User Info Card */}
-        <div className="bg-white rounded-lg shadow p-6 mb-8">
-          <h2 className="text-xl font-semibold mb-4">Your Profile</h2>
-          <div className="space-y-2">
-            <div className="flex items-center gap-4">
-              {session.user.picture ? (
-                <img 
-                  src={session.user.picture} 
-                  alt={session.user.name || 'Profile'}
-                  className="w-16 h-16 rounded-full object-cover"
-                  onError={(e) => {
-                    e.target.style.display = 'none';
-                    e.target.nextElementSibling.style.display = 'flex';
-                  }}
-                />
-              ) : (
-                <div className="w-16 h-16 rounded-full bg-green-500 flex items-center justify-center text-white text-2xl font-bold">
-                  {(session.user.name || session.user.email)?.[0]?.toUpperCase()}
-                </div>
-              )}
-              <div className="w-16 h-16 rounded-full bg-green-500 items-center justify-center text-white text-2xl font-bold" style={{ display: 'none' }}>
-                {(session.user.name || session.user.email)?.[0]?.toUpperCase()}
-              </div>
-              <div>
-                <p className="font-medium">{session.user.name}</p>
-                <p className="text-sm text-gray-600">{session.user.email}</p>
-                {session.user.authMethod && (
-                  <p className="text-xs text-gray-500 mt-1">
-                    Auth Method: {session.user.authMethod}
-                  </p>
-                )}
-              </div>
-            </div>
+        {/* Create/Edit Entry Form */}
+        {showForm ? (
+          <div className="bg-white rounded-2xl shadow-soft p-6 mb-8">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">
+              {editingEntry ? 'Edit Entry' : 'Create New Entry'}
+            </h2>
+            <EntryForm
+              entry={editingEntry}
+              onSuccess={handleFormSuccess}
+              onCancel={handleFormCancel}
+            />
           </div>
-        </div>
-
-        {/* Placeholder for future entries */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-xl font-semibold mb-4">Your Fasting Entries</h2>
-          <div className="text-center py-12 text-gray-500">
-            <svg 
-              className="mx-auto h-12 w-12 text-gray-400" 
-              fill="none" 
-              stroke="currentColor" 
-              viewBox="0 0 24 24"
+        ) : (
+          <div className="mb-8">
+            <Button
+              variant="primary"
+              onClick={() => setShowForm(true)}
+              className="inline-flex items-center gap-2"
             >
-              <path 
-                strokeLinecap="round" 
-                strokeLinejoin="round" 
-                strokeWidth={2} 
-                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" 
-              />
-            </svg>
-            <h3 className="mt-2 text-sm font-medium">No entries yet</h3>
-            <p className="mt-1 text-sm">
-              Get started by creating your first fasting entry.
-            </p>
-            <div className="mt-6">
-              <button
-                type="button"
-                className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-              >
-                Create Entry
-              </button>
-            </div>
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+              Create New Entry
+            </Button>
           </div>
+        )}
+
+        {/* Entries List */}
+        <div className="bg-white rounded-2xl shadow-soft p-6">
+          <h2 className="text-2xl font-bold text-gray-900 mb-6">Your Fasting Entries</h2>
+          <EntryList
+            entries={entries}
+            settings={settings}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+            loading={loading}
+            error={error}
+          />
         </div>
       </div>
     </div>

@@ -135,7 +135,11 @@ export const loginSchema = Joi.object({
   }),
 
   rememberMe: Joi.boolean().optional().default(false),
-});
+  
+  // NextAuth automatically sends these fields
+  csrfToken: Joi.string().optional(),
+  callbackUrl: Joi.string().optional(),
+}).unknown(false); // Still reject any other unknown fields
 
 // ============================================================================
 // FORGOT PASSWORD SCHEMA

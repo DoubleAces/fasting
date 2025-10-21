@@ -404,14 +404,14 @@ const EntryForm = ({
 
       {/* Extended Fast Confirmation Prompt */}
       {showExtendedFastPrompt && gapInfo && (
-        <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+        <div className="p-4 bg-purple-50 border border-purple-200 rounded-lg">
           <div className="flex items-start gap-3">
             <span className="text-2xl" role="img" aria-label="Question">🤔</span>
             <div className="flex-1">
-              <h4 className="text-sm font-semibold text-blue-900 mb-1">
+              <h4 className="text-sm font-semibold text-purple-900 mb-1">
                 Extended Fast Detected
               </h4>
-              <p className="text-sm text-blue-800 mb-3">
+              <p className="text-sm text-purple-800 mb-3">
                 Your last entry was {gapInfo.daysSinceLast} days ago on{' '}
                 {new Date(gapInfo.previousEntry.date).toLocaleDateString('en-GB', {
                   day: '2-digit',

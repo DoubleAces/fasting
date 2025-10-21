@@ -30,10 +30,10 @@ const Button = ({
     'inline-flex',
     'items-center',
     'justify-center',
-    'font-medium',
-    'rounded-lg',
-    'transition-colors',
-    'duration-200',
+    'font-semibold',
+    'rounded-xl',
+    'transition-all',
+    'duration-300',
     // WCAG 2.1 AA - Minimum 44x44px touch target
     'min-h-[44px]',
     'min-w-[44px]',
@@ -46,18 +46,23 @@ const Button = ({
   // Variant styles
   const variantStyles = {
     primary: [
-      'bg-blue-600',
+      'bg-gradient-to-r',
+      'from-primary-500',
+      'to-accent-600',
       'text-white',
-      'hover:bg-blue-700',
-      'focus:ring-blue-500',
-      'active:bg-blue-800',
+      'hover:shadow-soft-lg',
+      'hover:scale-105',
+      'focus:ring-primary-500',
+      'shadow-soft',
     ],
     secondary: [
-      'bg-gray-600',
-      'text-white',
-      'hover:bg-gray-700',
-      'focus:ring-gray-500',
-      'active:bg-gray-800',
+      'bg-white',
+      'border-2',
+      'border-gray-200',
+      'text-gray-700',
+      'hover:border-primary-300',
+      'hover:bg-gray-50',
+      'focus:ring-primary-500',
     ],
     danger: [
       'bg-red-600',
@@ -68,12 +73,12 @@ const Button = ({
     ],
     outline: [
       'bg-transparent',
-      'border',
+      'border-2',
       'border-gray-300',
       'text-gray-700',
       'hover:bg-gray-50',
-      'focus:ring-gray-500',
-      'active:bg-gray-100',
+      'hover:border-primary-400',
+      'focus:ring-primary-500',
     ],
   };
 
