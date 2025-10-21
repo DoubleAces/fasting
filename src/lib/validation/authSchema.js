@@ -105,6 +105,12 @@ export const registerSchema = Joi.object({
     'string.min': 'Name must be at least 1 character',
     'string.max': 'Name cannot exceed 100 characters',
   }),
+
+  termsAccepted: Joi.boolean().valid(true).required().messages({
+    'any.only': 'You must accept the Terms and Conditions to create an account',
+    'any.required': 'You must accept the Terms and Conditions to create an account',
+    'boolean.base': 'You must accept the Terms and Conditions to create an account',
+  }),
 });
 
 // ============================================================================

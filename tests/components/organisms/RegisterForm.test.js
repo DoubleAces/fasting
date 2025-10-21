@@ -380,6 +380,7 @@ describe('RegisterForm Component', () => {
       await user.type(screen.getByLabelText(/^name/i), 'John Doe');
       await user.type(screen.getByLabelText(/^password/i), 'SecurePass123');
       await user.type(screen.getByLabelText(/confirm password/i), 'SecurePass123');
+      await checkTermsCheckbox(user);
       await user.click(screen.getByRole('button', { name: /create account/i }));
 
       await waitFor(() => {
@@ -417,6 +418,7 @@ describe('RegisterForm Component', () => {
       await user.type(screen.getByLabelText(/email/i), 'test@example.com');
       await user.type(screen.getByLabelText(/^password/i), 'SecurePass123');
       await user.type(screen.getByLabelText(/confirm password/i), 'SecurePass123');
+      await checkTermsCheckbox(user);
       await user.click(screen.getByRole('button', { name: /create account/i }));
 
       await waitFor(() => {
@@ -452,6 +454,7 @@ describe('RegisterForm Component', () => {
       await user.type(screen.getByLabelText(/email/i), 'test@example.com');
       await user.type(screen.getByLabelText(/^password/i), 'SecurePass123');
       await user.type(screen.getByLabelText(/confirm password/i), 'SecurePass123');
+      await checkTermsCheckbox(user);
       await user.click(screen.getByRole('button', { name: /create account/i }));
 
       expect(screen.getByLabelText(/email/i)).toBeDisabled();
@@ -483,6 +486,7 @@ describe('RegisterForm Component', () => {
       await user.type(screen.getByLabelText(/email/i), 'existing@example.com');
       await user.type(screen.getByLabelText(/^password/i), 'SecurePass123');
       await user.type(screen.getByLabelText(/confirm password/i), 'SecurePass123');
+      await checkTermsCheckbox(user);
       await user.click(screen.getByRole('button', { name: /create account/i }));
 
       await waitFor(() => {
@@ -505,6 +509,7 @@ describe('RegisterForm Component', () => {
       await user.type(screen.getByLabelText(/email/i), 'test@example.com');
       await user.type(screen.getByLabelText(/^password/i), 'SecurePass123');
       await user.type(screen.getByLabelText(/confirm password/i), 'SecurePass123');
+      await checkTermsCheckbox(user);
       await user.click(screen.getByRole('button', { name: /create account/i }));
 
       await waitFor(() => {
@@ -527,6 +532,7 @@ describe('RegisterForm Component', () => {
       await user.type(screen.getByLabelText(/email/i), 'test@example.com');
       await user.type(screen.getByLabelText(/^password/i), 'SecurePass123');
       await user.type(screen.getByLabelText(/confirm password/i), 'SecurePass123');
+      await checkTermsCheckbox(user);
       await user.click(screen.getByRole('button', { name: /create account/i }));
 
       await waitFor(() => {
@@ -544,6 +550,7 @@ describe('RegisterForm Component', () => {
       await user.type(screen.getByLabelText(/email/i), 'test@example.com');
       await user.type(screen.getByLabelText(/^password/i), 'SecurePass123');
       await user.type(screen.getByLabelText(/confirm password/i), 'SecurePass123');
+      await checkTermsCheckbox(user);
       await user.click(screen.getByRole('button', { name: /create account/i }));
 
       await waitFor(() => {
@@ -566,6 +573,7 @@ describe('RegisterForm Component', () => {
       await user.type(screen.getByLabelText(/email/i), 'test@example.com');
       await user.type(screen.getByLabelText(/^password/i), 'SecurePass123');
       await user.type(screen.getByLabelText(/confirm password/i), 'SecurePass123');
+      await checkTermsCheckbox(user);
       await user.click(screen.getByRole('button', { name: /create account/i }));
 
       await waitFor(() => {
