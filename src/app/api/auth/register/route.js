@@ -9,6 +9,7 @@
  * - password: string (required, min 8 chars, complexity requirements)
  * - confirmPassword: string (required, must match password)
  * - name: string (optional)
+ * - termsAccepted: boolean (required, must be true)
  * 
  * Responses:
  * - 201: User created successfully
@@ -33,7 +34,7 @@ export async function POST(request) {
 
     // Parse request body
     const body = await request.json();
-    const { email, password, confirmPassword, name } = body;
+    const { email, password, confirmPassword, name, termsAccepted } = body;
 
     // Validate input
     const validation = registerSchema.validate(
@@ -42,6 +43,7 @@ export async function POST(request) {
         password,
         confirmPassword,
         name,
+        termsAccepted,
       },
       { abortEarly: false } // Return all errors, not just the first
     );

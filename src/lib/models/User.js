@@ -191,6 +191,45 @@ const userSchema = new mongoose.Schema(
       default: true,
     },
 
+    // ============================================================================
+    // LEGAL & COMPLIANCE
+    // ============================================================================
+
+    /**
+     * Terms and Conditions acceptance timestamp
+     * - Records when user accepted Terms and Conditions during registration
+     * - Set automatically to current timestamp at account creation
+     * - Immutable after set (users cannot un-accept terms)
+     * - Required for new users created after this feature deployment
+     * - Optional for existing users (backward compatibility - treat as accepted at registration)
+     * - Used for legal compliance and audit trail
+     * 
+     * Validation:
+     * - Must be a valid Date
+     * - Cannot be a future date (cannot accept terms before they exist)
+     * - Immutable after creation
+     */
+    termsAcceptedAt: {
+      type: Date,
+      required: function() {
+        // Required for new users, optional for existing users (migration compatibility)
+        return this.isNew;
+      },
+      default: Date.now,
+      immutable: true,
+      validate: {
+        validator: function(value) {
+          // Allow null for existing users (backward compatibility)
+          if (value === null || value === undefined) {
+            return !this.isNew; // Only allow null for existing users
+          }
+          // Prevent future dates
+          return value <= new Date();
+        },
+        message: 'Terms acceptance date cannot be in the future'
+      }
+    },
+
     // Note: createdAt and updatedAt are automatically created by timestamps: true option
   },
   {

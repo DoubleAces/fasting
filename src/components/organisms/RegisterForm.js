@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import FormField from '@/components/molecules/FormField';
+import TermsCheckbox from '@/components/molecules/TermsCheckbox';
 import Button from '@/components/atoms/Button';
 import ErrorMessage from '@/components/atoms/ErrorMessage';
 import Link from '@/components/atoms/Link';
@@ -32,6 +33,7 @@ const RegisterForm = ({ onSuccess, onError }) => {
     password: '',
     confirmPassword: '',
     name: '',
+    termsAccepted: false,
   });
 
   // UI state
@@ -43,10 +45,12 @@ const RegisterForm = ({ onSuccess, onError }) => {
    * Handle input change
    */
   const handleChange = (e) => {
-    const { id, value } = e.target;
+    const { id, value, type, checked } = e.target;
+    const fieldValue = type === 'checkbox' ? checked : value;
+    
     setFormData((prev) => ({
       ...prev,
-      [id]: value,
+      [id]: fieldValue,
     }));
     
     // Clear field error on change
@@ -54,6 +58,32 @@ const RegisterForm = ({ onSuccess, onError }) => {
       setErrors((prev) => {
         const newErrors = { ...prev };
         delete newErrors[id];
+        return newErrors;
+      });
+    }
+    
+    // Clear submit error on change
+    if (submitError) {
+      setSubmitError('');
+    }
+  };
+
+  /**
+   * Handle terms checkbox change
+   */
+  const handleTermsChange = (e) => {
+    const checked = e.target.checked;
+    
+    setFormData((prev) => ({
+      ...prev,
+      termsAccepted: checked,
+    }));
+    
+    // Clear terms error on change
+    if (errors.termsAccepted) {
+      setErrors((prev) => {
+        const newErrors = { ...prev };
+        delete newErrors.termsAccepted;
         return newErrors;
       });
     }
@@ -110,11 +140,20 @@ const RegisterForm = ({ onSuccess, onError }) => {
   const validateForm = () => {
     const result = registerSchema.validate(formData, { abortEarly: false });
     
+    const newErrors = {};
+    
     if (result.error) {
-      const newErrors = {};
       result.error.details.forEach((err) => {
         newErrors[err.path[0]] = err.message;
       });
+    }
+    
+    // Validate terms acceptance (required)
+    if (!formData.termsAccepted) {
+      newErrors.termsAccepted = 'You must accept the Terms and Conditions to create an account';
+    }
+    
+    if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       return false;
     }
@@ -190,8 +229,21 @@ const RegisterForm = ({ onSuccess, onError }) => {
    * Handle Google OAuth registration
    */
   const handleGoogleSignup = async () => {
+    // Check if terms are accepted before allowing Google signup
+    if (!formData.termsAccepted) {
+      setErrors({
+        termsAccepted: 'You must accept the Terms and Conditions to create an account',
+      });
+      setSubmitError('Please accept the Terms and Conditions to continue.');
+      return;
+    }
+
     try {
       const { signIn } = await import('next-auth/react');
+      
+      // Store terms acceptance flag in session storage for OAuth callback
+      sessionStorage.setItem('termsAccepted', 'true');
+      sessionStorage.setItem('termsAcceptedAt', new Date().toISOString());
       
       // For OAuth providers, we MUST redirect to the provider
       // redirect: false doesn't work with OAuth - it only works with credentials
@@ -351,6 +403,12 @@ const RegisterForm = ({ onSuccess, onError }) => {
           required
           disabled={isSubmitting}
           autoComplete="new-password"
+        />
+
+        <TermsCheckbox
+          checked={formData.termsAccepted}
+          onChange={handleTermsChange}
+          error={errors.termsAccepted}
         />
 
         <Button

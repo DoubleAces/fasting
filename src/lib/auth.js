@@ -213,6 +213,11 @@ export const authConfig = {
 
           if (!existingUser) {
             console.log('🆕 Creating new user from Google OAuth');
+            
+            // For new users, we require terms acceptance
+            // The terms acceptance is stored in the user record
+            // Note: The frontend should prevent OAuth signup without terms acceptance
+            
             // Create new user for first-time Google login
             existingUser = await User.create({
               email: profile.email,
@@ -221,6 +226,7 @@ export const authConfig = {
               authMethod: 'google',
               googleId: profile.sub,
               emailVerified: true,
+              termsAcceptedAt: new Date(), // Set terms acceptance for OAuth users
             });
             console.log('✅ User created:', existingUser._id);
 
