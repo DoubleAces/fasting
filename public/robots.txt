@@ -21,4 +21,4 @@ Disallow: /settings
 Disallow: /api/
 
 # Sitemap location
-Sitemap: https://fastingtracker.app/sitemap.xml
+Sitemap: https://fasting-nine.vercel.app/sitemap.xml

@@ -62,7 +62,7 @@ const faqItemSchema = new mongoose.Schema(
     /**
      * Category for organization
      * - Groups related questions together
-     * - Indexed for filtering
+     * - Indexed via compound index (category + order)
      */
     category: {
       type: String,
@@ -77,7 +77,6 @@ const faqItemSchema = new mongoose.Schema(
         ],
         message: 'Category must be one of: Getting Started, Fasting, Account, Technical, General',
       },
-      index: true,
     },
 
     /**
@@ -85,11 +84,11 @@ const faqItemSchema = new mongoose.Schema(
      * - Lower numbers appear first
      * - Allows manual ordering of FAQ items
      * - Default: 0 (displayed first)
+     * - Indexed via compound index (category + order)
      */
     order: {
       type: Number,
       default: 0,
-      index: true,
     },
 
     /**
@@ -110,12 +109,11 @@ const faqItemSchema = new mongoose.Schema(
      * Published status
      * - true: Visible on FAQ page
      * - false: Hidden (draft or archived)
-     * - Indexed for filtering published items
+     * - Indexed via explicit index below
      */
     isPublished: {
       type: Boolean,
       default: true,
-      index: true,
     },
 
     /**
@@ -142,8 +140,8 @@ const faqItemSchema = new mongoose.Schema(
     // Automatic timestamps
     timestamps: true,
 
-    // Collection name
-    collection: 'faqItems',
+  // Collection name (lowercase to match existing data and avoid duplicates)
+  collection: 'faqitems',
   }
 );
 

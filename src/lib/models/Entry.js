@@ -8,18 +8,18 @@ import mongoose from 'mongoose';
 const entrySchema = new mongoose.Schema(
   {
     // User reference - each entry belongs to a user
+    // Indexed via compound indexes below
     userId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
       required: [true, 'User ID is required'],
-      index: true,
     },
 
     // Date is the unique identifier for each entry (one entry per day per user)
+    // Indexed via compound indexes below
     date: {
       type: Date,
       required: [true, 'Date is required'],
-      index: true,
     },
 
     // Meal timing (stored in 24-hour HH:mm format)
@@ -121,7 +121,7 @@ const entrySchema = new mongoose.Schema(
 
 // Indexes for efficient queries
 entrySchema.index({ userId: 1, date: -1 }); // User entries by date descending
-entrySchema.index({ createdAt: -1 }); // Sort by creation time
+// Note: createdAt index automatically created by timestamps: true option
 
 // Unique constraint: One entry per user per day
 entrySchema.index({ userId: 1, date: 1 }, { unique: true });

@@ -240,27 +240,27 @@
 
 ### API Endpoints for Password Reset
 
-- [ ] T077 [P] [US6] Create forgot-password API route in src/app/api/auth/forgot-password/route.js (validate email, generate token, send email, return success)
-- [ ] T078 [P] [US6] Create reset-password API route in src/app/api/auth/reset-password/route.js (validate token, update password, mark token as used, return success)
-- [ ] T079 [US6] Write integration tests for password reset APIs in tests/integration/auth.test.js (forgot password, reset password, token expiration, token reuse prevention)
+- [x] T077 [P] [US6] Create forgot-password API route in src/app/api/auth/forgot-password/route.js (validate email, generate token, send email, return success)
+- [x] T078 [P] [US6] Create reset-password API route in src/app/api/auth/reset-password/route.js (validate token, update password, mark token as used, return success)
+- [x] T079 [US6] Write integration tests for password reset APIs in tests/integration/auth.test.js (forgot password, reset password, token expiration, token reuse prevention)
 
 ### UI Components for Password Reset
 
-- [ ] T080 [P] [US6] Create ForgotPasswordForm organism in src/components/organisms/ForgotPasswordForm.js (email field, submit)
-- [ ] T081 [P] [US6] Create ResetPasswordForm organism in src/components/organisms/ResetPasswordForm.js (newPassword field, submit, token validation)
-- [ ] T082 [US6] Write ForgotPasswordForm tests in tests/components/organisms/ForgotPasswordForm.test.js (renders, submits, success/error display)
-- [ ] T083 [US6] Write ResetPasswordForm tests in tests/components/organisms/ResetPasswordForm.test.js (renders, password validation, submit, token errors)
+- [x] T080 [P] [US6] Create ForgotPasswordForm organism in src/components/organisms/ForgotPasswordForm.js (email field, submit)
+- [x] T081 [P] [US6] Create ResetPasswordForm organism in src/components/organisms/ResetPasswordForm.js (newPassword field, submit, token validation)
+- [x] T082 [US6] Write ForgotPasswordForm tests in tests/components/organisms/ForgotPasswordForm.test.js (renders, submits, success/error display)
+- [x] T083 [US6] Write ResetPasswordForm tests in tests/components/organisms/ResetPasswordForm.test.js (renders, password validation, submit, token errors)
 
 ### Password Reset Pages
 
-- [ ] T084 [US6] Create forgot-password page in src/app/(auth)/forgot-password/page.js (use ForgotPasswordForm, handle submission)
-- [ ] T085 [US6] Create reset-password page in src/app/(auth)/reset-password/page.js (use ResetPasswordForm, extract token from URL, handle submission)
-- [ ] T086 [US6] Write forgot-password page tests in tests/pages/forgot-password.test.js (form renders, submission works, success message)
-- [ ] T087 [US6] Write reset-password page tests in tests/pages/reset-password.test.js (form renders, token validation, password update, invalid token handling)
+- [x] T084 [US6] Create forgot-password page in src/app/(auth)/forgot-password/page.js (use ForgotPasswordForm, handle submission)
+- [x] T085 [US6] Create reset-password page in src/app/(auth)/reset-password/page.js (use ResetPasswordForm, extract token from URL, handle submission)
+- [x] T086 [US6] Write forgot-password page tests in tests/pages/forgot-password.test.js (form renders, submission works, success message)
+- [x] T087 [US6] Write reset-password page tests in tests/pages/reset-password.test.js (form renders, token validation, password update, invalid token handling)
 
 ### E2E Tests for Password Reset
 
-- [ ] T088 [US6] Write E2E password reset test in tests/e2e/auth-flows.spec.js (complete reset flow, email link click, new password login)
+- [x] T088 [US6] Write E2E password reset test in tests/e2e/auth-flows.spec.js (complete reset flow, email link click, new password login)
 
 **Checkpoint**: User Story 6 complete - Password reset fully functional and testable independently
 
@@ -274,22 +274,22 @@
 
 ### Global Styling
 
-- [ ] T089 [P] [US7] Update global CSS in src/app/globals.css (Apple-inspired color palette, typography, spacing, button styles)
-- [ ] T090 [P] [US7] Configure Tailwind CSS theme in tailwind.config.js (custom colors, fonts, animations, transitions)
-- [ ] T091 [US7] Add smooth transitions and animations to all interactive elements (buttons, links, forms, menu expansions)
-- [ ] T092 [US7] Ensure responsive design across all breakpoints (mobile 320px, tablet 768px, desktop 1024px+)
+- [x] T089 [P] [US7] Update global CSS in src/app/globals.css (Apple-inspired color palette, typography, spacing, button styles)
+- [x] T090 [P] [US7] Configure Tailwind CSS theme in tailwind.config.js (custom colors, fonts, animations, transitions)
+- [x] T091 [US7] Add smooth transitions and animations to all interactive elements (buttons, links, forms, menu expansions)
+- [x] T092 [US7] Ensure responsive design across all breakpoints (mobile 320px, tablet 768px, desktop 1024px+)
 
 ### Design Consistency Review
 
-- [ ] T093 [US7] Review and update all components for design consistency (typography, spacing, colors, button styles match)
-- [ ] T094 [US7] Add loading states with smooth animations for all forms (login, register, password reset, entries, settings)
-- [ ] T095 [US7] Add error states with elegant error messages and fade-in animations
+- [x] T093 [US7] Review and update all components for design consistency (typography, spacing, colors, button styles match)
+- [x] T094 [US7] Add loading states with smooth animations for all forms (login, register, password reset, entries, settings)
+- [x] T095 [US7] Add error states with elegant error messages and fade-in animations
 
 ### Visual Testing
 
-- [ ] T096 [US7] Perform manual visual testing on all pages (homepage, FAQ, auth pages, entries, settings)
-- [ ] T097 [US7] Test responsive design on mobile, tablet, desktop devices
-- [ ] T098 [US7] Verify accessibility (color contrast, focus indicators, keyboard navigation)
+- [x] T096 [US7] Perform manual visual testing on all pages (homepage, FAQ, auth pages, entries, settings)
+- [x] T097 [US7] Test responsive design on mobile, tablet, desktop devices
+- [x] T098 [US7] Verify accessibility (color contrast, focus indicators, keyboard navigation)
 
 **Checkpoint**: User Story 7 complete - Modern design applied consistently across all pages
 
@@ -303,28 +303,28 @@
 
 ### UI Components for FAQ
 
-- [ ] T099 [P] [US8] Create SearchBar molecule in src/components/molecules/SearchBar.js (input with search icon, onChange callback)
-- [ ] T100 [P] [US8] Create FAQItem molecule in src/components/molecules/FAQItem.js (expandable question/answer with smooth animation)
-- [ ] T101 [US8] Create FAQList organism in src/components/organisms/FAQList.js (search bar, filtered list, category sections, no results message)
-- [ ] T102 [US8] Write SearchBar tests in tests/components/molecules/SearchBar.test.js (renders, onChange fires, accessible)
-- [ ] T103 [US8] Write FAQItem tests in tests/components/molecules/FAQItem.test.js (expands/collapses, animation, keyboard navigation)
-- [ ] T104 [US8] Write FAQList tests in tests/components/organisms/FAQList.test.js (search filters, categories render, no results message)
+- [x] T099 [P] [US8] Create SearchBar molecule in src/components/molecules/SearchBar.js (input with search icon, onChange callback)
+- [x] T100 [P] [US8] Create FAQItem molecule in src/components/molecules/FAQItem.js (expandable question/answer with smooth animation)
+- [x] T101 [US8] Create FAQList organism in src/components/organisms/FAQList.js (search bar, filtered list, category sections, no results message)
+- [x] T102 [US8] Write SearchBar tests in tests/components/molecules/SearchBar.test.js (renders, onChange fires, accessible)
+- [x] T103 [US8] Write FAQItem tests in tests/components/molecules/FAQItem.test.js (expands/collapses, animation, keyboard navigation)
+- [x] T104 [US8] Write FAQList tests in tests/components/organisms/FAQList.test.js (search filters, categories render, no results message)
 
 ### FAQ API Endpoint
 
-- [ ] T105 [P] [US8] Create FAQ API route in src/app/api/faq/route.js (GET with optional search query, category filter, return published FAQs)
-- [ ] T106 [US8] Write integration tests for FAQ API in tests/integration/faq.test.js (retrieve all FAQs, search filtering, category filtering)
+- [x] T105 [P] [US8] Create FAQ API route in src/app/api/faq/route.js (GET with optional search query, category filter, return published FAQs)
+- [x] T106 [US8] Write integration tests for FAQ API in tests/integration/faq.test.js (retrieve all FAQs, search filtering, category filtering)
 
 ### FAQ Page Implementation
 
-- [ ] T107 [US8] Create FAQ page in src/app/faq/page.js (use FAQList, fetch FAQs server-side, SEO metadata)
-- [ ] T108 [US8] Add FAQ page metadata in src/app/faq/page.js (title, description, Open Graph, keywords)
-- [ ] T109 [US8] Seed initial FAQ data in database (create seed script or manual entries for Getting Started, Fasting, Account, Technical)
-- [ ] T110 [US8] Write FAQ page tests in tests/pages/faq.test.js (renders questions, search works, categories display, CTA present)
+- [x] T107 [US8] Create FAQ page in src/app/faq/page.js (use FAQList, fetch FAQs server-side, SEO metadata)
+- [x] T108 [US8] Add FAQ page metadata in src/app/faq/page.js (title, description, Open Graph, keywords)
+- [x] T109 [US8] Seed initial FAQ data in database (create seed script or manual entries for Getting Started, Fasting, Account, Technical)
+- [x] T110 [US8] Write FAQ page tests in tests/pages/faq.test.js (renders questions, search works, categories display, CTA present)
 
 ### E2E Tests for FAQ
 
-- [ ] T111 [US8] Write E2E FAQ test in tests/e2e/faq.spec.js (search functionality, expand/collapse, navigation, performance <2s load)
+- [x] T111 [US8] Write E2E FAQ test in tests/e2e/faq.spec.js (search functionality, expand/collapse, navigation, performance <2s load)
 
 **Checkpoint**: User Story 8 complete - FAQ page fully functional with search and categories
 
@@ -338,27 +338,27 @@
 
 ### SEO Infrastructure
 
-- [ ] T112 [P] [US9] Create robots.txt in public/robots.txt (allow public pages, disallow protected pages)
-- [ ] T113 [P] [US9] Create sitemap.xml route in src/app/sitemap.xml/route.js (generate sitemap with /, /faq, /login, /register)
-- [ ] T114 [P] [US9] Add canonical URLs to all pages (via metadata export)
-- [ ] T115 [P] [US9] Add structured data (JSON-LD) to homepage in src/app/page.js (WebSite, Organization schema)
+- [x] T112 [P] [US9] Create robots.txt in public/robots.txt (allow public pages, disallow protected pages)
+- [x] T113 [P] [US9] Create sitemap.xml route in src/app/sitemap.xml/route.js (generate sitemap with /, /faq, /login, /register)
+- [x] T114 [P] [US9] Add canonical URLs to all pages (via metadata export)
+- [x] T115 [P] [US9] Add structured data (JSON-LD) to homepage in src/app/page.js (WebSite, Organization schema)
 
 ### Meta Tags for All Pages
 
-- [ ] T116 [US9] Update homepage metadata in src/app/page.js (unique title, description, Open Graph, Twitter Cards)
-- [ ] T117 [US9] Add FAQ metadata in src/app/faq/page.js (unique title, description, keywords)
-- [ ] T118 [US9] Add login metadata in src/app/(auth)/login/page.js (title, description, noindex)
-- [ ] T119 [US9] Add register metadata in src/app/(auth)/register/page.js (title, description, noindex)
-- [ ] T120 [US9] Add entries metadata in src/app/(protected)/entries/page.js (title, description, noindex)
-- [ ] T121 [US9] Add settings metadata in src/app/(protected)/settings/page.js (title, description, noindex)
+- [x] T116 [US9] Update homepage metadata in src/app/page.js (unique title, description, Open Graph, Twitter Cards)
+- [x] T117 [US9] Add FAQ metadata in src/app/faq/page.js (unique title, description, keywords)
+- [x] T118 [US9] Add login metadata in src/app/(auth)/login/page.js (title, description, noindex)
+- [x] T119 [US9] Add register metadata in src/app/(auth)/register/page.js (title, description, noindex)
+- [x] T120 [US9] Add entries metadata in src/app/(protected)/entries/page.js (title, description, noindex)
+- [x] T121 [US9] Add settings metadata in src/app/(protected)/settings/page.js (title, description, noindex)
 
 ### SEO Testing
 
-- [ ] T122 [US9] Run Lighthouse SEO audit on all public pages (homepage, FAQ) and verify score >90
-- [ ] T123 [US9] Test social media sharing previews (Open Graph validation) on Facebook, Twitter, LinkedIn
-- [ ] T124 [US9] Verify server-side rendering for public pages (view page source, ensure content visible without JS)
-- [ ] T125 [US9] Test URL redirects (unauthenticated → login, authenticated → entries, preserve destination URL)
-- [ ] T126 [US9] Write integration tests for SEO in tests/integration/seo.test.js (meta tags present, canonical URLs, structured data, sitemap accessible)
+- [x] T122 [US9] Run Lighthouse SEO audit on all public pages (homepage, FAQ) and verify score >90
+- [x] T123 [US9] Test social media sharing previews (Open Graph validation) on Facebook, Twitter, LinkedIn
+- [x] T124 [US9] Verify server-side rendering for public pages (view page source, ensure content visible without JS)
+- [x] T125 [US9] Test URL redirects (unauthenticated → login, authenticated → entries, preserve destination URL)
+- [x] T126 [US9] Write integration tests for SEO in tests/integration/seo.test.js (meta tags present, canonical URLs, structured data, sitemap accessible)
 
 **Checkpoint**: User Story 9 complete - SEO optimization fully implemented and tested
 

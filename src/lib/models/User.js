@@ -45,7 +45,7 @@ const userSchema = new mongoose.Schema(
      * Email address (unique, required)
      * - Stored in lowercase for case-insensitive matching
      * - Validated with regex pattern
-     * - Indexed for fast lookups
+     * - Indexed via unique constraint and compound index (email + isActive)
      */
     email: {
       type: String,
@@ -53,7 +53,6 @@ const userSchema = new mongoose.Schema(
       unique: true,
       lowercase: true,
       trim: true,
-      index: true,
       match: [
         /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
         'Please provide a valid email address',
@@ -94,12 +93,12 @@ const userSchema = new mongoose.Schema(
      * Google OAuth ID (unique, sparse index)
      * - Only set for Google OAuth users
      * - Sparse index: only users with googleId are indexed
+     * - Indexed via unique constraint
      */
     googleId: {
       type: String,
       sparse: true,
       unique: true,
-      index: true,
     },
 
     // ============================================================================
@@ -185,33 +184,14 @@ const userSchema = new mongoose.Schema(
      * Account active status
      * - true: Account is active and can log in
      * - false: Account is deactivated (soft delete)
+     * - Indexed via compound index (email + isActive)
      */
     isActive: {
       type: Boolean,
       default: true,
-      index: true, // Index for filtering active users
     },
 
-    /**
-     * Created at timestamp (automatic)
-     * - Set by Mongoose timestamps option
-     * - Immutable after creation
-     */
-    createdAt: {
-      type: Date,
-      default: Date.now,
-      immutable: true,
-    },
-
-    /**
-     * Updated at timestamp (automatic)
-     * - Updated by Mongoose timestamps option
-     * - Updates on any document modification
-     */
-    updatedAt: {
-      type: Date,
-      default: Date.now,
-    },
+    // Note: createdAt and updatedAt are automatically created by timestamps: true option
   },
   {
     // Automatic timestamps

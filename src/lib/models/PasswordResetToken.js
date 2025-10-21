@@ -37,12 +37,12 @@ const passwordResetTokenSchema = new mongoose.Schema(
      * - 64-character hexadecimal string
      * - Generated with crypto.randomBytes(32)
      * - Used in password reset email link
+     * - Indexed via unique constraint and compound index (token + used + expiresAt)
      */
     token: {
       type: String,
       required: [true, 'Token is required'],
       unique: true,
-      index: true,
       validate: {
         validator: function (v) {
           return /^[a-f0-9]{64}$/.test(v);
@@ -67,12 +67,11 @@ const passwordResetTokenSchema = new mongoose.Schema(
      * Expiration timestamp
      * - Set to 1 hour from creation
      * - Validated when token is used
-     * - Indexed for querying valid tokens
+     * - Indexed via compound index (token + used + expiresAt)
      */
     expiresAt: {
       type: Date,
       required: [true, 'Expiration date is required'],
-      index: true,
       validate: {
         validator: function (v) {
           return v > new Date();
@@ -85,11 +84,11 @@ const passwordResetTokenSchema = new mongoose.Schema(
      * Used flag
      * - false: Token has not been used (can be used once)
      * - true: Token has been used (cannot be reused)
+     * - Indexed via compound index (token + used + expiresAt)
      */
     used: {
       type: Boolean,
       default: false,
-      index: true, // Index for filtering unused tokens
     },
 
     /**
@@ -106,14 +105,13 @@ const passwordResetTokenSchema = new mongoose.Schema(
      * Created at timestamp
      * - Set automatically on document creation
      * - Used for TTL index (auto-delete after 1 hour)
+     * - Indexed via explicit TTL index below
      */
     createdAt: {
       type: Date,
       default: Date.now,
       immutable: true,
-      // TTL index: Documents automatically deleted 1 hour after creation
-      // This prevents database bloat from old tokens
-      expires: 3600, // 3600 seconds = 1 hour
+      // Note: TTL index is defined explicitly below, not using expires option here
     },
   },
   {

@@ -26,13 +26,13 @@ const settingsSchema = new mongoose.Schema(
      * User identifier
      * Reference to User model
      * Each user has unique settings
+     * Indexed via unique index below
      */
     userId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
       required: [true, 'User ID is required'],
       unique: true,
-      index: true,
     },
 
     /**
@@ -74,8 +74,8 @@ const settingsSchema = new mongoose.Schema(
   }
 );
 
-// Indexes
-settingsSchema.index({ userId: 1 }, { unique: true });
+// Note: userId index is automatically created by unique constraint above
+// No need for explicit settingsSchema.index({ userId: 1 }, { unique: true });
 
 /**
  * Static method: Get or create user settings
