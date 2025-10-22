@@ -24,7 +24,16 @@
  *   - Validates email format before modification
  */
 
-import 'dotenv/config';
+import dotenv from 'dotenv';
+import { fileURLToPath } from 'url';
+import { dirname, resolve } from 'path';
+
+// Get current file directory
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+// Load environment variables from .env.local
+dotenv.config({ path: resolve(__dirname, '../.env.local') });
 import { connectDB } from '../src/lib/db.js';
 import User from '../src/lib/models/User.js';
 
