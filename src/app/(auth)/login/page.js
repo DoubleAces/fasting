@@ -36,6 +36,13 @@ function LoginContent() {
   useEffect(() => {
     document.title = 'Log In - Fasting Tracker';
     
+    // Check for session expiration message
+    const sessionExpired = searchParams.get('sessionExpired');
+    if (sessionExpired === 'true') {
+      setOauthError('Your session has expired. Please log in again to continue.');
+      return;
+    }
+    
     // Check for OAuth errors in URL params
     const error = searchParams.get('error');
     if (error) {
