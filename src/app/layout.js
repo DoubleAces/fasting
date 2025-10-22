@@ -1,6 +1,7 @@
 import Navbar from "@/components/organisms/Navbar";
 import Footer from "@/components/organisms/Footer";
 import SessionProvider from "@/components/providers/SessionProvider";
+import ConditionalLayout from "@/components/ConditionalLayout";
 import "./globals.css";
 
 export const metadata = {
@@ -20,11 +21,9 @@ export default function RootLayout({ children }) {
     <html lang="en">
       <body>
         <SessionProvider>
-          <Navbar />
-          <main style={{ minHeight: "calc(100vh - 200px)" }}>
+          <ConditionalLayout>
             {children}
-          </main>
-          <Footer />
+          </ConditionalLayout>
         </SessionProvider>
       </body>
     </html>

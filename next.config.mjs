@@ -13,6 +13,11 @@ const nextConfig = {
       },
     ],
   },
+  // Expose environment variables to Edge Runtime (middleware)
+  env: {
+    NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET,
+    AUTH_SECRET: process.env.AUTH_SECRET,
+  },
 };
 
 export default nextConfig;

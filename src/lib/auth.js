@@ -94,6 +94,7 @@ export const authConfig = {
             name: user.name,
             picture: user.picture,
             authMethod: user.authMethod,
+            isAdmin: user.isAdmin || false,
           };
         } catch (error) {
           console.error('Credentials authorization error:', error);
@@ -197,6 +198,7 @@ export const authConfig = {
         token.name = user.name;
         token.picture = user.picture;
         token.authMethod = user.authMethod || 'email';
+        token.isAdmin = user.isAdmin || false;
       }
 
       // Handle Google OAuth sign in
@@ -259,6 +261,7 @@ export const authConfig = {
           token.id = existingUser._id.toString();
           token.authMethod = 'google';
           token.picture = existingUser.picture; // Add picture to token
+          token.isAdmin = existingUser.isAdmin || false;
           console.log('✅ Token updated with user ID:', token.id);
         } catch (error) {
           console.error('❌ Error in Google OAuth JWT callback:', error);
@@ -290,6 +293,7 @@ export const authConfig = {
         session.user.name = token.name;
         session.user.picture = token.picture;
         session.user.authMethod = token.authMethod;
+        session.user.isAdmin = token.isAdmin || false;
       }
 
       return session;
