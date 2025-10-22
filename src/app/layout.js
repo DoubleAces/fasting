@@ -1,7 +1,7 @@
 import Navbar from "@/components/organisms/Navbar";
 import Footer from "@/components/organisms/Footer";
 import SessionProvider from "@/components/providers/SessionProvider";
-import { headers } from "next/headers";
+import ConditionalLayout from "@/components/ConditionalLayout";
 import "./globals.css";
 
 export const metadata = {
@@ -16,21 +16,14 @@ export const metadata = {
   },
 };
 
-export default async function RootLayout({ children }) {
-  // Get the current pathname to determine if we're in admin area
-  const headersList = await headers();
-  const pathname = headersList.get("x-pathname") || "";
-  const isAdminRoute = pathname.startsWith("/dashboard");
-
+export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body>
         <SessionProvider>
-          {!isAdminRoute && <Navbar />}
-          <main style={{ minHeight: isAdminRoute ? "100vh" : "calc(100vh - 200px)" }}>
+          <ConditionalLayout>
             {children}
-          </main>
-          {!isAdminRoute && <Footer />}
+          </ConditionalLayout>
         </SessionProvider>
       </body>
     </html>
