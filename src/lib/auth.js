@@ -223,15 +223,19 @@ export const authConfig = {
             return null;
           }
           
-          // Also update user data from database
+          // CRITICAL: Check if user still exists in database
           const currentUser = await User.findById(token.id);
           
-          if (currentUser) {
-            // Update isAdmin status and other fields
-            token.isAdmin = currentUser.isAdmin || false;
-            token.name = currentUser.name;
-            token.picture = currentUser.picture;
+          if (!currentUser) {
+            // User was deleted - force logout immediately
+            console.warn(`⚠️  User ${token.id} no longer exists - forcing logout`);
+            return null;
           }
+          
+          // Update isAdmin status and other fields from current database state
+          token.isAdmin = currentUser.isAdmin || false;
+          token.name = currentUser.name;
+          token.picture = currentUser.picture;
         } catch (error) {
           // Silently fail - keep existing token data on error
           if (process.env.NODE_ENV === 'development') {
