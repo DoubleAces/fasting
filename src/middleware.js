@@ -104,10 +104,12 @@ export default async function middleware(request) {
       return NextResponse.redirect(loginUrl);
     }
     
-    // If authenticated but not admin, redirect to access denied
+    // If authenticated but not admin, show 404 (security through obscurity)
     if (!token.isAdmin) {
-      console.log('🔴 Redirecting to access-denied - non-admin user');
-      return NextResponse.redirect(new URL('/access-denied', request.url));
+      console.log('🔴 Rewriting to 404 - non-admin user attempted admin access');
+      // Rewrite to 404 page instead of redirecting
+      // This makes it look like the page doesn't exist (security through obscurity)
+      return NextResponse.rewrite(new URL('/404', request.url));
     }
     
     // Admin user - allow access

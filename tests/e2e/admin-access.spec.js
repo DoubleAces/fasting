@@ -67,7 +67,7 @@ test.describe('Admin Area Access', () => {
   });
   
   test.describe('Non-Admin User Blocked', () => {
-    test('non-admin user redirected to access denied', async ({ page }) => {
+    test('non-admin user sees 404 page (security through obscurity)', async ({ page }) => {
       // Navigate to login page
       await page.goto('/login');
       
@@ -84,24 +84,21 @@ test.describe('Admin Area Access', () => {
       // Attempt to access admin dashboard
       await page.goto('/dashboard');
       
-      // Should be redirected to access denied page
-      await expect(page).toHaveURL('/access-denied');
-      await expect(page.locator('text=/access denied|unauthorized/i')).toBeVisible();
+      // Should see 404 page (not access-denied)
+      // URL stays as /dashboard but content is 404
+      await expect(page.locator('text=/404|not found|page not found/i')).toBeVisible();
     });
     
-    test('access denied page displays helpful message', async ({ page }) => {
+    test('404 page does not reveal admin area existence', async ({ page }) => {
       // Assuming user is logged in as non-admin
       await page.goto('/dashboard');
       
-      // Should be on access denied page
-      await expect(page).toHaveURL('/access-denied');
+      // Should see generic 404 page
+      await expect(page.locator('text=/404|not found|page not found/i')).toBeVisible();
       
-      // Should see clear error message
-      await expect(page.locator('text=/admin privileges|administrator/i')).toBeVisible();
-      
-      // Should have link back to home or entries
-      const homeLink = page.locator('a[href="/"]');
-      await expect(homeLink).toBeVisible();
+      // Should NOT see admin-specific error messages
+      const adminText = page.locator('text=/admin|administrator|privileges/i');
+      await expect(adminText).not.toBeVisible();
     });
   });
   
@@ -146,11 +143,12 @@ test.describe('Admin Area Access', () => {
       await expect(page.locator('text=Admin Dashboard')).toBeVisible();
     });
     
-    test('non-admin cannot access dashboard via direct URL', async ({ page }) => {
+    test('non-admin sees 404 via direct URL', async ({ page }) => {
       // Assuming non-admin is logged in
       await page.goto('/dashboard');
       
-      await expect(page).toHaveURL('/access-denied');
+      // URL stays as /dashboard but shows 404 content
+      await expect(page.locator('text=/404|not found/i')).toBeVisible();
     });
   });
 });

@@ -23,7 +23,7 @@ describe('Admin Authentication Middleware', () => {
       expect(result.redirect).toContain('/login');
     });
     
-    it('should return redirect to access-denied for non-admin users', () => {
+    it('should return redirect to 404 for non-admin users', () => {
       const session = {
         user: {
           id: 'user123',
@@ -35,7 +35,7 @@ describe('Admin Authentication Middleware', () => {
       const result = checkAdminAccess(session);
       
       expect(result.allowed).toBe(false);
-      expect(result.redirect).toBe('/access-denied');
+      expect(result.redirect).toBe('/404');
     });
     
     it('should allow admin users to continue', () => {
@@ -65,7 +65,7 @@ describe('Admin Authentication Middleware', () => {
       const result = checkAdminAccess(session);
       
       expect(result.allowed).toBe(false);
-      expect(result.redirect).toBe('/access-denied');
+      expect(result.redirect).toBe('/404');
     });
     
     it('should preserve callbackUrl in login redirect', () => {

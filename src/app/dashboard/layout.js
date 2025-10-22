@@ -20,8 +20,9 @@ export default async function DashboardLayout({ children }) {
 
   // This is a safety check - middleware should handle this
   // but we double-check here for security
+  // Return 404 instead of access-denied for better security (obscurity)
   if (!session || !session.user || !session.user.isAdmin) {
-    redirect('/access-denied');
+    redirect('/404');
   }
 
   // Pass user info to client component

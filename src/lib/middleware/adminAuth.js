@@ -30,11 +30,11 @@ export function checkAdminAccess(session, requestedUrl = '/dashboard') {
     };
   }
   
-  // Has session but not admin -> redirect to access denied
+  // Has session but not admin -> show 404 (security through obscurity)
   if (!session.user.isAdmin) {
     return {
       allowed: false,
-      redirect: '/access-denied',
+      redirect: '/404',
     };
   }
   
