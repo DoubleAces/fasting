@@ -61,9 +61,16 @@ export default async function middleware(request) {
 
   // Get JWT token (Edge Runtime compatible)
   // Auth.js uses __Secure-authjs.session-token in production (not __Host-)
+  // Note: In Edge Runtime, we must explicitly pass the secret
+  const secret = process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET;
+  
+  if (!secret) {
+    console.error('❌ NEXTAUTH_SECRET or AUTH_SECRET not found in middleware');
+  }
+  
   const token = await getToken({
     req: request,
-    secret: process.env.NEXTAUTH_SECRET,
+    secret: secret,
     secureCookie: process.env.NODE_ENV === 'production',
     cookieName: process.env.NODE_ENV === 'production'
       ? '__Secure-authjs.session-token'
