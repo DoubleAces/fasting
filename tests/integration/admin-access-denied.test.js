@@ -5,8 +5,8 @@
  * T030: Unauthenticated dashboard access redirects to login with callbackUrl
  */
 
-import { describe, it, expect, beforeAll, afterAll } from '@jest/globals';
-import { connectDB, disconnectDB } from '@/lib/db';
+import { describe, it, expect, beforeAll, afterAll, beforeEach } from '@jest/globals';
+import { setupTestDatabase, cleanTestDatabase, teardownTestDatabase } from '@/lib/test-utils/db-test-helper';
 import User from '@/lib/models/User';
 
 describe('Admin Access Denied Integration', () => {
@@ -14,7 +14,16 @@ describe('Admin Access Denied Integration', () => {
   let adminUser;
 
   beforeAll(async () => {
-    await connectDB();
+    await setupTestDatabase();
+  });
+
+  afterAll(async () => {
+    await teardownTestDatabase();
+  });
+
+  beforeEach(async () => {
+    // Clean all collections and recreate test users
+    await cleanTestDatabase();
     
     // Create test users
     // Use valid bcrypt hashes
@@ -31,17 +40,6 @@ describe('Admin Access Denied Integration', () => {
       password: '$2b$10$rBV2KvGzR5t6Z8Z8Z8Z8ZOqXqXqXqXqXqXqXqXqXqXqXqXqXqXqXq',
       isAdmin: true,
     });
-  });
-
-  afterAll(async () => {
-    // Clean up test users
-    if (testUser) {
-      await User.findByIdAndDelete(testUser._id);
-    }
-    if (adminUser) {
-      await User.findByIdAndDelete(adminUser._id);
-    }
-    await disconnectDB();
   });
 
   describe('Access Control', () => {

@@ -1,6 +1,10 @@
 /**
  * Password Reset API Integration Tests
  * 
+ * ⚠️ NOTE: Some tests may fail when run in full suite due to test isolation issues
+ * All tests pass when run individually: npm test -- tests/integration/password-reset.test.js
+ * See: docs/KNOWN-TEST-ISSUES.md
+ * 
  * Tests for password reset flow:
  * - Forgot password request
  * - Reset password with token
@@ -34,7 +38,7 @@ jest.mock('@/lib/utils/email', () => ({
 
 import { POST as forgotPasswordPOST } from '@/app/api/auth/forgot-password/route';
 import { POST as resetPasswordPOST } from '@/app/api/auth/reset-password/route';
-import dbConnect from '@/lib/db';
+import { setupTestDatabase, cleanTestDatabase, teardownTestDatabase } from '@/lib/test-utils/db-test-helper';
 import User from '@/lib/models/User';
 import PasswordResetToken from '@/lib/models/PasswordResetToken';
 import { sendPasswordResetEmail } from '@/lib/utils/email';
@@ -45,13 +49,15 @@ describe('Password Reset API Integration Tests', () => {
   let requestCounts; // Store reference to rate limit storage
 
   beforeAll(async () => {
-    await dbConnect();
+    await setupTestDatabase();
+  });
+
+  afterAll(async () => {
+    await teardownTestDatabase();
   });
 
   beforeEach(async () => {
-    // Clear collections
-    await User.deleteMany({});
-    await PasswordResetToken.deleteMany({});
+    await cleanTestDatabase();
 
     // Create test user with email/password auth
     const hashedPassword = await hashPassword('TestPass123');
@@ -67,11 +73,6 @@ describe('Password Reset API Integration Tests', () => {
     
     // Clear rate limiting (access global state from route module)
     // We'll use different IPs for each test to avoid rate limiting issues
-  });
-
-  afterAll(async () => {
-    await User.deleteMany({});
-    await PasswordResetToken.deleteMany({});
   });
 
   // ============================================================================

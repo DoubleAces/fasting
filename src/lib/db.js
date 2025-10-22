@@ -1,6 +1,7 @@
 /**
  * MongoDB Connection Utility
  * Implements connection pooling and singleton pattern for Next.js
+ * Environment-aware database selection for test isolation
  * 
  * Usage:
  *   import { connectDB } from '@/lib/db';
@@ -30,20 +31,92 @@ if (!cached) {
 }
 
 /**
+ * Get the appropriate MongoDB URI based on the current environment
+ * 
+ * @returns {string} MongoDB connection URI
+ */
+export function getMongoURI() {
+  const env = process.env.NODE_ENV;
+  
+  // Use test database when in test environment
+  if (env === 'test') {
+    return process.env.MONGODB_TEST_URI;
+  }
+  
+  // Use main database for production and development
+  return process.env.MONGODB_URI;
+}
+
+/**
+ * Extract database name from MongoDB connection URI
+ * 
+ * @param {string} uri - MongoDB connection URI
+ * @returns {string} Database name, or empty string if not found
+ */
+export function extractDatabaseName(uri) {
+  try {
+    // Handle mongodb:// and mongodb+srv:// URLs
+    const url = new URL(uri);
+    // pathname starts with '/', so remove it and get the database name (before any query params)
+    const pathname = url.pathname.slice(1); // Remove leading '/'
+    const dbName = pathname.split('?')[0]; // Remove query parameters if present
+    return dbName || '';
+  } catch (error) {
+    // If URL parsing fails, return empty string
+    return '';
+  }
+}
+
+/**
+ * Validate that test database name contains 'test' keyword for safety
+ * 
+ * @param {string} uri - MongoDB connection URI
+ * @throws {Error} If database name doesn't contain 'test'
+ */
+export function validateTestDatabase(uri) {
+  const dbName = extractDatabaseName(uri);
+  
+  if (!dbName || !dbName.toLowerCase().includes('test')) {
+    throw new Error(
+      `Test database name must include 'test' keyword for safety.\n` +
+      `Found: ${dbName || '(empty)'}\n` +
+      `Example: mongodb://localhost:27017/fasting-tracker-test\n` +
+      `Please update MONGODB_TEST_URI in your .env.local file.`
+    );
+  }
+}
+
+/**
  * Connect to MongoDB database
  * Uses connection pooling and caching for optimal performance
+ * Automatically selects test database in test environment
  * 
  * @returns {Promise<typeof mongoose>} Mongoose instance
- * @throws {Error} If MONGODB_URI is not defined or connection fails
+ * @throws {Error} If required environment variables are missing or validation fails
  */
 export async function connectDB() {
-  // Validate environment variable (check at runtime for tests)
-  const uri = process.env.MONGODB_URI;
+  // Get environment-appropriate URI
+  const uri = getMongoURI();
+  const env = process.env.NODE_ENV;
   
-  if (!uri) {
-    throw new Error(
-      'Please define the MONGODB_URI environment variable inside .env.local'
-    );
+  // Validate environment variables
+  if (env === 'test') {
+    if (!uri) {
+      throw new Error(
+        `MONGODB_TEST_URI must be set when NODE_ENV=test\n` +
+        `Add this to your .env.local file:\n` +
+        `MONGODB_TEST_URI=mongodb://localhost:27017/fasting-tracker-test\n` +
+        `(Database name must contain 'test' keyword for safety)`
+      );
+    }
+    // Validate test database name contains 'test'
+    validateTestDatabase(uri);
+  } else {
+    if (!uri) {
+      throw new Error(
+        'Please define the MONGODB_URI environment variable inside .env.local'
+      );
+    }
   }
 
   // Return existing connection if available
@@ -53,8 +126,10 @@ export async function connectDB() {
 
   // Return pending connection promise if connection is in progress
   if (!cached.promise) {
+    const dbName = extractDatabaseName(uri);
     cached.promise = mongoose.connect(uri, options).then((mongoose) => {
-      console.log('✓ MongoDB connected successfully');
+      console.log(`✓ MongoDB connected successfully${env === 'test' ? ' [TEST DATABASE]' : ''}`);
+      console.log(`  Database: ${dbName}`);
       return mongoose;
     }).catch((error) => {
       console.error('✗ MongoDB connection error:', error.message);
