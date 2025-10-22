@@ -3,6 +3,7 @@
  * 
  * Root layout for /dashboard routes.
  * Wraps all admin pages with AdminLayout component.
+ * This is a completely separate layout from the public site.
  */
 
 import { auth } from '@/lib/auth';
@@ -33,8 +34,11 @@ export default async function DashboardLayout({ children }) {
   };
 
   return (
-    <AdminLayout user={user}>
-      {children}
-    </AdminLayout>
+    <>
+      {/* Standalone admin layout - no public site header/footer */}
+      <AdminLayout user={user}>
+        {children}
+      </AdminLayout>
+    </>
   );
 }

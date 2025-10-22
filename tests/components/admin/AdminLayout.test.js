@@ -29,7 +29,7 @@ describe('AdminLayout Component', () => {
       </AdminLayout>
     );
     
-    // Check for sidebar presence (will be added when AdminSidebar is implemented)
+    // Check for sidebar presence
     const sidebar = screen.queryByRole('navigation', { name: /admin sidebar/i });
     expect(sidebar).toBeInTheDocument();
   });
@@ -41,7 +41,7 @@ describe('AdminLayout Component', () => {
       </AdminLayout>
     );
     
-    // Check for header presence (will be added when AdminHeader is implemented)
+    // Check for header presence
     const header = screen.queryByRole('banner');
     expect(header).toBeInTheDocument();
   });
@@ -68,5 +68,16 @@ describe('AdminLayout Component', () => {
     // Check for layout classes (Tailwind)
     const layoutWrapper = container.firstChild;
     expect(layoutWrapper).toHaveClass('flex');
+  });
+  
+  it('should be standalone without public site elements', () => {
+    render(
+      <AdminLayout>
+        <div>Content</div>
+      </AdminLayout>
+    );
+    
+    // Should not have public site navigation
+    expect(screen.queryByText(/home|features|faq/i)).not.toBeInTheDocument();
   });
 });

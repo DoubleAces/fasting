@@ -42,8 +42,8 @@ export default function AdminSidebar() {
     >
       {/* Admin Branding */}
       <div className="p-6 border-b border-gray-800">
-        <h1 className="text-2xl font-bold text-blue-400">Admin Area</h1>
-        <p className="text-sm text-gray-400 mt-1">Dashboard Management</p>
+        <h1 className="text-2xl font-bold text-blue-400">Fasting Tracker</h1>
+        <p className="text-sm text-gray-400 mt-1">Admin Panel</p>
       </div>
 
       {/* Navigation Links */}
