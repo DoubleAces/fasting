@@ -20,7 +20,7 @@ export default function AdminNotFound() {
 
       {/* Description */}
       <p className="text-gray-600 text-center max-w-md mb-8">
-        The admin page you're looking for doesn't exist or hasn't been created yet.
+        The admin page you&apos;re looking for doesn&apos;t exist or hasn&apos;t been created yet.
       </p>
 
       {/* Actions */}

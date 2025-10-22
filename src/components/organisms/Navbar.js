@@ -102,6 +102,17 @@ export default function Navbar() {
                   </Link>
                 ))}
 
+                {session?.user?.isAdmin && (
+                  <Link
+                    href="/dashboard"
+                    className="px-4 py-2 rounded-xl text-sm font-medium bg-purple-50 text-purple-700 hover:bg-purple-100 transition-all duration-200 flex items-center gap-2"
+                    title="Admin Dashboard"
+                  >
+                    <span className="text-xs font-bold px-1.5 py-0.5 bg-purple-600 text-white rounded">ADMIN</span>
+                    <span>Dashboard</span>
+                  </Link>
+                )}
+
                 {session && (
                   <button
                     onClick={() => signOut({ callbackUrl: '/' })}
@@ -176,6 +187,18 @@ export default function Navbar() {
                     {link.label}
                   </Link>
                 ))}
+
+                {session?.user?.isAdmin && (
+                  <Link
+                    href="/dashboard"
+                    className="block px-4 py-3 rounded-xl text-sm font-medium bg-purple-50 text-purple-700 hover:bg-purple-100 transition-all duration-200"
+                  >
+                    <span className="flex items-center gap-2">
+                      <span className="text-xs font-bold px-1.5 py-0.5 bg-purple-600 text-white rounded">ADMIN</span>
+                      <span>Dashboard</span>
+                    </span>
+                  </Link>
+                )}
 
                 {session && (
                   <button

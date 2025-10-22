@@ -30,7 +30,7 @@ describe('AdminLayout Component', () => {
     );
     
     // Check for sidebar presence
-    const sidebar = screen.queryByRole('navigation', { name: /admin sidebar/i });
+    const sidebar = screen.queryByRole('navigation', { name: /admin navigation/i });
     expect(sidebar).toBeInTheDocument();
   });
   

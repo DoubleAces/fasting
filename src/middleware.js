@@ -26,7 +26,7 @@
 
 import { NextResponse } from 'next/server';
 import { getToken } from 'next-auth/jwt';
-import { logAdminAccessDenied, logAdminAccessGranted, getClientIP } from '@/lib/utils/adminLogger';
+import { logSecurityEvent, getClientIP } from '@/lib/utils/securityLogger';
 
 /**
  * Define protected routes that require authentication
@@ -104,20 +104,23 @@ export default async function middleware(request) {
   // CASE 1: Admin route protection
   // Check admin privileges before allowing access
   if (isAdminRoute) {
-    // Get client IP for logging
+    // Get client IP and user agent for logging
     const clientIP = getClientIP(request);
+    const userAgent = request.headers.get('user-agent') || 'unknown';
     
     // If not authenticated, redirect to login with callback URL
     if (!isAuthenticated) {
       console.log('🔴 Redirecting to login - admin route without auth');
       
-      // Log denied access attempt
-      logAdminAccessDenied({
+      // Log denied access attempt (async, but don't wait - fire and forget)
+      logSecurityEvent({
         email: 'none',
         ip: clientIP,
         url: pathname,
         reason: 'Not authenticated',
-      });
+        userAgent,
+        request,
+      }).catch(err => console.error('Log error:', err));
       
       const loginUrl = new URL('/login', request.url);
       loginUrl.searchParams.set('callbackUrl', pathname);
@@ -128,14 +131,16 @@ export default async function middleware(request) {
     if (!token.isAdmin) {
       console.log('🔴 Rewriting to 404 - non-admin user attempted admin access');
       
-      // Log denied access attempt
-      logAdminAccessDenied({
+      // Log denied access attempt (async, but don't wait - fire and forget)
+      logSecurityEvent({
         userId: token.sub || token.id,
         email: token.email,
         ip: clientIP,
         url: pathname,
         reason: 'User does not have admin privileges',
-      });
+        userAgent,
+        request,
+      }).catch(err => console.error('Log error:', err));
       
       // Rewrite to 404 page instead of redirecting
       // This makes it look like the page doesn't exist (security through obscurity)
@@ -143,14 +148,12 @@ export default async function middleware(request) {
     }
     
     // Admin user - allow access
-    console.log('✅ Admin access granted');
-    
-    // Log successful admin access
-    logAdminAccessGranted({
+    console.log('✅ Admin access granted', {
       userId: token.sub || token.id,
       email: token.email,
       ip: clientIP,
       url: pathname,
+      timestamp: new Date().toISOString(),
     });
     
     return NextResponse.next();

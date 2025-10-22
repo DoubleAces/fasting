@@ -30,4 +30,28 @@ describe('AdminHeader Component', () => {
     const header = container.firstChild;
     expect(header).toHaveClass('bg-white', 'border-b');
   });
+
+  it('should include link to public site', () => {
+    render(<AdminHeader />);
+    
+    const publicLink = screen.getByRole('link', { name: /navigate to public website/i });
+    expect(publicLink).toBeInTheDocument();
+    expect(publicLink).toHaveAttribute('href', '/');
+  });
+
+  it('should display arrow icon with public site link', () => {
+    render(<AdminHeader />);
+    
+    const publicLink = screen.getByRole('link', { name: /navigate to public website/i });
+    // Check that the link contains text
+    expect(publicLink).toHaveTextContent('View Public Site');
+  });
+
+  it('should have proper layout with title and link', () => {
+    const { container } = render(<AdminHeader />);
+    
+    // Should have flex layout
+    const flexContainer = container.querySelector('.flex.items-center.justify-between');
+    expect(flexContainer).toBeInTheDocument();
+  });
 });

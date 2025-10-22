@@ -2,6 +2,9 @@
  * EmptyDashboard Component
  * 
  * Welcome screen for admin dashboard with "Coming Soon" placeholder cards.
+ * Displays upcoming features to give admins a preview of planned functionality.
+ * 
+ * @returns {JSX.Element} Dashboard welcome screen with feature placeholders
  */
 
 export default function EmptyDashboard() {

@@ -3,9 +3,17 @@
  * 
  * Fixed sidebar navigation for admin area.
  * Displays user info and navigation links.
+ * 
+ * @param {Object} props - Component props
+ * @param {Object} props.user - User object from session
+ * @param {string} props.user.name - User's display name
+ * @param {string} props.user.email - User's email address
+ * @param {string} [props.user.picture] - User's profile picture URL (optional)
+ * @returns {JSX.Element} Sidebar navigation component
  */
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { LayoutDashboard, Users, Settings, FileText } from 'lucide-react';
 
 export default function AdminSidebar({ user }) {
@@ -38,16 +46,18 @@ export default function AdminSidebar({ user }) {
   return (
     <nav
       className="fixed left-0 top-0 h-screen w-64 bg-gray-900 text-white flex flex-col"
-      aria-label="Admin Sidebar"
+      aria-label="Admin navigation"
     >
       {/* User Info */}
-      <div className="p-6 border-b border-gray-800">
+      <div className="p-6 border-b border-gray-800" aria-label="Admin user information">
         <div className="flex items-center gap-3">
           {user?.picture ? (
-            <img
+            <Image
               src={user.picture}
               alt={user.name || 'User'}
-              className="w-10 h-10 rounded-full"
+              width={40}
+              height={40}
+              className="rounded-full"
             />
           ) : (
             <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center">
@@ -69,7 +79,7 @@ export default function AdminSidebar({ user }) {
 
       {/* Navigation Links */}
       <div className="flex-1 overflow-y-auto p-4">
-        <ul className="space-y-2">
+        <ul className="space-y-2" role="list">
           {navItems.map((item) => (
             <li key={item.href}>
               <Link
@@ -80,11 +90,13 @@ export default function AdminSidebar({ user }) {
                     : 'text-gray-300 hover:bg-gray-800 hover:text-white'
                 }`}
                 onClick={(e) => item.comingSoon && e.preventDefault()}
+                aria-label={item.comingSoon ? `${item.name} (coming soon)` : item.name}
+                aria-disabled={item.comingSoon ? 'true' : undefined}
               >
-                <item.icon className="w-5 h-5" />
+                <item.icon className="w-5 h-5" aria-hidden="true" />
                 <span className="font-medium">{item.name}</span>
                 {item.comingSoon && (
-                  <span className="ml-auto text-xs bg-gray-800 px-2 py-1 rounded">
+                  <span className="ml-auto text-xs bg-gray-800 px-2 py-1 rounded" aria-hidden="true">
                     Soon
                   </span>
                 )}
@@ -99,12 +111,14 @@ export default function AdminSidebar({ user }) {
         <Link
           href="/"
           className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors"
+          aria-label="Return to public website"
         >
           <svg
             className="w-4 h-4"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
+            aria-hidden="true"
           >
             <path
               strokeLinecap="round"

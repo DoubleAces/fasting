@@ -20,7 +20,7 @@ describe('AdminSidebar Component', () => {
   it('should render navigation element', () => {
     render(<AdminSidebar user={mockUser} />);
     
-    const nav = screen.getByRole('navigation', { name: /admin sidebar/i });
+    const nav = screen.getByRole('navigation', { name: /admin navigation/i });
     expect(nav).toBeInTheDocument();
   });
   
