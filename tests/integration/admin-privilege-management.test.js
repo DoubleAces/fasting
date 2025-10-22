@@ -1,25 +1,29 @@
 /**
  * Admin Privilege Management Integration Tests
  * 
+ * ⚠️ NOTE: Some tests may fail when run in full suite due to test isolation issues
+ * All tests pass when run individually: npm test -- tests/integration/admin-privilege-management.test.js
+ * See: docs/KNOWN-TEST-ISSUES.md
+ * 
  * Tests for granting and revoking admin privileges via script.
  */
 
-import { connectDB, disconnectDB } from '@/lib/db';
+import { setupTestDatabase, cleanTestDatabase, teardownTestDatabase } from '@/lib/test-utils/db-test-helper';
 import User from '@/lib/models/User';
 import bcrypt from 'bcrypt';
 
 describe('Admin Privilege Management', () => {
   beforeAll(async () => {
-    await connectDB();
+    await setupTestDatabase();
   });
 
   afterAll(async () => {
-    await disconnectDB();
+    await teardownTestDatabase();
   });
 
-  afterEach(async () => {
-    // Clean up test users after each test
-    await User.deleteMany({ email: /test-admin-privilege/i });
+  beforeEach(async () => {
+    // Clean all collections before each test
+    await cleanTestDatabase();
   });
 
   describe('Granting Admin Access', () => {
@@ -33,6 +37,8 @@ describe('Admin Privilege Management', () => {
         isAdmin: false,
         isActive: true,
         emailVerified: true,
+        termsAccepted: true,
+        termsAcceptedAt: new Date(),
       });
 
       expect(user.isAdmin).toBe(false);
@@ -56,6 +62,8 @@ describe('Admin Privilege Management', () => {
         isAdmin: true,
         isActive: true,
         emailVerified: true,
+        termsAccepted: true,
+        termsAcceptedAt: new Date(),
       });
 
       expect(user.isAdmin).toBe(true);
@@ -79,6 +87,8 @@ describe('Admin Privilege Management', () => {
         isAdmin: false,
         isActive: true,
         emailVerified: true,
+        termsAccepted: true,
+        termsAcceptedAt: new Date(),
       });
 
       const originalName = user.name;
@@ -109,6 +119,8 @@ describe('Admin Privilege Management', () => {
         isAdmin: true,
         isActive: true,
         emailVerified: true,
+        termsAccepted: true,
+        termsAcceptedAt: new Date(),
       });
 
       expect(user.isAdmin).toBe(true);
@@ -132,6 +144,8 @@ describe('Admin Privilege Management', () => {
         isAdmin: false,
         isActive: true,
         emailVerified: true,
+        termsAccepted: true,
+        termsAcceptedAt: new Date(),
       });
 
       expect(user.isAdmin).toBe(false);
@@ -155,6 +169,8 @@ describe('Admin Privilege Management', () => {
         isAdmin: true,
         isActive: true,
         emailVerified: true,
+        termsAccepted: true,
+        termsAcceptedAt: new Date(),
       });
 
       const originalName = user.name;
@@ -185,6 +201,8 @@ describe('Admin Privilege Management', () => {
         isAdmin: true,
         isActive: true,
         emailVerified: true,
+        termsAccepted: true,
+        termsAcceptedAt: new Date(),
       });
 
       // Simulate checking admin status (like middleware would)
@@ -209,6 +227,8 @@ describe('Admin Privilege Management', () => {
         isAdmin: false,
         isActive: true,
         emailVerified: true,
+        termsAccepted: true,
+        termsAcceptedAt: new Date(),
       });
 
       // Grant admin
@@ -229,3 +249,6 @@ describe('Admin Privilege Management', () => {
     });
   });
 });
+
+
+

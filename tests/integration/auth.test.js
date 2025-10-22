@@ -1,6 +1,10 @@
 /**
  * Integration Tests: Authentication API
  * 
+ * ⚠️ NOTE: Some tests may fail when run in full suite due to test isolation issues
+ * All tests pass when run individually: npm test -- tests/integration/auth.test.js
+ * See: docs/KNOWN-TEST-ISSUES.md
+ * 
  * Test coverage:
  * - User registration (POST /api/auth/register)
  * - Email/password validation
@@ -10,84 +14,74 @@
  * - Google OAuth - to be added in Phase 6
  * - Password reset - to be added in Phase 8
  * 
- * Uses real MongoDB Atlas connection and tests against running Next.js server
+ * Uses test database (via test utilities) to prevent production data loss
  * 
  * @jest-environment node
  */
 
-import { config } from 'dotenv';
-import { resolve } from 'path';
-config({ path: resolve(process.cwd(), '.env.local') });
+// Mock Next.js server components before imports
+jest.mock('next/server', () => ({
+  NextResponse: {
+    json: (data, init) => ({
+      json: async () => data,
+      status: init?.status || 200,
+      ok: !init?.status || (init.status >= 200 && init.status < 300),
+    }),
+  },
+}));
 
-import mongoose from 'mongoose';
+import { POST as registerPOST } from '@/app/api/auth/register/route';
+import { setupTestDatabase, cleanTestDatabase, teardownTestDatabase } from '@/lib/test-utils/db-test-helper';
 import bcrypt from 'bcrypt';
 import User from '@/lib/models/User';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
-
-// Helper to make API requests
-async function apiRequest(endpoint, method = 'GET', body = null) {
-  const options = {
-    method,
-    headers: {
+// Helper to call API route handlers with unique IP per test to avoid rate limiting
+let testCounter = 0;
+async function callRouteHandler(handler, body = null) {
+  testCounter++;
+  const request = {
+    json: async () => body,
+    headers: new Headers({
+      'x-forwarded-for': `127.0.0.${testCounter}`,
       'Content-Type': 'application/json',
-    },
+    }),
   };
 
-  if (body) {
-    options.body = JSON.stringify(body);
-  }
-
-  const response = await fetch(`${API_URL}${endpoint}`, options);
-  const text = await response.text();
+  const response = await handler(request);
+  const data = await response.json();
   
   return {
     status: response.status,
-    body: text ? JSON.parse(text) : null,
+    body: data,
   };
 }
 
 describe('Registration API Integration Tests', () => {
   beforeAll(async () => {
-    // Connect to MongoDB Atlas for database verification
-    const uri = process.env.MONGODB_URI;
-    
-    if (!uri) {
-      throw new Error('MONGODB_URI not found in environment variables');
-    }
-    
-    if (mongoose.connection.readyState === 0) {
-      await mongoose.connect(uri, {
-        maxPoolSize: 10,
-        serverSelectionTimeoutMS: 5000,
-      });
-      console.log('✓ Test database connected');
-    }
-  }, 30000); // 30 second timeout for Atlas connection
+    // Set up test database connection
+    await setupTestDatabase();
+  }, 30000); // 30 second timeout for connection
 
   afterAll(async () => {
-    // Disconnect from MongoDB
-    if (mongoose.connection.readyState !== 0) {
-      await mongoose.connection.close();
-      console.log('✓ Test database disconnected');
-    }
+    // Clean up and disconnect from test database
+    await teardownTestDatabase();
   });
 
   beforeEach(async () => {
-    // Clear test users before each test
-    // Only delete users created during tests (with test email pattern)
-    await User.deleteMany({ email: /test.*@example\.com/ });
+    // Clean all collections before each test for isolated test runs
+    await cleanTestDatabase();
   });
 
   describe('POST /api/auth/register - Valid Registration', () => {
     it('should create new user with valid email and password', async () => {
-      const { status, body } = await apiRequest('/api/auth/register', 'POST', {
+      const { status, body } = await callRouteHandler(registerPOST, {
         email: 'test@example.com',
         password: 'SecurePass123!',
         confirmPassword: 'SecurePass123!',
+        termsAccepted: true,
         name: 'Test User',
       });
-
+      
       expect(status).toBe(201);
       expect(body).toMatchObject({
         success: true,
@@ -104,10 +98,11 @@ describe('Registration API Integration Tests', () => {
     });
 
     it('should create user without optional name field', async () => {
-      const { status, body } = await apiRequest('/api/auth/register', 'POST', {
+      const { status, body } = await callRouteHandler(registerPOST, {
         email: 'test-noname@example.com',
         password: 'SecurePass123!',
         confirmPassword: 'SecurePass123!',
+        termsAccepted: true,
       });
 
       expect(status).toBe(201);
@@ -116,10 +111,11 @@ describe('Registration API Integration Tests', () => {
     });
 
     it('should convert email to lowercase', async () => {
-      const { status, body } = await apiRequest('/api/auth/register', 'POST', {
+      const { status, body } = await callRouteHandler(registerPOST, {
         email: 'Test-CASE@EXAMPLE.COM',
         password: 'SecurePass123!',
         confirmPassword: 'SecurePass123!',
+        termsAccepted: true,
       });
 
       expect(status).toBe(201);
@@ -127,38 +123,45 @@ describe('Registration API Integration Tests', () => {
     });
 
     it('should hash password before storing', async () => {
-      const { status, body } = await apiRequest('/api/auth/register', 'POST', {
+      const { status, body } = await callRouteHandler(registerPOST, {
         email: 'test-secure@example.com',
         password: 'MyPassword123!',
         confirmPassword: 'MyPassword123!',
+        termsAccepted: true,
       });
 
       expect(status).toBe(201);
+      expect(body.success).toBe(true);
 
       const user = await User.findOne({ email: 'test-secure@example.com' }).select('+password');
+      expect(user).toBeTruthy();
       expect(user.password).toBeDefined();
       expect(user.password).not.toBe('MyPassword123!');
       expect(user.password).toMatch(/^\$2[ayb]\$.{56}$/); // Bcrypt hash format
     });
 
     it('should set authMethod to email', async () => {
-      const { status } = await apiRequest('/api/auth/register', 'POST', {
+      const { status, body } = await callRouteHandler(registerPOST, {
         email: 'test-method@example.com',
         password: 'SecurePass123!',
         confirmPassword: 'SecurePass123!',
+        termsAccepted: true,
       });
 
       expect(status).toBe(201);
+      expect(body.success).toBe(true);
 
       const user = await User.findOne({ email: 'test-method@example.com' });
+      expect(user).toBeTruthy();
       expect(user.authMethod).toBe('email');
     });
 
     it('should set isActive to true', async () => {
-      const { status } = await apiRequest('/api/auth/register', 'POST', {
+      const { status } = await callRouteHandler(registerPOST, {
         email: 'test-active@example.com',
         password: 'SecurePass123!',
         confirmPassword: 'SecurePass123!',
+        termsAccepted: true,
       });
 
       expect(status).toBe(201);
@@ -176,12 +179,15 @@ describe('Registration API Integration Tests', () => {
         email: 'test-existing@example.com',
         password: hashedPassword,
         authMethod: 'email',
+        termsAccepted: true,
+        termsAcceptedAt: new Date(),
       });
 
-      const { status, body } = await apiRequest('/api/auth/register', 'POST', {
+      const { status, body } = await callRouteHandler(registerPOST, {
         email: 'test-existing@example.com',
         password: 'NewPassword123!',
         confirmPassword: 'NewPassword123!',
+        termsAccepted: true,
       });
 
       expect(status).toBe(400);
@@ -201,13 +207,16 @@ describe('Registration API Integration Tests', () => {
         email: 'test-duplicate@example.com',
         password: hashedPassword,
         authMethod: 'email',
+        termsAccepted: true,
+        termsAcceptedAt: new Date(),
       });
 
       // Try to register with uppercase email
-      const { status, body } = await apiRequest('/api/auth/register', 'POST', {
+      const { status, body } = await callRouteHandler(registerPOST, {
         email: 'TEST-DUPLICATE@EXAMPLE.COM',
         password: 'SecurePass123!',
         confirmPassword: 'SecurePass123!',
+        termsAccepted: true,
       });
 
       expect(status).toBe(400);
@@ -217,10 +226,11 @@ describe('Registration API Integration Tests', () => {
 
   describe('POST /api/auth/register - Email Validation', () => {
     it('should reject invalid email format', async () => {
-      const { status, body } = await apiRequest('/api/auth/register', 'POST', {
+      const { status, body } = await callRouteHandler(registerPOST, {
         email: 'invalid-email',
         password: 'SecurePass123!',
         confirmPassword: 'SecurePass123!',
+        termsAccepted: true,
       });
 
       expect(status).toBe(400);
@@ -235,9 +245,10 @@ describe('Registration API Integration Tests', () => {
     });
 
     it('should reject missing email', async () => {
-      const { status, body } = await apiRequest('/api/auth/register', 'POST', {
+      const { status, body } = await callRouteHandler(registerPOST, {
         password: 'SecurePass123!',
         confirmPassword: 'SecurePass123!',
+        termsAccepted: true,
       });
 
       expect(status).toBe(400);
@@ -245,10 +256,11 @@ describe('Registration API Integration Tests', () => {
     });
 
     it('should reject empty email', async () => {
-      const { status, body } = await apiRequest('/api/auth/register', 'POST', {
+      const { status, body } = await callRouteHandler(registerPOST, {
         email: '',
         password: 'SecurePass123!',
         confirmPassword: 'SecurePass123!',
+        termsAccepted: true,
       });
 
       expect(status).toBe(400);
@@ -258,10 +270,11 @@ describe('Registration API Integration Tests', () => {
 
   describe('POST /api/auth/register - Password Validation', () => {
     it('should reject weak password (too short)', async () => {
-      const { status, body } = await apiRequest('/api/auth/register', 'POST', {
+      const { status, body } = await callRouteHandler(registerPOST, {
         email: 'test-short@example.com',
         password: 'Short1!',
         confirmPassword: 'Short1!',
+        termsAccepted: true,
       });
 
       expect(status).toBe(400);
@@ -276,10 +289,11 @@ describe('Registration API Integration Tests', () => {
     });
 
     it('should reject password without uppercase letter', async () => {
-      const { status, body } = await apiRequest('/api/auth/register', 'POST', {
+      const { status, body } = await callRouteHandler(registerPOST, {
         email: 'test-lower@example.com',
         password: 'lowercase123!',
         confirmPassword: 'lowercase123!',
+        termsAccepted: true,
       });
 
       expect(status).toBe(400);
@@ -287,10 +301,11 @@ describe('Registration API Integration Tests', () => {
     });
 
     it('should reject password without lowercase letter', async () => {
-      const { status, body } = await apiRequest('/api/auth/register', 'POST', {
+      const { status, body } = await callRouteHandler(registerPOST, {
         email: 'test-upper@example.com',
         password: 'UPPERCASE123!',
         confirmPassword: 'UPPERCASE123!',
+        termsAccepted: true,
       });
 
       expect(status).toBe(400);
@@ -298,10 +313,11 @@ describe('Registration API Integration Tests', () => {
     });
 
     it('should reject password without number', async () => {
-      const { status, body } = await apiRequest('/api/auth/register', 'POST', {
+      const { status, body } = await callRouteHandler(registerPOST, {
         email: 'test-nonumber@example.com',
         password: 'NoNumbers!',
         confirmPassword: 'NoNumbers!',
+        termsAccepted: true,
       });
 
       expect(status).toBe(400);
@@ -309,9 +325,10 @@ describe('Registration API Integration Tests', () => {
     });
 
     it('should reject missing password', async () => {
-      const { status, body } = await apiRequest('/api/auth/register', 'POST', {
+      const { status, body } = await callRouteHandler(registerPOST, {
         email: 'test-nopass@example.com',
         confirmPassword: 'SecurePass123!',
+        termsAccepted: true,
       });
 
       expect(status).toBe(400);
@@ -321,10 +338,11 @@ describe('Registration API Integration Tests', () => {
 
   describe('POST /api/auth/register - Password Confirmation', () => {
     it('should reject mismatched passwords', async () => {
-      const { status, body } = await apiRequest('/api/auth/register', 'POST', {
+      const { status, body } = await callRouteHandler(registerPOST, {
         email: 'test-mismatch@example.com',
         password: 'SecurePass123!',
         confirmPassword: 'DifferentPass123!',
+        termsAccepted: true,
       });
 
       expect(status).toBe(400);
@@ -339,7 +357,7 @@ describe('Registration API Integration Tests', () => {
     });
 
     it('should reject missing confirmPassword', async () => {
-      const { status, body } = await apiRequest('/api/auth/register', 'POST', {
+      const { status, body } = await callRouteHandler(registerPOST, {
         email: 'test-noconfirm@example.com',
         password: 'SecurePass123!',
       });
@@ -351,10 +369,11 @@ describe('Registration API Integration Tests', () => {
 
   describe('POST /api/auth/register - Name Validation', () => {
     it('should accept valid name', async () => {
-      const { status, body } = await apiRequest('/api/auth/register', 'POST', {
+      const { status, body } = await callRouteHandler(registerPOST, {
         email: 'test-name@example.com',
         password: 'SecurePass123!',
         confirmPassword: 'SecurePass123!',
+        termsAccepted: true,
         name: 'John Doe',
       });
 
@@ -363,10 +382,11 @@ describe('Registration API Integration Tests', () => {
     });
 
     it('should reject name exceeding max length (100 chars)', async () => {
-      const { status, body } = await apiRequest('/api/auth/register', 'POST', {
+      const { status, body } = await callRouteHandler(registerPOST, {
         email: 'test-longname@example.com',
         password: 'SecurePass123!',
         confirmPassword: 'SecurePass123!',
+        termsAccepted: true,
         name: 'A'.repeat(101),
       });
 
@@ -377,10 +397,11 @@ describe('Registration API Integration Tests', () => {
 
   describe('POST /api/auth/register - Multiple Validation Errors', () => {
     it('should return all validation errors', async () => {
-      const { status, body } = await apiRequest('/api/auth/register', 'POST', {
+      const { status, body } = await callRouteHandler(registerPOST, {
         email: 'invalid-email',
         password: 'weak',
         confirmPassword: 'different',
+        termsAccepted: true,
       });
 
       expect(status).toBe(400);
@@ -395,10 +416,11 @@ describe('Registration API Integration Tests', () => {
       // We can't easily simulate database disconnection in integration tests
       // Skip this test or mark it as pending
       // For now, we'll just verify the endpoint is accessible
-      const { status } = await apiRequest('/api/auth/register', 'POST', {
+      const { status } = await callRouteHandler(registerPOST, {
         email: 'test-error@example.com',
         password: 'SecurePass123!',
         confirmPassword: 'SecurePass123!',
+        termsAccepted: true,
       });
 
       // Should succeed with valid data
@@ -416,25 +438,16 @@ describe('Session Management Integration Tests', () => {
   const testPassword = 'SecurePass123!';
 
   beforeAll(async () => {
-    // Ensure MongoDB connection (reuse existing if available)
-    if (mongoose.connection.readyState === 0) {
-      await mongoose.connect(process.env.MONGODB_URI, {
-        maxPoolSize: 10,
-        serverSelectionTimeoutMS: 5000,
-      });
-    }
-  });
+    await setupTestDatabase();
+  }, 30000);
 
   afterAll(async () => {
-    // Close MongoDB connection
-    if (mongoose.connection.readyState !== 0) {
-      await mongoose.connection.close();
-    }
+    await teardownTestDatabase();
   });
 
   beforeEach(async () => {
     // Create a test user for login tests
-    await User.deleteMany({ email: /test-session.*@example\.com/ });
+    await cleanTestDatabase();
     
     const hashedPassword = await bcrypt.hash(testPassword, 10);
     testUser = await User.create({
@@ -443,11 +456,6 @@ describe('Session Management Integration Tests', () => {
       name: 'Session Test User',
       authMethod: 'email',
     });
-  });
-
-  afterEach(async () => {
-    // Clean up test users
-    await User.deleteMany({ email: /test-session.*@example\.com/ });
   });
 
   describe('Login - Session Creation', () => {
@@ -569,30 +577,16 @@ describe('Session Management Integration Tests', () => {
 
 describe('Google OAuth Integration Tests', () => {
   beforeAll(async () => {
-    // Ensure MongoDB connection
-    if (mongoose.connection.readyState === 0) {
-      await mongoose.connect(process.env.MONGODB_URI, {
-        maxPoolSize: 10,
-        serverSelectionTimeoutMS: 5000,
-      });
-    }
-  });
+    await setupTestDatabase();
+  }, 30000);
 
   afterAll(async () => {
-    // Close MongoDB connection
-    if (mongoose.connection.readyState !== 0) {
-      await mongoose.connection.close();
-    }
+    await teardownTestDatabase();
   });
 
   beforeEach(async () => {
     // Clean up OAuth test users
-    await User.deleteMany({ email: /test-oauth.*@example\.com/ });
-  });
-
-  afterEach(async () => {
-    // Clean up after each test
-    await User.deleteMany({ email: /test-oauth.*@example\.com/ });
+    await cleanTestDatabase();
   });
 
   describe('OAuth Account Creation', () => {
@@ -814,3 +808,6 @@ describe('Google OAuth Integration Tests', () => {
     });
   });
 });
+
+
+

@@ -5,8 +5,8 @@
  * T029: Non-admin dashboard access is logged
  */
 
-import { describe, it, expect, jest, beforeAll, afterAll } from '@jest/globals';
-import { connectDB, disconnectDB } from '@/lib/db';
+import { describe, it, expect, jest, beforeAll, afterAll, beforeEach } from '@jest/globals';
+import { setupTestDatabase, cleanTestDatabase, teardownTestDatabase } from '@/lib/test-utils/db-test-helper';
 import User from '@/lib/models/User';
 import mongoose from 'mongoose';
 
@@ -15,7 +15,18 @@ describe('Admin Access Logging Integration', () => {
   let consoleSpy;
 
   beforeAll(async () => {
-    await connectDB();
+    await setupTestDatabase();
+  });
+
+  afterAll(async () => {
+    await teardownTestDatabase();
+  });
+
+  beforeEach(async () => {
+    consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
+    
+    // Clean all collections and recreate test user
+    await cleanTestDatabase();
     
     // Create a test non-admin user
     // Use a valid bcrypt hash (for password "testpassword123")
@@ -25,18 +36,6 @@ describe('Admin Access Logging Integration', () => {
       password: '$2b$10$rBV2KvGzR5t6Z8Z8Z8Z8ZOqXqXqXqXqXqXqXqXqXqXqXqXqXqXqXq',
       isAdmin: false,
     });
-  });
-
-  afterAll(async () => {
-    // Clean up test user
-    if (testUser) {
-      await User.findByIdAndDelete(testUser._id);
-    }
-    await disconnectDB();
-  });
-
-  beforeEach(() => {
-    consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
   });
 
   afterEach(() => {

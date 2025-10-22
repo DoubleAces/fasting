@@ -12,7 +12,7 @@
  * uses these same functions in src/lib/auth.js.
  */
 
-import { connectDB } from '@/lib/db';
+import { setupTestDatabase, cleanTestDatabase, teardownTestDatabase } from '@/lib/test-utils/db-test-helper';
 import User from '@/lib/models/User';
 import { loginSchema } from '@/lib/validation/authSchema';
 import mongoose from 'mongoose';
@@ -29,13 +29,16 @@ beforeAll(async () => {
     NEXTAUTH_URL: 'http://localhost:3000',
   };
 
-  // Only connect to MongoDB for database-dependent tests
-  // await connectDB();
+  await setupTestDatabase();
 }, 10000);
 
 afterAll(async () => {
   process.env = originalEnv;
-  // await mongoose.connection.close();
+  await teardownTestDatabase();
+});
+
+beforeEach(async () => {
+  await cleanTestDatabase();
 });
 
 afterEach(async () => {
