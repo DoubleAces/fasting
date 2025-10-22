@@ -11,11 +11,11 @@
 import AdminSidebar from './AdminSidebar';
 import AdminHeader from './AdminHeader';
 
-export default function AdminLayout({ children }) {
+export default function AdminLayout({ children, user }) {
   return (
     <div className="flex min-h-screen bg-gray-50">
       {/* Sidebar (fixed) */}
-      <AdminSidebar />
+      <AdminSidebar user={user} />
 
       {/* Main Content Area */}
       <div className="flex-1 ml-64">

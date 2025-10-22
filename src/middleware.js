@@ -114,7 +114,10 @@ export default async function middleware(request) {
     
     // Admin user - allow access
     console.log('✅ Admin access granted');
-    return NextResponse.next();
+    const response = NextResponse.next();
+    // Pass pathname to layout via header
+    response.headers.set('x-pathname', pathname);
+    return response;
   }
 
   // CASE 2: Protected route without authentication

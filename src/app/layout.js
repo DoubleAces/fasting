@@ -1,6 +1,7 @@
 import Navbar from "@/components/organisms/Navbar";
 import Footer from "@/components/organisms/Footer";
 import SessionProvider from "@/components/providers/SessionProvider";
+import { headers } from "next/headers";
 import "./globals.css";
 
 export const metadata = {
@@ -15,16 +16,21 @@ export const metadata = {
   },
 };
 
-export default function RootLayout({ children }) {
+export default async function RootLayout({ children }) {
+  // Get the current pathname to determine if we're in admin area
+  const headersList = await headers();
+  const pathname = headersList.get("x-pathname") || "";
+  const isAdminRoute = pathname.startsWith("/dashboard");
+
   return (
     <html lang="en">
       <body>
         <SessionProvider>
-          <Navbar />
-          <main style={{ minHeight: "calc(100vh - 200px)" }}>
+          {!isAdminRoute && <Navbar />}
+          <main style={{ minHeight: isAdminRoute ? "100vh" : "calc(100vh - 200px)" }}>
             {children}
           </main>
-          <Footer />
+          {!isAdminRoute && <Footer />}
         </SessionProvider>
       </body>
     </html>

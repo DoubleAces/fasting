@@ -2,13 +2,13 @@
  * AdminSidebar Component
  * 
  * Fixed sidebar navigation for admin area.
- * Displays admin branding and navigation links.
+ * Displays user info and navigation links.
  */
 
 import Link from 'next/link';
 import { LayoutDashboard, Users, Settings, FileText } from 'lucide-react';
 
-export default function AdminSidebar() {
+export default function AdminSidebar({ user }) {
   const navItems = [
     {
       name: 'Dashboard',
@@ -40,10 +40,31 @@ export default function AdminSidebar() {
       className="fixed left-0 top-0 h-screen w-64 bg-gray-900 text-white flex flex-col"
       aria-label="Admin Sidebar"
     >
-      {/* Admin Branding */}
+      {/* User Info */}
       <div className="p-6 border-b border-gray-800">
-        <h1 className="text-2xl font-bold text-blue-400">Fasting Tracker</h1>
-        <p className="text-sm text-gray-400 mt-1">Admin Panel</p>
+        <div className="flex items-center gap-3">
+          {user?.picture ? (
+            <img
+              src={user.picture}
+              alt={user.name || 'User'}
+              className="w-10 h-10 rounded-full"
+            />
+          ) : (
+            <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center">
+              <span className="text-white font-semibold">
+                {user?.name?.charAt(0)?.toUpperCase() || 'A'}
+              </span>
+            </div>
+          )}
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-white truncate">
+              {user?.name || 'Admin User'}
+            </p>
+            <p className="text-xs text-gray-400 truncate">
+              {user?.email || 'admin@example.com'}
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* Navigation Links */}
