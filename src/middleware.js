@@ -26,6 +26,7 @@
 
 import { NextResponse } from 'next/server';
 import { getToken } from 'next-auth/jwt';
+import { logAdminAccessDenied, logAdminAccessGranted, getClientIP } from '@/lib/utils/adminLogger';
 
 /**
  * Define protected routes that require authentication
@@ -103,9 +104,21 @@ export default async function middleware(request) {
   // CASE 1: Admin route protection
   // Check admin privileges before allowing access
   if (isAdminRoute) {
+    // Get client IP for logging
+    const clientIP = getClientIP(request);
+    
     // If not authenticated, redirect to login with callback URL
     if (!isAuthenticated) {
       console.log('🔴 Redirecting to login - admin route without auth');
+      
+      // Log denied access attempt
+      logAdminAccessDenied({
+        email: 'none',
+        ip: clientIP,
+        url: pathname,
+        reason: 'Not authenticated',
+      });
+      
       const loginUrl = new URL('/login', request.url);
       loginUrl.searchParams.set('callbackUrl', pathname);
       return NextResponse.redirect(loginUrl);
@@ -114,6 +127,16 @@ export default async function middleware(request) {
     // If authenticated but not admin, show 404 (security through obscurity)
     if (!token.isAdmin) {
       console.log('🔴 Rewriting to 404 - non-admin user attempted admin access');
+      
+      // Log denied access attempt
+      logAdminAccessDenied({
+        userId: token.sub || token.id,
+        email: token.email,
+        ip: clientIP,
+        url: pathname,
+        reason: 'User does not have admin privileges',
+      });
+      
       // Rewrite to 404 page instead of redirecting
       // This makes it look like the page doesn't exist (security through obscurity)
       return NextResponse.rewrite(new URL('/404', request.url));
@@ -121,6 +144,15 @@ export default async function middleware(request) {
     
     // Admin user - allow access
     console.log('✅ Admin access granted');
+    
+    // Log successful admin access
+    logAdminAccessGranted({
+      userId: token.sub || token.id,
+      email: token.email,
+      ip: clientIP,
+      url: pathname,
+    });
+    
     return NextResponse.next();
   }
 
