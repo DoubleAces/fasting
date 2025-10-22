@@ -1,0 +1,664 @@
+openapi: 3.0.3
+info:
+  title: Admin User Management API
+  description: |
+    API endpoints for administrators to view, filter, sort, and manage users.
+    Includes pagination, admin privilege toggling, and cascade user deletion.
+  version: 1.0.0
+  contact:
+    name: Fasting Tracker System
+servers:
+  - url: http://localhost:3000/api
+    description: Local development
+  - url: https://fasting-tracker.vercel.app/api
+    description: Production
+
+security:
+  - sessionAuth: []
+
+tags:
+  - name: Users
+    description: User management operations (admin only)
+
+paths:
+  /admin/users:
+    get:
+      tags:
+        - Users
+      summary: Get paginated user list
+      description: |
+        Retrieves a paginated, filtered, and sorted list of all users.
+        Requires admin privileges. Server-side processing for performance with large datasets.
+      operationId: getUsers
+      security:
+        - sessionAuth: []
+      parameters:
+        - name: page
+          in: query
+          description: Page number (1-indexed)
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+            example: 1
+        - name: pageSize
+          in: query
+          description: Number of users per page
+          required: false
+          schema:
+            type: integer
+            enum: [10, 25, 50, 100]
+            default: 25
+            example: 25
+        - name: name
+          in: query
+          description: Filter by name (case-insensitive partial match)
+          required: false
+          schema:
+            type: string
+            maxLength: 100
+            example: "John"
+        - name: email
+          in: query
+          description: Filter by email (case-insensitive partial match)
+          required: false
+          schema:
+            type: string
+            maxLength: 255
+            example: "john@example.com"
+        - name: adminStatus
+          in: query
+          description: Filter by admin status
+          required: false
+          schema:
+            type: string
+            enum: ["all", "admin", "non-admin"]
+            default: "all"
+            example: "admin"
+        - name: sortField
+          in: query
+          description: Field to sort by
+          required: false
+          schema:
+            type: string
+            enum: ["name", "email", "registrationDate", "lastLogin", "isAdmin"]
+            default: "registrationDate"
+            example: "registrationDate"
+        - name: sortOrder
+          in: query
+          description: Sort order
+          required: false
+          schema:
+            type: string
+            enum: ["asc", "desc"]
+            default: "desc"
+            example: "desc"
+      responses:
+        "200":
+          description: Successfully retrieved user list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaginatedUsersResponse"
+              example:
+                users:
+                  - id: "6543210abcdef1234567890a"
+                    name: "John Doe"
+                    email: "john@example.com"
+                    isAdmin: true
+                    registrationDate: "2025-01-15T10:30:00Z"
+                    lastLogin: "2025-10-22T08:15:00Z"
+                    isSelf: false
+                  - id: "6543210abcdef1234567890b"
+                    name: "Jane Smith"
+                    email: "jane@example.com"
+                    isAdmin: false
+                    registrationDate: "2025-02-20T14:45:00Z"
+                    lastLogin: null
+                    isSelf: true
+                pagination:
+                  currentPage: 1
+                  pageSize: 25
+                  totalUsers: 147
+                  totalPages: 6
+                  hasNextPage: true
+                  hasPreviousPage: false
+                filters:
+                  name: ""
+                  email: ""
+                  adminStatus: "all"
+                sort:
+                  field: "registrationDate"
+                  order: "desc"
+        "401":
+          description: Unauthorized - not logged in
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                success: false
+                error: "Authentication required"
+                code: "UNAUTHORIZED"
+                status: 401
+        "403":
+          description: Forbidden - not an admin
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                success: false
+                error: "Admin privileges required"
+                code: "FORBIDDEN"
+                status: 403
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                success: false
+                error: "Failed to retrieve users"
+                code: "INTERNAL_ERROR"
+                status: 500
+
+  /admin/users/toggle-admin:
+    post:
+      tags:
+        - Users
+      summary: Toggle user admin status
+      description: |
+        Grants or revokes admin privileges for a user.
+        Cannot modify own admin status (returns 403).
+        Creates audit log entry for the action.
+      operationId: toggleAdmin
+      security:
+        - sessionAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ToggleAdminRequest"
+            example:
+              userId: "6543210abcdef1234567890a"
+      responses:
+        "200":
+          description: Admin status successfully toggled
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ToggleAdminResponse"
+              example:
+                success: true
+                userId: "6543210abcdef1234567890a"
+                newAdminStatus: true
+                message: "Admin status updated successfully"
+                auditLogId: "6543210abcdef1234567890c"
+        "400":
+          description: Bad request - invalid user ID format
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                success: false
+                error: "Invalid user ID format"
+                code: "INVALID_INPUT"
+                status: 400
+        "401":
+          description: Unauthorized - not logged in
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                success: false
+                error: "Authentication required"
+                code: "UNAUTHORIZED"
+                status: 401
+        "403":
+          description: Forbidden - trying to modify own status or not an admin
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                selfModification:
+                  value:
+                    success: false
+                    error: "Cannot modify own admin status"
+                    code: "SELF_MODIFICATION"
+                    status: 403
+                notAdmin:
+                  value:
+                    success: false
+                    error: "Admin privileges required"
+                    code: "FORBIDDEN"
+                    status: 403
+        "404":
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                success: false
+                error: "User not found"
+                code: "NOT_FOUND"
+                status: 404
+        "500":
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                success: false
+                error: "Failed to update admin status"
+                code: "INTERNAL_ERROR"
+                status: 500
+
+  /admin/users/delete:
+    post:
+      tags:
+        - Users
+      summary: Delete user with cascade
+      description: |
+        Permanently deletes a user and all related data (fasting entries, settings, tokens, logs).
+        Uses atomic transaction - all deletions succeed or all rollback.
+        Cannot delete own account (returns 403).
+        Creates audit log entry for the action.
+      operationId: deleteUser
+      security:
+        - sessionAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DeleteUserRequest"
+            example:
+              userId: "6543210abcdef1234567890a"
+      responses:
+        "200":
+          description: User and related data successfully deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeleteUserResponse"
+              example:
+                success: true
+                userId: "6543210abcdef1234567890a"
+                deletedCounts:
+                  fastingEntries: 47
+                  settings: 1
+                  tokens: 2
+                  logs: 15
+                message: "Deleted user and 47 fasting entries, 1 settings record, 2 tokens, 15 security logs"
+                auditLogId: "6543210abcdef1234567890d"
+        "400":
+          description: Bad request - invalid user ID format
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                success: false
+                error: "Invalid user ID format"
+                code: "INVALID_INPUT"
+                status: 400
+        "401":
+          description: Unauthorized - not logged in
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                success: false
+                error: "Authentication required"
+                code: "UNAUTHORIZED"
+                status: 401
+        "403":
+          description: Forbidden - trying to delete own account or not an admin
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                selfDeletion:
+                  value:
+                    success: false
+                    error: "Cannot delete own account"
+                    code: "SELF_DELETION"
+                    status: 403
+                notAdmin:
+                  value:
+                    success: false
+                    error: "Admin privileges required"
+                    code: "FORBIDDEN"
+                    status: 403
+        "404":
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                success: false
+                error: "User not found"
+                code: "NOT_FOUND"
+                status: 404
+        "500":
+          description: Internal server error (transaction failure)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeleteUserErrorResponse"
+              example:
+                success: false
+                error: "Transaction failed - database error"
+                code: "TRANSACTION_FAILED"
+                status: 500
+                retryable: true
+
+components:
+  securitySchemes:
+    sessionAuth:
+      type: apiKey
+      in: cookie
+      name: next-auth.session-token
+      description: NextAuth.js session cookie (automatically managed)
+
+  schemas:
+    UserListItem:
+      type: object
+      required:
+        - id
+        - name
+        - email
+        - isAdmin
+        - registrationDate
+        - isSelf
+      properties:
+        id:
+          type: string
+          description: User ID (MongoDB ObjectId as string)
+          example: "6543210abcdef1234567890a"
+        name:
+          type: string
+          description: User's full name
+          example: "John Doe"
+        email:
+          type: string
+          format: email
+          description: User's email address
+          example: "john@example.com"
+        isAdmin:
+          type: boolean
+          description: Whether user has admin privileges
+          example: true
+        registrationDate:
+          type: string
+          format: date-time
+          description: User registration timestamp (ISO 8601)
+          example: "2025-01-15T10:30:00Z"
+        lastLogin:
+          type: string
+          format: date-time
+          nullable: true
+          description: Last login timestamp (ISO 8601) or null if never logged in
+          example: "2025-10-22T08:15:00Z"
+        isSelf:
+          type: boolean
+          description: Whether this user is the currently authenticated admin
+          example: false
+
+    PaginationMetadata:
+      type: object
+      required:
+        - currentPage
+        - pageSize
+        - totalUsers
+        - totalPages
+        - hasNextPage
+        - hasPreviousPage
+      properties:
+        currentPage:
+          type: integer
+          minimum: 1
+          description: Current page number (1-indexed)
+          example: 1
+        pageSize:
+          type: integer
+          enum: [10, 25, 50, 100]
+          description: Number of users per page
+          example: 25
+        totalUsers:
+          type: integer
+          minimum: 0
+          description: Total number of users matching filters
+          example: 147
+        totalPages:
+          type: integer
+          minimum: 0
+          description: Total number of pages
+          example: 6
+        hasNextPage:
+          type: boolean
+          description: Whether there is a next page
+          example: true
+        hasPreviousPage:
+          type: boolean
+          description: Whether there is a previous page
+          example: false
+
+    FiltersMetadata:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Current name filter value
+          example: ""
+        email:
+          type: string
+          description: Current email filter value
+          example: ""
+        adminStatus:
+          type: string
+          enum: ["all", "admin", "non-admin"]
+          description: Current admin status filter
+          example: "all"
+
+    SortMetadata:
+      type: object
+      required:
+        - field
+        - order
+      properties:
+        field:
+          type: string
+          enum: ["name", "email", "registrationDate", "lastLogin", "isAdmin"]
+          description: Current sort field
+          example: "registrationDate"
+        order:
+          type: string
+          enum: ["asc", "desc"]
+          description: Current sort order
+          example: "desc"
+
+    PaginatedUsersResponse:
+      type: object
+      required:
+        - users
+        - pagination
+        - filters
+        - sort
+      properties:
+        users:
+          type: array
+          items:
+            $ref: "#/components/schemas/UserListItem"
+          description: Array of user data for current page
+        pagination:
+          $ref: "#/components/schemas/PaginationMetadata"
+        filters:
+          $ref: "#/components/schemas/FiltersMetadata"
+        sort:
+          $ref: "#/components/schemas/SortMetadata"
+
+    ToggleAdminRequest:
+      type: object
+      required:
+        - userId
+      properties:
+        userId:
+          type: string
+          description: ID of user to toggle admin status
+          example: "6543210abcdef1234567890a"
+
+    ToggleAdminResponse:
+      type: object
+      required:
+        - success
+        - userId
+        - newAdminStatus
+        - message
+        - auditLogId
+      properties:
+        success:
+          type: boolean
+          description: Operation success indicator
+          example: true
+        userId:
+          type: string
+          description: ID of affected user
+          example: "6543210abcdef1234567890a"
+        newAdminStatus:
+          type: boolean
+          description: New admin status after toggle
+          example: true
+        message:
+          type: string
+          description: Success message
+          example: "Admin status updated successfully"
+        auditLogId:
+          type: string
+          description: ID of created audit log entry
+          example: "6543210abcdef1234567890c"
+
+    DeleteUserRequest:
+      type: object
+      required:
+        - userId
+      properties:
+        userId:
+          type: string
+          description: ID of user to delete
+          example: "6543210abcdef1234567890a"
+
+    DeletedCounts:
+      type: object
+      required:
+        - fastingEntries
+        - settings
+        - tokens
+        - logs
+      properties:
+        fastingEntries:
+          type: integer
+          minimum: 0
+          description: Number of fasting entries deleted
+          example: 47
+        settings:
+          type: integer
+          minimum: 0
+          description: Number of settings records deleted
+          example: 1
+        tokens:
+          type: integer
+          minimum: 0
+          description: Number of password reset tokens deleted
+          example: 2
+        logs:
+          type: integer
+          minimum: 0
+          description: Number of security logs deleted
+          example: 15
+
+    DeleteUserResponse:
+      type: object
+      required:
+        - success
+        - userId
+        - deletedCounts
+        - message
+        - auditLogId
+      properties:
+        success:
+          type: boolean
+          description: Operation success indicator
+          example: true
+        userId:
+          type: string
+          description: ID of deleted user
+          example: "6543210abcdef1234567890a"
+        deletedCounts:
+          $ref: "#/components/schemas/DeletedCounts"
+        message:
+          type: string
+          description: Summary message with deletion counts
+          example: "Deleted user and 47 fasting entries, 1 settings record, 2 tokens, 15 security logs"
+        auditLogId:
+          type: string
+          description: ID of created audit log entry
+          example: "6543210abcdef1234567890d"
+
+    ErrorResponse:
+      type: object
+      required:
+        - success
+        - error
+        - code
+        - status
+      properties:
+        success:
+          type: boolean
+          description: Operation success indicator (always false for errors)
+          example: false
+        error:
+          type: string
+          description: Human-readable error message
+          example: "Cannot modify own admin status"
+        code:
+          type: string
+          description: Machine-readable error code
+          enum:
+            - UNAUTHORIZED
+            - FORBIDDEN
+            - SELF_MODIFICATION
+            - SELF_DELETION
+            - NOT_FOUND
+            - INVALID_INPUT
+            - TRANSACTION_FAILED
+            - INTERNAL_ERROR
+          example: "SELF_MODIFICATION"
+        status:
+          type: integer
+          description: HTTP status code
+          example: 403
+
+    DeleteUserErrorResponse:
+      allOf:
+        - $ref: "#/components/schemas/ErrorResponse"
+        - type: object
+          required:
+            - retryable
+          properties:
+            retryable:
+              type: boolean
+              description: Whether the operation can be retried
+              example: true
