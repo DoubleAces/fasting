@@ -191,6 +191,19 @@ const userSchema = new mongoose.Schema(
       default: true,
     },
 
+    /**
+     * Admin privilege flag
+     * - true: User has admin access (can access /dashboard)
+     * - false: Regular user (no admin access)
+     * - Indexed for fast privilege checking in middleware
+     * - Default: false (new users are not admins)
+     */
+    isAdmin: {
+      type: Boolean,
+      default: false,
+      index: true,
+    },
+
     // ============================================================================
     // LEGAL & COMPLIANCE
     // ============================================================================
