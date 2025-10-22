@@ -264,6 +264,12 @@ userSchema.index({ email: 1, isActive: 1 });
 // Index for filtering by authentication method
 userSchema.index({ authMethod: 1 });
 
+// Admin user management indexes (Feature 006)
+userSchema.index({ name: 1 }); // For name filtering and sorting
+userSchema.index({ registrationDate: 1 }); // For registration date sorting
+userSchema.index({ lastLogin: 1 }); // For last login sorting
+userSchema.index({ isAdmin: 1, registrationDate: -1 }); // Compound index for admin filtering + sorting
+
 // ============================================================================
 // INSTANCE METHODS
 // ============================================================================

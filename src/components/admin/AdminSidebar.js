@@ -27,7 +27,6 @@ export default function AdminSidebar({ user }) {
       name: 'Users',
       href: '/dashboard/users',
       icon: Users,
-      comingSoon: true,
     },
     {
       name: 'Content',

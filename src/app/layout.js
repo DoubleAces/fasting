@@ -2,6 +2,7 @@ import Navbar from "@/components/organisms/Navbar";
 import Footer from "@/components/organisms/Footer";
 import SessionProvider from "@/components/providers/SessionProvider";
 import ConditionalLayout from "@/components/ConditionalLayout";
+import { ToastProvider } from "@/contexts/ToastContext";
 import "./globals.css";
 
 export const metadata = {
@@ -21,9 +22,11 @@ export default function RootLayout({ children }) {
     <html lang="en">
       <body>
         <SessionProvider>
-          <ConditionalLayout>
-            {children}
-          </ConditionalLayout>
+          <ToastProvider>
+            <ConditionalLayout>
+              {children}
+            </ConditionalLayout>
+          </ToastProvider>
         </SessionProvider>
       </body>
     </html>

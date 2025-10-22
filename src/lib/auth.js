@@ -21,6 +21,7 @@ import CredentialsProvider from 'next-auth/providers/credentials';
 import GoogleProvider from 'next-auth/providers/google';
 import { connectDB } from '@/lib/db';
 import User from '@/lib/models/User';
+import InvalidatedToken from '@/lib/models/InvalidatedToken';
 import { loginSchema } from '@/lib/validation/authSchema';
 import { sendWelcomeEmail } from '@/lib/utils/email';
 
@@ -183,14 +184,18 @@ export const authConfig = {
      * Called whenever a JWT is created or updated.
      * Adds user data to the token.
      * 
+     * IMPORTANT: Checks for invalidated tokens to force logout when admin
+     * privileges are revoked. Returns null to force logout.
+     * 
      * @param {Object} params
      * @param {Object} params.token - JWT token
      * @param {Object} params.user - User object (only available on sign in)
      * @param {Object} params.account - Account object (only available on sign in)
      * @param {Object} params.profile - OAuth profile (only for OAuth providers)
-     * @returns {Object} Updated token
+     * @param {Object} params.trigger - What triggered this callback ('signIn', 'signUp', 'update')
+     * @returns {Object|null} Updated token, or null to force logout
      */
-    async jwt({ token, user, account, profile }) {
+    async jwt({ token, user, account, profile, trigger }) {
       // On initial sign in, user object is available
       if (user) {
         token.id = user.id;
@@ -199,6 +204,40 @@ export const authConfig = {
         token.picture = user.picture;
         token.authMethod = user.authMethod || 'email';
         token.isAdmin = user.isAdmin || false;
+        token.iat = Math.floor(Date.now() / 1000); // Issue time in seconds
+      }
+
+      // On every token use, check if it has been invalidated (force logout)
+      if (!user && token.id && token.iat) {
+        try {
+          await connectDB();
+          
+          // Check if this token was invalidated (e.g., admin privileges revoked)
+          const isInvalidated = await InvalidatedToken.isTokenInvalidated(
+            token.id,
+            new Date(token.iat * 1000) // Convert seconds to milliseconds
+          );
+          
+          if (isInvalidated) {
+            // Return null to force logout
+            return null;
+          }
+          
+          // Also update user data from database
+          const currentUser = await User.findById(token.id);
+          
+          if (currentUser) {
+            // Update isAdmin status and other fields
+            token.isAdmin = currentUser.isAdmin || false;
+            token.name = currentUser.name;
+            token.picture = currentUser.picture;
+          }
+        } catch (error) {
+          // Silently fail - keep existing token data on error
+          if (process.env.NODE_ENV === 'development') {
+            console.error('Error checking token validity:', error.message);
+          }
+        }
       }
 
       // Handle Google OAuth sign in
