@@ -49,51 +49,45 @@ export const GET = withErrorHandler(async (request) => {
     .limit(1)
     .lean();
 
-  if (!previousEntry) {
-    return okResponse({
-      hasPreviousEntry: false,
-      hasGap: false,
-      isExtendedFast: false,
-      previousEntry: null,
-      daysSinceLast: null,
-      fastingDuration: null,
-    });
-  }
-
-  // Calculate days between entries
-  const previousDate = new Date(previousEntry.date);
-  const daysDifference = Math.floor((currentDate - previousDate) / (1000 * 60 * 60 * 24));
-
-  // Check if there's a gap (more than 1 day difference)
-  const hasGap = daysDifference > 1;
-
-  // Calculate fasting duration FROM previous entry if we have both meal times
+  // Calculate days between entries and fasting duration FROM previous entry
+  let daysDifference = null;
+  let hasGap = false;
   let fastingDuration = null;
   let isExtendedFast = false;
   let extendedFastDirection = null; // 'from-previous' or 'to-next'
   
-  if (previousEntry.lastMealTime && firstMealTime) {
-    try {
-      const result = calculateFastingDuration(
-        previousEntry.lastMealTime,
-        firstMealTime,
-        previousEntry.date,
-        currentDate
-      );
-      fastingDuration = {
-        hours: result.hours,
-        minutes: result.minutes,
-        totalMinutes: result.totalMinutes,
-        formatted: result.formattedDuration
-      };
-      
-      // Check if fasting is more than 24 hours (1440 minutes)
-      if (result.totalMinutes > 1440) {
-        isExtendedFast = true;
-        extendedFastDirection = 'from-previous';
+  if (previousEntry) {
+    // Calculate days between entries
+    const previousDate = new Date(previousEntry.date);
+    daysDifference = Math.floor((currentDate - previousDate) / (1000 * 60 * 60 * 24));
+
+    // Check if there's a gap (more than 1 day difference)
+    hasGap = daysDifference > 1;
+
+    // Calculate fasting duration FROM previous entry if we have both meal times
+    if (previousEntry.lastMealTime && firstMealTime) {
+      try {
+        const result = calculateFastingDuration(
+          previousEntry.lastMealTime,
+          firstMealTime,
+          previousEntry.date,
+          currentDate
+        );
+        fastingDuration = {
+          hours: result.hours,
+          minutes: result.minutes,
+          totalMinutes: result.totalMinutes,
+          formatted: result.formattedDuration
+        };
+        
+        // Check if fasting is more than 24 hours (1440 minutes)
+        if (result.totalMinutes > 1440) {
+          isExtendedFast = true;
+          extendedFastDirection = 'from-previous';
+        }
+      } catch (error) {
+        console.warn('Could not calculate fasting duration from previous:', error.message);
       }
-    } catch (error) {
-      console.warn('Could not calculate fasting duration from previous:', error.message);
     }
   }
 
@@ -136,15 +130,15 @@ export const GET = withErrorHandler(async (request) => {
   }
 
   return okResponse({
-    hasPreviousEntry: true,
+    hasPreviousEntry: !!previousEntry,
     hasGap,
     isExtendedFast,
     extendedFastDirection,
-    previousEntry: {
+    previousEntry: previousEntry ? {
       _id: previousEntry._id,
       date: previousEntry.date,
       lastMealTime: previousEntry.lastMealTime,
-    },
+    } : null,
     nextEntry: nextEntry ? {
       _id: nextEntry._id,
       date: nextEntry.date,
