@@ -153,37 +153,62 @@ export const PUT = withErrorHandler(async (request, { params }) => {
     { new: true, runValidators: true }
   );
 
-  // Recalculate next day's fasting duration if last meal time changed (for this user only)
+  // Recalculate next entry's fasting duration if last meal time changed (for this user only)
   const lastMealChanged = existingEntry.lastMealTime !== value.lastMealTime;
   
   if (dateChanged || lastMealChanged) {
     try {
-      // Get the date for the day after this entry
       const currentDate = new Date(value.date);
-      const nextDate = new Date(currentDate);
-      nextDate.setDate(nextDate.getDate() + 1);
-      const nextDateFormatted = formatDate(nextDate);
       
+      // Find the next chronological entry (not just next day)
       const nextEntry = await Entry.findOne({
         userId: session.user.id,
-        date: new Date(nextDateFormatted)
-      });
+        date: { $gt: currentDate }
+      })
+      .sort({ date: 1 })
+      .limit(1);
 
-      if (nextEntry && value.lastMealTime && nextEntry.firstMealTime) {
-        const result = calculateFastingDuration(
-          value.lastMealTime,
-          nextEntry.firstMealTime,
-          value.date,
-          nextEntry.date
-        );
+      if (nextEntry && nextEntry.firstMealTime) {
+        let newFastingDuration = null;
         
+        // If current entry still has lastMealTime, calculate from current entry
+        if (value.lastMealTime) {
+          const result = calculateFastingDuration(
+            value.lastMealTime,
+            nextEntry.firstMealTime,
+            value.date,
+            nextEntry.date
+          );
+          newFastingDuration = result.totalMinutes;
+        } else {
+          // Current entry has no lastMealTime, find the previous entry with lastMealTime
+          const previousEntryWithMeal = await Entry.findOne({
+            userId: session.user.id,
+            date: { $lt: currentDate },
+            lastMealTime: { $exists: true, $ne: null }
+          })
+          .sort({ date: -1 })
+          .limit(1);
+
+          if (previousEntryWithMeal && previousEntryWithMeal.lastMealTime) {
+            const result = calculateFastingDuration(
+              previousEntryWithMeal.lastMealTime,
+              nextEntry.firstMealTime,
+              previousEntryWithMeal.date,
+              nextEntry.date
+            );
+            newFastingDuration = result.totalMinutes;
+          }
+        }
+        
+        // Update next entry's fasting duration
         await Entry.findByIdAndUpdate(
           nextEntry._id,
-          { fastingDuration: result.totalMinutes }
+          { fastingDuration: newFastingDuration }
         );
       }
     } catch (calcError) {
-      console.warn('Could not update next day fasting duration:', calcError.message);
+      console.warn('Could not update next entry fasting duration:', calcError.message);
     }
   }
 
