@@ -16,6 +16,8 @@ Auto-generated from all feature plans. Last updated: 2025-10-17
 - MongoDB with replica set (required for atomic transactions) (006-admin-user-management)
 - JavaScript (ES6+) with Node.js (compatible with Next.js 15.5.6) + Jest 30.2.0, Mongoose 8.19.1, MongoDB 5.5, Dotenv 17.2.3, mongodb-memory-server 10.2.3 (008-test-database-separation)
 - MongoDB (production, development, and test databases) (008-test-database-separation)
+- JavaScript (ES6+) / Node.js with Next.js 14+ (App Router) + Next.js, Mongoose ODM, MongoDB Atlas, NextAuth.js (009-backfill-fasting-calculation)
+- MongoDB Atlas (cloud database) - existing `entries` collection with userId and date compound index (009-backfill-fasting-calculation)
 
 ## Project Structure
 ```
@@ -31,9 +33,9 @@ npm test; npm run lint
 JavaScript ES6+ with Node.js 18+ (Next.js 14+): Follow standard conventions
 
 ## Recent Changes
+- 009-backfill-fasting-calculation: Added JavaScript (ES6+) / Node.js with Next.js 14+ (App Router) + Next.js, Mongoose ODM, MongoDB Atlas, NextAuth.js
 - 008-test-database-separation: Added JavaScript (ES6+) with Node.js (compatible with Next.js 15.5.6) + Jest 30.2.0, Mongoose 8.19.1, MongoDB 5.5, Dotenv 17.2.3, mongodb-memory-server 10.2.3
 - 006-admin-user-management: Added JavaScript ES6+ / TypeScript (optional), Node.js 18+ + Next.js 15.5.6 (App Router), React 19.1.0, NextAuth.js v5, Mongoose (MongoDB ODM)
-- 005-admin-area-access: Added JavaScript (ES6+) with Next.js 15.5.6 + React 19.1.0, NextAuth 5.0 (beta), Mongoose 8.19.1, Tailwind CSS 4.1.14
 
 <!-- MANUAL ADDITIONS START -->
 <!-- MANUAL ADDITIONS END -->
