@@ -87,10 +87,10 @@ const EntryForm = ({
     { value: 'Good', label: 'Good' },
   ];
 
-  // Check for extended fast when date changes
+  // Check for extended fast when date or first meal time changes
   React.useEffect(() => {
     const checkForGap = async () => {
-      if (!formData.date) {
+      if (!formData.date || !formData.firstMealTime) {
         setGapInfo(null);
         setShowExtendedFastPrompt(false);
         return;
@@ -103,10 +103,13 @@ const EntryForm = ({
 
       setCheckingGap(true);
       try {
-        const response = await fetch(`/api/entries/check-previous?date=${formData.date}`);
+        const response = await fetch(
+          `/api/entries/check-previous?date=${formData.date}&firstMealTime=${formData.firstMealTime}`
+        );
         const data = await response.json();
 
-        if (data.hasGap && data.daysSinceLast > 1) {
+        // Show prompt only if fasting duration is more than 24 hours
+        if (data.isExtendedFast && data.fastingDuration) {
           setGapInfo(data);
           // Only show prompt if user hasn't already confirmed for this session
           if (!formData.extendedFastConfirmed) {
@@ -115,20 +118,20 @@ const EntryForm = ({
         } else {
           setGapInfo(null);
           setShowExtendedFastPrompt(false);
-          // Clear extended fast confirmation if gap no longer exists
+          // Clear extended fast confirmation if extended fast no longer detected
           if (formData.extendedFastConfirmed) {
             setFormData(prev => ({ ...prev, extendedFastConfirmed: false }));
           }
         }
       } catch (error) {
-        console.error('Error checking for gap:', error);
+        console.error('Error checking for extended fast:', error);
       } finally {
         setCheckingGap(false);
       }
     };
 
     checkForGap();
-  }, [formData.date, isEditMode, entry?.extendedFastConfirmed]);
+  }, [formData.date, formData.firstMealTime, isEditMode, entry?.extendedFastConfirmed]);
 
   // Handle field changes
   const handleChange = (field) => (e) => {
@@ -403,24 +406,36 @@ const EntryForm = ({
       />
 
       {/* Extended Fast Confirmation Prompt */}
-      {showExtendedFastPrompt && gapInfo && (
+      {showExtendedFastPrompt && gapInfo && gapInfo.fastingDuration && (
         <div className="p-4 bg-purple-50 border border-purple-200 rounded-lg">
           <div className="flex items-start gap-3">
             <span className="text-2xl" role="img" aria-label="Question">🤔</span>
             <div className="flex-1">
-              <h4 className="text-sm font-semibold text-purple-900 mb-1">
-                Extended Fast Detected
+              <h4 className="text-sm font-semibold text-purple-900 mb-2">
+                Extended Fast Detected ({gapInfo.fastingDuration.formatted})
               </h4>
-              <p className="text-sm text-purple-800 mb-3">
-                Your last entry was {gapInfo.daysSinceLast} days ago on{' '}
-                {new Date(gapInfo.previousEntry.date).toLocaleDateString('en-GB', {
-                  day: '2-digit',
-                  month: '2-digit',
-                  year: 'numeric',
-                })}.
-                Did you fast continuously since your last meal at{' '}
-                {gapInfo.previousEntry.lastMealTime}?
-              </p>
+              <div className="text-sm text-purple-800 mb-3 space-y-1">
+                <p className="font-medium">
+                  Fasting duration would be: <span className="text-purple-900 font-bold">{gapInfo.fastingDuration.formatted}</span>
+                </p>
+                <p className="text-xs">
+                  From: {new Date(gapInfo.previousEntry.date).toLocaleDateString('en-GB', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric',
+                  })} at {gapInfo.previousEntry.lastMealTime} (last meal)
+                </p>
+                <p className="text-xs">
+                  To: {new Date(formData.date).toLocaleDateString('en-GB', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric',
+                  })} at {formData.firstMealTime} (first meal)
+                </p>
+                <p className="mt-2">
+                  Did you fast continuously for this entire period?
+                </p>
+              </div>
               <div className="flex gap-2">
                 <Button
                   type="button"
@@ -428,7 +443,7 @@ const EntryForm = ({
                   size="sm"
                   onClick={handleExtendedFastConfirm}
                 >
-                  Yes, I fasted
+                  Yes, confirm extended fast
                 </Button>
                 <Button
                   type="button"
@@ -450,7 +465,7 @@ const EntryForm = ({
           <div className="flex items-center gap-2">
             <span className="text-lg" role="img" aria-label="Check">✅</span>
             <p className="text-sm text-green-800">
-              Extended fast confirmed - fasting duration will be calculated from{' '}
+              Extended fast confirmed ({gapInfo.fastingDuration?.formatted || 'calculating...'}) - fasting duration will be calculated from{' '}
               {new Date(gapInfo.previousEntry.date).toLocaleDateString('en-GB', {
                 day: '2-digit',
                 month: '2-digit',
