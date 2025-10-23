@@ -191,16 +191,23 @@ export const POST = withErrorHandler(async (request) => {
     .limit(1);
 
     if (nextEntry && value.lastMealTime && nextEntry.firstMealTime) {
-      const result = calculateFastingDuration(
-        value.lastMealTime,
-        nextEntry.firstMealTime,
-        value.date,
-        nextEntry.date
-      );
+      // If user denied extended fast, set next entry's fasting to null
+      // Otherwise calculate the fasting duration
+      let nextFastingDuration = null;
+      
+      if (!value.extendedFastDenied) {
+        const result = calculateFastingDuration(
+          value.lastMealTime,
+          nextEntry.firstMealTime,
+          value.date,
+          nextEntry.date
+        );
+        nextFastingDuration = result.totalMinutes;
+      }
       
       await Entry.findByIdAndUpdate(
         nextEntry._id,
-        { fastingDuration: result.totalMinutes }
+        { fastingDuration: nextFastingDuration }
       );
     }
   } catch (backfillError) {
