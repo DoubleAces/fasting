@@ -54,6 +54,8 @@ const EntryForm = ({
     wellBeing: entry?.wellBeing || '',
     foodNotes: entry?.foodNotes || '',
     extendedFastConfirmed: entry?.extendedFastConfirmed || false,
+    extendedFastFromPreviousConfirmed: false,
+    extendedFastToNextConfirmed: false,
   });
 
   // Error state
@@ -63,6 +65,7 @@ const EntryForm = ({
   // Extended fast detection state
   const [gapInfo, setGapInfo] = useState(null);
   const [showExtendedFastPrompt, setShowExtendedFastPrompt] = useState(false);
+  const [currentPromptType, setCurrentPromptType] = useState(null); // 'from-previous' or 'to-next'
   const [checkingGap, setCheckingGap] = useState(false);
 
   // Loading state
@@ -87,72 +90,7 @@ const EntryForm = ({
     { value: 'Good', label: 'Good' },
   ];
 
-  // Check for extended fast when date or first meal time changes
-  React.useEffect(() => {
-    const checkForGap = async () => {
-      if (!formData.date || !formData.firstMealTime) {
-        console.log('⏭️ Skipping extended fast check - missing date or firstMealTime');
-        setGapInfo(null);
-        setShowExtendedFastPrompt(false);
-        return;
-      }
-
-      // Don't check if we're editing and already confirmed
-      if (isEditMode && entry?.extendedFastConfirmed) {
-        console.log('⏭️ Skipping extended fast check - edit mode with confirmed');
-        return;
-      }
-
-      console.log('🔍 Checking for extended fast:', {
-        date: formData.date,
-        firstMealTime: formData.firstMealTime,
-        lastMealTime: formData.lastMealTime
-      });
-
-      setCheckingGap(true);
-      try {
-        // Include lastMealTime to check for extended fast TO next entry
-        const params = new URLSearchParams({
-          date: formData.date,
-          firstMealTime: formData.firstMealTime
-        });
-        if (formData.lastMealTime) {
-          params.append('lastMealTime', formData.lastMealTime);
-        }
-        
-        const response = await fetch(
-          `/api/entries/check-previous?${params.toString()}`
-        );
-        const data = await response.json();
-
-        console.log('📊 Extended fast check result:', data);
-
-        // Show prompt only if fasting duration is more than 24 hours
-        if (data.isExtendedFast && data.fastingDuration) {
-          console.log('⚠️ Extended fast detected!', data.fastingDuration.formatted, 'Direction:', data.extendedFastDirection);
-          setGapInfo(data);
-          // Only show prompt if user hasn't already confirmed for this session
-          if (!formData.extendedFastConfirmed) {
-            setShowExtendedFastPrompt(true);
-          }
-        } else {
-          console.log('✅ No extended fast detected');
-          setGapInfo(null);
-          setShowExtendedFastPrompt(false);
-          // Clear extended fast confirmation if extended fast no longer detected
-          if (formData.extendedFastConfirmed) {
-            setFormData(prev => ({ ...prev, extendedFastConfirmed: false }));
-          }
-        }
-      } catch (error) {
-        console.error('❌ Error checking for extended fast:', error);
-      } finally {
-        setCheckingGap(false);
-      }
-    };
-
-    checkForGap();
-  }, [formData.date, formData.firstMealTime, formData.lastMealTime, isEditMode, entry?.extendedFastConfirmed]);
+  // No automatic extended fast checking - we'll do it on submit
 
   // Handle field changes
   const handleChange = (field) => (e) => {
@@ -249,18 +187,43 @@ const EntryForm = ({
 
   // Handle extended fast confirmation
   const handleExtendedFastConfirm = () => {
-    setFormData(prev => ({ ...prev, extendedFastConfirmed: true }));
+    if (currentPromptType === 'from-previous') {
+      setFormData(prev => ({ ...prev, extendedFastFromPreviousConfirmed: true }));
+    } else if (currentPromptType === 'to-next') {
+      setFormData(prev => ({ ...prev, extendedFastToNextConfirmed: true }));
+    }
     setShowExtendedFastPrompt(false);
+    
+    // Check if there's a second popup to show
+    if (currentPromptType === 'from-previous' && gapInfo?.isExtendedFastToNext && !formData.extendedFastToNextConfirmed && !formData.extendedFastToNextDenied) {
+      setTimeout(() => {
+        setCurrentPromptType('to-next');
+        setShowExtendedFastPrompt(true);
+      }, 100);
+    } else {
+      // All prompts handled, allow submission
+      setFormData(prev => ({ ...prev, extendedFastConfirmed: true }));
+    }
   };
 
   const handleExtendedFastDeny = () => {
-    // User clicked "No, I ate but didn't log" - set flag to clear fasting duration
-    setFormData(prev => ({ 
-      ...prev, 
-      extendedFastConfirmed: false,
-      extendedFastDenied: true  // This tells API to set fasting to N/A
-    }));
+    if (currentPromptType === 'from-previous') {
+      setFormData(prev => ({ ...prev, extendedFastDenied: true }));
+    } else if (currentPromptType === 'to-next') {
+      setFormData(prev => ({ ...prev, extendedFastToNextDenied: true }));
+    }
     setShowExtendedFastPrompt(false);
+    
+    // Check if there's a second popup to show
+    if (currentPromptType === 'from-previous' && gapInfo?.isExtendedFastToNext && !formData.extendedFastToNextConfirmed && !formData.extendedFastToNextDenied) {
+      setTimeout(() => {
+        setCurrentPromptType('to-next');
+        setShowExtendedFastPrompt(true);
+      }, 100);
+    } else {
+      // All prompts handled, allow submission
+      setFormData(prev => ({ ...prev, extendedFastConfirmed: true }));
+    }
   };
 
   // Validate form
@@ -342,11 +305,54 @@ const EntryForm = ({
       return;
     }
 
-    // Check if extended fast detected but not confirmed/denied yet
-    if (gapInfo?.isExtendedFast && !formData.extendedFastConfirmed && !formData.extendedFastDenied) {
-      // Show the prompt and prevent submission
-      setShowExtendedFastPrompt(true);
-      return;
+    // Check for extended fasts ONLY if we haven't checked yet
+    if (!gapInfo && formData.date && formData.firstMealTime && formData.lastMealTime) {
+      setIsSubmitting(true);
+      try {
+        const params = new URLSearchParams({
+          date: formData.date,
+          firstMealTime: formData.firstMealTime,
+          lastMealTime: formData.lastMealTime
+        });
+        
+        const response = await fetch(`/api/entries/check-previous?${params.toString()}`);
+        const data = await response.json();
+        
+        setGapInfo(data);
+        
+        // If extended fast detected, show first popup and stop
+        if (data.isExtendedFast) {
+          if (data.isExtendedFastFromPrevious) {
+            setCurrentPromptType('from-previous');
+            setShowExtendedFastPrompt(true);
+          } else if (data.isExtendedFastToNext) {
+            setCurrentPromptType('to-next');
+            setShowExtendedFastPrompt(true);
+          }
+          setIsSubmitting(false);
+          return;
+        }
+      } catch (error) {
+        console.error('❌ Error checking for extended fast:', error);
+        setIsSubmitting(false);
+        return;
+      }
+    }
+
+    // Check if extended fast detected but not all prompts confirmed/denied yet
+    if (gapInfo?.isExtendedFast && !formData.extendedFastConfirmed) {
+      // Check if from-previous needs confirmation
+      if (gapInfo.isExtendedFastFromPrevious && !formData.extendedFastFromPreviousConfirmed && !formData.extendedFastDenied) {
+        setCurrentPromptType('from-previous');
+        setShowExtendedFastPrompt(true);
+        return;
+      }
+      // Check if to-next needs confirmation
+      if (gapInfo.isExtendedFastToNext && !formData.extendedFastToNextConfirmed && !formData.extendedFastToNextDenied) {
+        setCurrentPromptType('to-next');
+        setShowExtendedFastPrompt(true);
+        return;
+      }
     }
 
     setIsSubmitting(true);
@@ -357,8 +363,9 @@ const EntryForm = ({
         date: formData.date,
         firstMealTime: formData.firstMealTime,
         lastMealTime: formData.lastMealTime,
-        extendedFastConfirmed: formData.extendedFastConfirmed, // Always send this
-        extendedFastDenied: formData.extendedFastDenied, // Send if user denied extended fast
+        extendedFastConfirmed: formData.extendedFastFromPreviousConfirmed,
+        extendedFastDenied: formData.extendedFastDenied,
+        extendedFastToNextDenied: formData.extendedFastToNextDenied,
       };
 
       // Add optional fields only if they have values
@@ -440,21 +447,21 @@ const EntryForm = ({
       />
 
       {/* Extended Fast Confirmation Prompt */}
-      {showExtendedFastPrompt && gapInfo && gapInfo.fastingDuration && (
+      {showExtendedFastPrompt && gapInfo && currentPromptType && (
         <div className="p-4 bg-purple-50 border border-purple-200 rounded-lg">
           <div className="flex items-start gap-3">
             <span className="text-2xl" role="img" aria-label="Question">🤔</span>
             <div className="flex-1">
-              <h4 className="text-sm font-semibold text-purple-900 mb-2">
-                Extended Fast Detected ({gapInfo.fastingDuration.formatted})
-              </h4>
-              <div className="text-sm text-purple-800 mb-3 space-y-1">
-                <p className="font-medium">
-                  Fasting duration would be: <span className="text-purple-900 font-bold">{gapInfo.fastingDuration.formatted}</span>
-                </p>
-                {gapInfo.extendedFastDirection === 'from-previous' && gapInfo.previousEntry && (
-                  <>
-                    <p className="text-xs">
+              {currentPromptType === 'from-previous' && gapInfo.fromPreviousFasting && gapInfo.previousEntry && (
+                <>
+                  <h4 className="text-sm font-semibold text-purple-900 mb-2">
+                    Extended Fast Detected ({gapInfo.fromPreviousFasting.formatted})
+                  </h4>
+                  <div className="text-sm text-purple-800 mb-3 space-y-1">
+                    <p className="font-medium">
+                      Fasting duration would be: <span className="text-purple-900 font-bold">{gapInfo.fromPreviousFasting.formatted}</span>
+                    </p>
+                    <p className="text-xs mt-1">
                       From: {new Date(gapInfo.previousEntry.date).toLocaleDateString('en-GB', {
                         day: '2-digit',
                         month: '2-digit',
@@ -468,11 +475,23 @@ const EntryForm = ({
                         year: 'numeric',
                       })} at {formData.firstMealTime} (first meal)
                     </p>
-                  </>
-                )}
-                {gapInfo.extendedFastDirection === 'to-next' && gapInfo.nextEntry && (
-                  <>
-                    <p className="text-xs">
+                    <p className="mt-2">
+                      Did you fast continuously for this entire period?
+                    </p>
+                  </div>
+                </>
+              )}
+              
+              {currentPromptType === 'to-next' && gapInfo.toNextFasting && gapInfo.nextEntry && (
+                <>
+                  <h4 className="text-sm font-semibold text-purple-900 mb-2">
+                    Extended Fast Detected ({gapInfo.toNextFasting.formatted})
+                  </h4>
+                  <div className="text-sm text-purple-800 mb-3 space-y-1">
+                    <p className="font-medium">
+                      Fasting duration would be: <span className="text-purple-900 font-bold">{gapInfo.toNextFasting.formatted}</span>
+                    </p>
+                    <p className="text-xs mt-1">
                       From: {new Date(formData.date).toLocaleDateString('en-GB', {
                         day: '2-digit',
                         month: '2-digit',
@@ -486,12 +505,13 @@ const EntryForm = ({
                         year: 'numeric',
                       })} at {gapInfo.nextEntry.firstMealTime} (first meal)
                     </p>
-                  </>
-                )}
-                <p className="mt-2">
-                  Did you fast continuously for this entire period?
-                </p>
-              </div>
+                    <p className="mt-2">
+                      Did you fast continuously for this entire period?
+                    </p>
+                  </div>
+                </>
+              )}
+              
               <div className="flex gap-2">
                 <Button
                   type="button"
@@ -515,13 +535,13 @@ const EntryForm = ({
         </div>
       )}
 
-      {/* Show confirmation when extended fast is confirmed */}
-      {formData.extendedFastConfirmed && gapInfo && !showExtendedFastPrompt && (
+      {/* Show confirmation when extended fast from previous is confirmed */}
+      {formData.extendedFastFromPreviousConfirmed && gapInfo?.fromPreviousFasting && !showExtendedFastPrompt && gapInfo.previousEntry && (
         <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
           <div className="flex items-center gap-2">
             <span className="text-lg" role="img" aria-label="Check">✅</span>
             <p className="text-sm text-green-800">
-              Extended fast confirmed ({gapInfo.fastingDuration?.formatted || 'calculating...'}) - fasting duration will be calculated from{' '}
+              Extended fast confirmed ({gapInfo.fromPreviousFasting.formatted}) - fasting duration will be calculated from{' '}
               {new Date(gapInfo.previousEntry.date).toLocaleDateString('en-GB', {
                 day: '2-digit',
                 month: '2-digit',

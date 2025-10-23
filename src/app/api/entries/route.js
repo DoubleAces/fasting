@@ -191,11 +191,12 @@ export const POST = withErrorHandler(async (request) => {
     .limit(1);
 
     if (nextEntry && value.lastMealTime && nextEntry.firstMealTime) {
-      // If user denied extended fast, set next entry's fasting to null
+      // If user denied extended fast TO NEXT specifically, set next entry's fasting to null
       // Otherwise calculate the fasting duration
+      // Note: extendedFastDenied only affects the CURRENT entry's fasting from previous
       let nextFastingDuration = null;
       
-      if (!value.extendedFastDenied) {
+      if (!value.extendedFastToNextDenied) {
         const result = calculateFastingDuration(
           value.lastMealTime,
           nextEntry.firstMealTime,

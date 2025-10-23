@@ -179,6 +179,16 @@ export const entrySchema = Joi.object({
     .messages({
       'boolean.base': 'Extended fast denied must be true or false',
     }),
+
+  /**
+   * Extended fast to next denied (optional)
+   * Boolean flag indicating user clicked "No" for extended fast to next entry
+   */
+  extendedFastToNextDenied: Joi.boolean()
+    .optional()
+    .messages({
+      'boolean.base': 'Extended fast to next denied must be true or false',
+    }),
 }).options({
   stripUnknown: true, // Remove unknown fields
   abortEarly: false,  // Return all errors, not just the first one

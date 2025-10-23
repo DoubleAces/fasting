@@ -52,9 +52,10 @@ export const GET = withErrorHandler(async (request) => {
   // Calculate days between entries and fasting duration FROM previous entry
   let daysDifference = null;
   let hasGap = false;
-  let fastingDuration = null;
-  let isExtendedFast = false;
-  let extendedFastDirection = null; // 'from-previous' or 'to-next'
+  let fromPreviousFasting = null;
+  let toNextFasting = null;
+  let isExtendedFastFromPrevious = false;
+  let isExtendedFastToNext = false;
   
   if (previousEntry) {
     // Calculate days between entries
@@ -73,7 +74,7 @@ export const GET = withErrorHandler(async (request) => {
           previousEntry.date,
           currentDate
         );
-        fastingDuration = {
+        fromPreviousFasting = {
           hours: result.hours,
           minutes: result.minutes,
           totalMinutes: result.totalMinutes,
@@ -82,8 +83,7 @@ export const GET = withErrorHandler(async (request) => {
         
         // Check if fasting is more than 24 hours (1440 minutes)
         if (result.totalMinutes > 1440) {
-          isExtendedFast = true;
-          extendedFastDirection = 'from-previous';
+          isExtendedFastFromPrevious = true;
         }
       } catch (error) {
         console.warn('Could not calculate fasting duration from previous:', error.message);
@@ -101,7 +101,6 @@ export const GET = withErrorHandler(async (request) => {
     .limit(1)
     .lean();
 
-  let nextEntryFastingDuration = null;
   if (nextEntry && lastMealTime && nextEntry.firstMealTime) {
     try {
       const result = calculateFastingDuration(
@@ -110,7 +109,7 @@ export const GET = withErrorHandler(async (request) => {
         currentDate,
         nextEntry.date
       );
-      nextEntryFastingDuration = {
+      toNextFasting = {
         hours: result.hours,
         minutes: result.minutes,
         totalMinutes: result.totalMinutes,
@@ -119,20 +118,30 @@ export const GET = withErrorHandler(async (request) => {
       
       // Check if fasting TO next entry is more than 24 hours
       if (result.totalMinutes > 1440) {
-        isExtendedFast = true;
-        extendedFastDirection = 'to-next';
-        // Use this duration instead for display
-        fastingDuration = nextEntryFastingDuration;
+        isExtendedFastToNext = true;
       }
     } catch (error) {
       console.warn('Could not calculate fasting duration to next:', error.message);
     }
   }
 
+  // Determine if there's any extended fast and which direction(s)
+  const isExtendedFast = isExtendedFastFromPrevious || isExtendedFastToNext;
+  let extendedFastDirection = null;
+  if (isExtendedFastFromPrevious && isExtendedFastToNext) {
+    extendedFastDirection = 'both';
+  } else if (isExtendedFastFromPrevious) {
+    extendedFastDirection = 'from-previous';
+  } else if (isExtendedFastToNext) {
+    extendedFastDirection = 'to-next';
+  }
+
   return okResponse({
     hasPreviousEntry: !!previousEntry,
     hasGap,
     isExtendedFast,
+    isExtendedFastFromPrevious,
+    isExtendedFastToNext,
     extendedFastDirection,
     previousEntry: previousEntry ? {
       _id: previousEntry._id,
@@ -145,7 +154,7 @@ export const GET = withErrorHandler(async (request) => {
       firstMealTime: nextEntry.firstMealTime,
     } : null,
     daysSinceLast: daysDifference,
-    fastingDuration,
-    nextEntryFastingDuration,
+    fromPreviousFasting,
+    toNextFasting,
   });
 });
