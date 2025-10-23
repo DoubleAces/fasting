@@ -254,7 +254,12 @@ const EntryForm = ({
   };
 
   const handleExtendedFastDeny = () => {
-    setFormData(prev => ({ ...prev, extendedFastConfirmed: false }));
+    // User clicked "No, I ate but didn't log" - set flag to clear fasting duration
+    setFormData(prev => ({ 
+      ...prev, 
+      extendedFastConfirmed: false,
+      extendedFastDenied: true  // This tells API to set fasting to N/A
+    }));
     setShowExtendedFastPrompt(false);
   };
 
@@ -337,6 +342,13 @@ const EntryForm = ({
       return;
     }
 
+    // Check if extended fast detected but not confirmed/denied yet
+    if (gapInfo?.isExtendedFast && !formData.extendedFastConfirmed && !formData.extendedFastDenied) {
+      // Show the prompt and prevent submission
+      setShowExtendedFastPrompt(true);
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -346,6 +358,7 @@ const EntryForm = ({
         firstMealTime: formData.firstMealTime,
         lastMealTime: formData.lastMealTime,
         extendedFastConfirmed: formData.extendedFastConfirmed, // Always send this
+        extendedFastDenied: formData.extendedFastDenied, // Send if user denied extended fast
       };
 
       // Add optional fields only if they have values

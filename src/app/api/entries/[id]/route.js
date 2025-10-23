@@ -86,11 +86,16 @@ export const PUT = withErrorHandler(async (request, { params }) => {
   const dateChanged = formatDate(existingEntry.date) !== formatDate(value.date);
   const firstMealChanged = existingEntry.firstMealTime !== value.firstMealTime;
   const extendedFastChanged = existingEntry.extendedFastConfirmed !== value.extendedFastConfirmed;
+  const extendedFastDenied = value.extendedFastDenied;
   
-  if (dateChanged || firstMealChanged || extendedFastChanged) {
+  if (dateChanged || firstMealChanged || extendedFastChanged || extendedFastDenied) {
     try {
+      // If user denied extended fast (clicked "No, I ate but didn't log"), set to null
+      if (extendedFastDenied) {
+        fastingDuration = null;
+      }
       // If user confirmed extended fast, find the most recent previous entry for this user
-      if (value.extendedFastConfirmed) {
+      else if (value.extendedFastConfirmed) {
         const previousEntry = await Entry.findOne({
           userId: session.user.id,
           date: { $lt: new Date(value.date) },

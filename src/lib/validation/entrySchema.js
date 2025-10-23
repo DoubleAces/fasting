@@ -169,6 +169,16 @@ export const entrySchema = Joi.object({
     .messages({
       'boolean.base': 'Extended fast confirmation must be true or false',
     }),
+
+  /**
+   * Extended fast denied (optional)
+   * Boolean flag indicating user clicked "No, I ate but didn't log"
+   */
+  extendedFastDenied: Joi.boolean()
+    .optional()
+    .messages({
+      'boolean.base': 'Extended fast denied must be true or false',
+    }),
 }).options({
   stripUnknown: true, // Remove unknown fields
   abortEarly: false,  // Return all errors, not just the first one
