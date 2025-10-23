@@ -558,6 +558,121 @@ describe('Entry API Endpoints - Integration Tests', () => {
       expect(body.error).toContain('not found');
     });
   });
+
+  describe('POST /api/entries - Backfill Fasting Calculation', () => {
+    it('should recalculate next entry fasting when creating past entry', async () => {
+      // Create entry for October 18 (today) with no fasting (no previous day)
+      const oct18 = await Entry.create({
+        date: new Date('2025-10-18'),
+        firstMealTime: '12:00',
+        lastMealTime: '20:00',
+        fastingDuration: null
+      });
+
+      // Verify Oct 18 has no fasting initially
+      expect(oct18.fastingDuration).toBeNull();
+
+      // Create entry for October 17 (yesterday) with last meal at 8:00 PM
+      const requestBody = {
+        date: '2025-10-17',
+        firstMealTime: '10:00',
+        lastMealTime: '20:00'
+      };
+
+      const request = createRequest('http://localhost:3000/api/entries', 'POST', requestBody);
+      const response = await createEntry(request);
+      const { status, body } = await parseResponse(response);
+
+      // Verify Oct 17 was created successfully
+      expect(status).toBe(201);
+      expect(body.entry).toBeDefined();
+
+      // Verify Oct 18's fasting duration was recalculated
+      // From Oct 17 20:00 to Oct 18 12:00 = 16 hours = 960 minutes
+      const updatedOct18 = await Entry.findById(oct18._id);
+      expect(updatedOct18.fastingDuration).toBe(960);
+    });
+
+    it('should find next entry across gaps', async () => {
+      // Create entry for October 20 (future date) with no fasting
+      const oct20 = await Entry.create({
+        date: new Date('2025-10-20'),
+        firstMealTime: '11:00',
+        lastMealTime: '19:00',
+        fastingDuration: null
+      });
+
+      // Verify Oct 20 has no fasting initially
+      expect(oct20.fastingDuration).toBeNull();
+
+      // Create entry for October 17 (3 days before, with gap on Oct 18-19)
+      const requestBody = {
+        date: '2025-10-17',
+        firstMealTime: '10:00',
+        lastMealTime: '21:00'
+      };
+
+      const request = createRequest('http://localhost:3000/api/entries', 'POST', requestBody);
+      const response = await createEntry(request);
+      const { status, body } = await parseResponse(response);
+
+      // Verify Oct 17 was created successfully
+      expect(status).toBe(201);
+      expect(body.entry).toBeDefined();
+
+      // Verify Oct 20's fasting was recalculated (should find next entry across gap)
+      // From Oct 17 21:00 to Oct 20 11:00 = 62 hours = 3720 minutes
+      const updatedOct20 = await Entry.findById(oct20._id);
+      expect(updatedOct20.fastingDuration).toBe(3720);
+    });
+
+    it('should handle middle entry creation with Day 1 and Day 3 existing', async () => {
+      // Create entry for October 15 (Day 1)
+      const oct15 = await Entry.create({
+        date: new Date('2025-10-15'),
+        firstMealTime: '10:00',
+        lastMealTime: '20:00',
+        fastingDuration: null
+      });
+
+      // Create entry for October 17 (Day 3) with no fasting initially
+      const oct17 = await Entry.create({
+        date: new Date('2025-10-17'),
+        firstMealTime: '12:00',
+        lastMealTime: '20:00',
+        fastingDuration: null
+      });
+
+      // Verify both have no fasting initially
+      expect(oct15.fastingDuration).toBeNull();
+      expect(oct17.fastingDuration).toBeNull();
+
+      // Create entry for October 16 (Day 2, middle entry)
+      const requestBody = {
+        date: '2025-10-16',
+        firstMealTime: '11:00',
+        lastMealTime: '19:00'
+      };
+
+      const request = createRequest('http://localhost:3000/api/entries', 'POST', requestBody);
+      const response = await createEntry(request);
+      const { status, body } = await parseResponse(response);
+
+      // Verify Oct 16 was created successfully
+      expect(status).toBe(201);
+      expect(body.entry).toBeDefined();
+
+      // Verify Oct 16 calculated its own fasting from Oct 15
+      // From Oct 15 20:00 to Oct 16 11:00 = 15 hours = 900 minutes
+      const createdOct16 = await Entry.findOne({ date: new Date('2025-10-16') });
+      expect(createdOct16.fastingDuration).toBe(900);
+
+      // Verify Oct 17's fasting was recalculated using Oct 16's last meal
+      // From Oct 16 19:00 to Oct 17 12:00 = 17 hours = 1020 minutes
+      const updatedOct17 = await Entry.findById(oct17._id);
+      expect(updatedOct17.fastingDuration).toBe(1020);
+    });
+  });
 });
 
 END OF PRESERVED TESTS */

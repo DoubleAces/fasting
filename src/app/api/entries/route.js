@@ -150,5 +150,34 @@ export const POST = withErrorHandler(async (request) => {
 
   await entry.save();
 
+  // Backfill: Recalculate next entry's fasting duration if this is a past entry
+  // This handles the case where a user adds an entry for a previous date
+  // and we need to update the fasting duration of the next chronological entry
+  try {
+    const nextEntry = await Entry.findOne({
+      userId: session.user.id,
+      date: { $gt: new Date(value.date) }
+    })
+    .sort({ date: 1 })
+    .limit(1);
+
+    if (nextEntry && value.lastMealTime && nextEntry.firstMealTime) {
+      const result = calculateFastingDuration(
+        value.lastMealTime,
+        nextEntry.firstMealTime,
+        value.date,
+        nextEntry.date
+      );
+      
+      await Entry.findByIdAndUpdate(
+        nextEntry._id,
+        { fastingDuration: result.totalMinutes }
+      );
+    }
+  } catch (backfillError) {
+    console.warn('Could not backfill next entry fasting duration:', backfillError.message);
+    // Continue - don't fail entry creation if backfill update fails
+  }
+
   return createdResponse(entry);
 });
