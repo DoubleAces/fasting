@@ -13,6 +13,7 @@ import { useEffect, useState } from 'react';
 import EntryList from '@/components/organisms/EntryList';
 import EntryForm from '@/components/organisms/EntryForm';
 import Button from '@/components/atoms/Button';
+import DeleteConfirmationModal from '@/components/DeleteConfirmationModal';
 
 export default function EntriesPage() {
   const { data: session, status } = useSession();
@@ -23,6 +24,14 @@ export default function EntriesPage() {
   const [showForm, setShowForm] = useState(false);
   const [editingEntry, setEditingEntry] = useState(null);
   const [settings, setSettings] = useState(null);
+  
+  // Modal state for delete confirmation
+  const [deleteModal, setDeleteModal] = useState({
+    isOpen: false,
+    entryId: null,
+    extendedFastInfo: null,
+    isDeleting: false
+  });
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -77,12 +86,45 @@ export default function EntriesPage() {
   };
 
   const handleDelete = async (entryId) => {
-    if (!confirm('Are you sure you want to delete this entry?')) {
-      return;
+    try {
+      // First, check if deletion would create an extended fast
+      const checkResponse = await fetch(`/api/entries/${entryId}?checkOnly=true`, {
+        method: 'DELETE',
+      });
+
+      if (!checkResponse.ok) {
+        throw new Error('Failed to check entry');
+      }
+
+      const checkData = await checkResponse.json();
+      
+      // Open modal with extended fast info (if any)
+      setDeleteModal({
+        isOpen: true,
+        entryId,
+        extendedFastInfo: checkData.extendedFastCreated ? checkData.extendedFastInfo : null,
+        isDeleting: false
+      });
+    } catch (err) {
+      console.error('Error checking entry:', err);
+      alert('Failed to check entry. Please try again.');
     }
+  };
+
+  const handleConfirmDelete = async ({ createExtendedFast }) => {
+    const { entryId } = deleteModal;
+    
+    // Update modal to show loading state
+    setDeleteModal(prev => ({ ...prev, isDeleting: true }));
 
     try {
-      const response = await fetch(`/api/entries/${entryId}`, {
+      // Build URL with query parameter if user made a choice about extended fast
+      let url = `/api/entries/${entryId}`;
+      if (createExtendedFast !== null) {
+        url += `?createExtendedFast=${createExtendedFast}`;
+      }
+
+      const response = await fetch(url, {
         method: 'DELETE',
       });
 
@@ -90,10 +132,32 @@ export default function EntriesPage() {
         throw new Error('Failed to delete entry');
       }
 
+      // Close modal and refresh entries
+      setDeleteModal({
+        isOpen: false,
+        entryId: null,
+        extendedFastInfo: null,
+        isDeleting: false
+      });
+
       await fetchEntries();
     } catch (err) {
       console.error('Error deleting entry:', err);
       alert('Failed to delete entry. Please try again.');
+      
+      // Reset loading state but keep modal open
+      setDeleteModal(prev => ({ ...prev, isDeleting: false }));
+    }
+  };
+
+  const handleCloseDeleteModal = () => {
+    if (!deleteModal.isDeleting) {
+      setDeleteModal({
+        isOpen: false,
+        entryId: null,
+        extendedFastInfo: null,
+        isDeleting: false
+      });
     }
   };
 
@@ -175,6 +239,15 @@ export default function EntriesPage() {
           />
         </div>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmationModal
+        isOpen={deleteModal.isOpen}
+        onClose={handleCloseDeleteModal}
+        onConfirm={handleConfirmDelete}
+        extendedFastInfo={deleteModal.extendedFastInfo}
+        isDeleting={deleteModal.isDeleting}
+      />
     </div>
   );
 }

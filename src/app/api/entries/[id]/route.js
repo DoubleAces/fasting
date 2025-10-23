@@ -220,34 +220,38 @@ export const DELETE = withErrorHandler(async (request, { params }) => {
     return forbiddenResponse('You do not have permission to delete this entry');
   }
 
-  // Delete the entry
-  await Entry.findByIdAndDelete(params.id);
+  // Get URL search params to check for confirmation
+  const { searchParams } = new URL(request.url);
+  const createExtendedFast = searchParams.get('createExtendedFast');
+  const checkOnly = searchParams.get('checkOnly') === 'true';
 
-  // Recalculate next day's fasting duration for this user
+  // Track if deletion creates an extended fast
+  let extendedFastCreated = false;
+  let extendedFastInfo = null;
+
+  // Check for extended fast BEFORE deleting
   try {
-    // Get the date for the day after the deleted entry
     const deletedDate = new Date(entry.date);
-    const nextDate = new Date(deletedDate);
-    nextDate.setDate(nextDate.getDate() + 1);
-    const nextDateFormatted = formatDate(nextDate);
     
+    // Find the next chronological entry (not necessarily next day)
     const nextEntry = await Entry.findOne({
       userId: session.user.id,
-      date: new Date(nextDateFormatted)
-    });
+      date: { $gt: deletedDate }
+    })
+    .sort({ date: 1 })
+    .limit(1);
 
     if (nextEntry) {
-      // Try to find the new previous day (the day before the deleted entry) for this user
-      const previousDate = new Date(deletedDate);
-      previousDate.setDate(previousDate.getDate() - 1);
-      const previousDateFormatted = formatDate(previousDate);
-      
+      // Find the new previous entry (entry before the deleted one)
       const newPreviousEntry = await Entry.findOne({
         userId: session.user.id,
-        date: new Date(previousDateFormatted)
-      });
+        date: { $lt: deletedDate }
+      })
+      .sort({ date: -1 })
+      .limit(1);
 
       let newFastingDuration = null;
+      
       if (newPreviousEntry && newPreviousEntry.lastMealTime && nextEntry.firstMealTime) {
         const result = calculateFastingDuration(
           newPreviousEntry.lastMealTime,
@@ -256,19 +260,66 @@ export const DELETE = withErrorHandler(async (request, { params }) => {
           nextEntry.date
         );
         newFastingDuration = result.totalMinutes;
+        
+        // Check if this creates an extended fast (>24 hours)
+        if (newFastingDuration > 1440) {
+          extendedFastCreated = true;
+          extendedFastInfo = {
+            nextEntryId: nextEntry._id,
+            nextEntryDate: nextEntry.date,
+            previousEntryDate: newPreviousEntry.date,
+            previousLastMealTime: newPreviousEntry.lastMealTime,
+            nextFirstMealTime: nextEntry.firstMealTime,
+            fastingDuration: {
+              totalMinutes: newFastingDuration,
+              hours: result.hours,
+              minutes: result.minutes,
+              formatted: result.formatted
+            }
+          };
+        }
       }
 
-      await Entry.findByIdAndUpdate(
-        nextEntry._id,
-        { fastingDuration: newFastingDuration }
-      );
+      // If checkOnly, return the extended fast info without deleting
+      if (checkOnly) {
+        return okResponse({
+          extendedFastCreated,
+          extendedFastInfo
+        });
+      }
+
+      // If confirmed, proceed with deletion and update
+      if (!checkOnly) {
+        // Delete the entry
+        await Entry.findByIdAndDelete(params.id);
+
+        // Update next entry's fasting duration based on user choice
+        if (createExtendedFast === 'false' && extendedFastCreated) {
+          // User chose not to create extended fast - keep original fasting duration unchanged
+          // Don't update the next entry at all, it will keep its existing fasting duration
+        } else {
+          // User confirmed extended fast or no extended fast detected - update normally
+          await Entry.findByIdAndUpdate(
+            nextEntry._id,
+            { fastingDuration: newFastingDuration }
+          );
+        }
+      }
+    } else {
+      // No next entry, just delete
+      if (!checkOnly) {
+        await Entry.findByIdAndDelete(params.id);
+      }
     }
   } catch (calcError) {
-    console.warn('Could not update next day fasting duration:', calcError.message);
+    console.error('Error during delete operation:', calcError);
+    return errorResponse('Failed to process deletion', 500);
   }
 
   return okResponse({
     message: 'Entry deleted successfully',
-    deletedEntry: entry
+    deletedEntry: entry,
+    extendedFastCreated,
+    extendedFastInfo
   });
 });
