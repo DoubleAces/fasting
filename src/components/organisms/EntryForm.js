@@ -91,6 +91,7 @@ const EntryForm = ({
   React.useEffect(() => {
     const checkForGap = async () => {
       if (!formData.date || !formData.firstMealTime) {
+        console.log('⏭️ Skipping extended fast check - missing date or firstMealTime');
         setGapInfo(null);
         setShowExtendedFastPrompt(false);
         return;
@@ -98,8 +99,14 @@ const EntryForm = ({
 
       // Don't check if we're editing and already confirmed
       if (isEditMode && entry?.extendedFastConfirmed) {
+        console.log('⏭️ Skipping extended fast check - edit mode with confirmed');
         return;
       }
+
+      console.log('🔍 Checking for extended fast:', {
+        date: formData.date,
+        firstMealTime: formData.firstMealTime
+      });
 
       setCheckingGap(true);
       try {
@@ -108,14 +115,18 @@ const EntryForm = ({
         );
         const data = await response.json();
 
+        console.log('📊 Extended fast check result:', data);
+
         // Show prompt only if fasting duration is more than 24 hours
         if (data.isExtendedFast && data.fastingDuration) {
+          console.log('⚠️ Extended fast detected!', data.fastingDuration.formatted);
           setGapInfo(data);
           // Only show prompt if user hasn't already confirmed for this session
           if (!formData.extendedFastConfirmed) {
             setShowExtendedFastPrompt(true);
           }
         } else {
+          console.log('✅ No extended fast detected');
           setGapInfo(null);
           setShowExtendedFastPrompt(false);
           // Clear extended fast confirmation if extended fast no longer detected
@@ -124,7 +135,7 @@ const EntryForm = ({
           }
         }
       } catch (error) {
-        console.error('Error checking for extended fast:', error);
+        console.error('❌ Error checking for extended fast:', error);
       } finally {
         setCheckingGap(false);
       }

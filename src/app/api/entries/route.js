@@ -84,10 +84,19 @@ export const POST = withErrorHandler(async (request) => {
   }
 
   // Check if entry for this date already exists for this user
+  console.log('🔍 Checking for existing entry:', {
+    date: value.date,
+    userId: session.user.id,
+    userEmail: session.user.email
+  });
+  
   const existingEntry = await Entry.findOne({ 
     date: value.date,
     userId: session.user.id 
   });
+  
+  console.log('🔍 Existing entry result:', existingEntry ? 'FOUND' : 'NOT FOUND');
+  
   if (existingEntry) {
     throw new ApiError('An entry for this date already exists', 409);
   }
@@ -142,13 +151,29 @@ export const POST = withErrorHandler(async (request) => {
   }
 
   // Create new entry with userId
+  console.log('✏️ Creating new entry:', {
+    date: value.date,
+    userId: session.user.id,
+    userEmail: session.user.email,
+    firstMealTime: value.firstMealTime
+  });
+  
   const entry = new Entry({
     ...value,
     userId: session.user.id,
     fastingDuration
   });
 
-  await entry.save();
+  try {
+    await entry.save();
+    console.log('✅ Entry saved successfully');
+  } catch (saveError) {
+    console.error('❌ Entry save failed:', saveError.message);
+    console.error('Error code:', saveError.code);
+    console.error('Key pattern:', saveError.keyPattern);
+    console.error('Key value:', saveError.keyValue);
+    throw saveError;
+  }
 
   // Backfill: Recalculate next entry's fasting duration if this is a past entry
   // This handles the case where a user adds an entry for a previous date
