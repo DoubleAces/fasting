@@ -105,13 +105,23 @@ const EntryForm = ({
 
       console.log('🔍 Checking for extended fast:', {
         date: formData.date,
-        firstMealTime: formData.firstMealTime
+        firstMealTime: formData.firstMealTime,
+        lastMealTime: formData.lastMealTime
       });
 
       setCheckingGap(true);
       try {
+        // Include lastMealTime to check for extended fast TO next entry
+        const params = new URLSearchParams({
+          date: formData.date,
+          firstMealTime: formData.firstMealTime
+        });
+        if (formData.lastMealTime) {
+          params.append('lastMealTime', formData.lastMealTime);
+        }
+        
         const response = await fetch(
-          `/api/entries/check-previous?date=${formData.date}&firstMealTime=${formData.firstMealTime}`
+          `/api/entries/check-previous?${params.toString()}`
         );
         const data = await response.json();
 
@@ -119,7 +129,7 @@ const EntryForm = ({
 
         // Show prompt only if fasting duration is more than 24 hours
         if (data.isExtendedFast && data.fastingDuration) {
-          console.log('⚠️ Extended fast detected!', data.fastingDuration.formatted);
+          console.log('⚠️ Extended fast detected!', data.fastingDuration.formatted, 'Direction:', data.extendedFastDirection);
           setGapInfo(data);
           // Only show prompt if user hasn't already confirmed for this session
           if (!formData.extendedFastConfirmed) {
@@ -142,7 +152,7 @@ const EntryForm = ({
     };
 
     checkForGap();
-  }, [formData.date, formData.firstMealTime, isEditMode, entry?.extendedFastConfirmed]);
+  }, [formData.date, formData.firstMealTime, formData.lastMealTime, isEditMode, entry?.extendedFastConfirmed]);
 
   // Handle field changes
   const handleChange = (field) => (e) => {
@@ -429,20 +439,42 @@ const EntryForm = ({
                 <p className="font-medium">
                   Fasting duration would be: <span className="text-purple-900 font-bold">{gapInfo.fastingDuration.formatted}</span>
                 </p>
-                <p className="text-xs">
-                  From: {new Date(gapInfo.previousEntry.date).toLocaleDateString('en-GB', {
-                    day: '2-digit',
-                    month: '2-digit',
-                    year: 'numeric',
-                  })} at {gapInfo.previousEntry.lastMealTime} (last meal)
-                </p>
-                <p className="text-xs">
-                  To: {new Date(formData.date).toLocaleDateString('en-GB', {
-                    day: '2-digit',
-                    month: '2-digit',
-                    year: 'numeric',
-                  })} at {formData.firstMealTime} (first meal)
-                </p>
+                {gapInfo.extendedFastDirection === 'from-previous' && gapInfo.previousEntry && (
+                  <>
+                    <p className="text-xs">
+                      From: {new Date(gapInfo.previousEntry.date).toLocaleDateString('en-GB', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric',
+                      })} at {gapInfo.previousEntry.lastMealTime} (last meal)
+                    </p>
+                    <p className="text-xs">
+                      To: {new Date(formData.date).toLocaleDateString('en-GB', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric',
+                      })} at {formData.firstMealTime} (first meal)
+                    </p>
+                  </>
+                )}
+                {gapInfo.extendedFastDirection === 'to-next' && gapInfo.nextEntry && (
+                  <>
+                    <p className="text-xs">
+                      From: {new Date(formData.date).toLocaleDateString('en-GB', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric',
+                      })} at {formData.lastMealTime} (last meal)
+                    </p>
+                    <p className="text-xs">
+                      To: {new Date(gapInfo.nextEntry.date).toLocaleDateString('en-GB', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric',
+                      })} at {gapInfo.nextEntry.firstMealTime} (first meal)
+                    </p>
+                  </>
+                )}
                 <p className="mt-2">
                   Did you fast continuously for this entire period?
                 </p>

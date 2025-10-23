@@ -67,9 +67,10 @@ export const GET = withErrorHandler(async (request) => {
   // Check if there's a gap (more than 1 day difference)
   const hasGap = daysDifference > 1;
 
-  // Calculate fasting duration if we have both meal times
+  // Calculate fasting duration FROM previous entry if we have both meal times
   let fastingDuration = null;
   let isExtendedFast = false;
+  let extendedFastDirection = null; // 'from-previous' or 'to-next'
   
   if (previousEntry.lastMealTime && firstMealTime) {
     try {
@@ -87,9 +88,50 @@ export const GET = withErrorHandler(async (request) => {
       };
       
       // Check if fasting is more than 24 hours (1440 minutes)
-      isExtendedFast = result.totalMinutes > 1440;
+      if (result.totalMinutes > 1440) {
+        isExtendedFast = true;
+        extendedFastDirection = 'from-previous';
+      }
     } catch (error) {
-      console.warn('Could not calculate fasting duration:', error.message);
+      console.warn('Could not calculate fasting duration from previous:', error.message);
+    }
+  }
+
+  // Also check for NEXT entry (future entry) if this is a past date being created
+  const lastMealTime = searchParams.get('lastMealTime');
+  const nextEntry = await Entry.findOne({
+    userId: session.user.id,
+    date: { $gt: currentDate }
+  })
+    .sort({ date: 1 })
+    .limit(1)
+    .lean();
+
+  let nextEntryFastingDuration = null;
+  if (nextEntry && lastMealTime && nextEntry.firstMealTime) {
+    try {
+      const result = calculateFastingDuration(
+        lastMealTime,
+        nextEntry.firstMealTime,
+        currentDate,
+        nextEntry.date
+      );
+      nextEntryFastingDuration = {
+        hours: result.hours,
+        minutes: result.minutes,
+        totalMinutes: result.totalMinutes,
+        formatted: result.formattedDuration
+      };
+      
+      // Check if fasting TO next entry is more than 24 hours
+      if (result.totalMinutes > 1440) {
+        isExtendedFast = true;
+        extendedFastDirection = 'to-next';
+        // Use this duration instead for display
+        fastingDuration = nextEntryFastingDuration;
+      }
+    } catch (error) {
+      console.warn('Could not calculate fasting duration to next:', error.message);
     }
   }
 
@@ -97,12 +139,19 @@ export const GET = withErrorHandler(async (request) => {
     hasPreviousEntry: true,
     hasGap,
     isExtendedFast,
+    extendedFastDirection,
     previousEntry: {
       _id: previousEntry._id,
       date: previousEntry.date,
       lastMealTime: previousEntry.lastMealTime,
     },
+    nextEntry: nextEntry ? {
+      _id: nextEntry._id,
+      date: nextEntry.date,
+      firstMealTime: nextEntry.firstMealTime,
+    } : null,
     daysSinceLast: daysDifference,
     fastingDuration,
+    nextEntryFastingDuration,
   });
 });
