@@ -112,6 +112,27 @@ export default withPWA({
         },
       },
     },
+    {
+      // Cache page navigations (HTML) for offline support
+      urlPattern: ({ request }) => request.mode === 'navigate',
+      handler: 'NetworkFirst',
+      options: {
+        cacheName: 'pages-cache',
+        expiration: {
+          maxEntries: 50,
+          maxAgeSeconds: 24 * 60 * 60, // 1 day
+        },
+        networkTimeoutSeconds: 5,
+        plugins: [
+          {
+            // Fallback to offline page if page not cached
+            handlerDidError: async () => {
+              return caches.match('/offline.html');
+            },
+          },
+        ],
+      },
+    },
   ],
 })(nextConfig);
 
