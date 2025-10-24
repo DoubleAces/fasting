@@ -140,6 +140,58 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('install', (event) => {
   console.log('[SW] Service worker installed');
   
+  // Pre-cache critical offline resources
+  event.waitUntil(
+    caches.open('offline-v1').then((cache) => {
+      return cache.addAll(['/offline.html']);
+    })
+  );
+  
   // Skip waiting to activate immediately
   self.skipWaiting();
+});
+
+// Add a catch-all fetch handler for failed navigations
+self.addEventListener('fetch', (event) => {
+  // Only handle navigation requests
+  if (event.request.mode === 'navigate') {
+    event.respondWith(
+      (async () => {
+        try {
+          // Try to get the response from the network or Workbox cache
+          const preloadResponse = await event.preloadResponse;
+          if (preloadResponse) {
+            return preloadResponse;
+          }
+          
+          // Try network
+          const networkResponse = await fetch(event.request);
+          return networkResponse;
+        } catch (error) {
+          // Network failed, try cache
+          console.log('[SW] Network failed for navigation, checking cache:', event.request.url);
+          const cachedResponse = await caches.match(event.request);
+          if (cachedResponse) {
+            return cachedResponse;
+          }
+          
+          // Not in cache either, return offline page
+          console.log('[SW] Page not in cache, returning offline fallback');
+          const offlinePage = await caches.match('/offline.html');
+          if (offlinePage) {
+            return offlinePage;
+          }
+          
+          // Last resort - return a simple response
+          return new Response('Offline - please check your connection', {
+            status: 503,
+            statusText: 'Service Unavailable',
+            headers: new Headers({
+              'Content-Type': 'text/html'
+            })
+          });
+        }
+      })()
+    );
+  }
 });

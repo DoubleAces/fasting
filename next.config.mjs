@@ -112,31 +112,6 @@ export default withPWA({
         },
       },
     },
-    {
-      // Cache page navigations - network first, fallback to cache, then offline page
-      urlPattern: ({ request, url }) => {
-        return request.mode === 'navigate' && 
-               !url.pathname.startsWith('/_next') && 
-               !url.pathname.startsWith('/api');
-      },
-      handler: 'NetworkFirst',
-      options: {
-        cacheName: 'pages',
-        networkTimeoutSeconds: 10,
-        expiration: {
-          maxEntries: 50,
-          maxAgeSeconds: 24 * 60 * 60,
-        },
-        plugins: [
-          {
-            // Provide offline fallback when page not in cache
-            handlerDidError: async ({ request }) => {
-              return caches.match('/offline.html');
-            },
-          },
-        ],
-      },
-    },
   ],
 })(nextConfig);
 
