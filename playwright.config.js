@@ -67,11 +67,14 @@ export default defineConfig({
     },
   ],
 
-  /* Run your local dev server before starting the tests */
+  /* Run production build before starting the tests to enable service workers */
   webServer: {
-    command: 'npm run dev',
+    command: 'npm run build && npm start',
     url: 'http://localhost:3000',
     reuseExistingServer: !process.env.CI,
-    timeout: 120 * 1000,
+    timeout: 180 * 1000, // 3 minutes for build time
+    env: {
+      NODE_ENV: 'production',
+    },
   },
 });
