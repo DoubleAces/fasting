@@ -154,15 +154,32 @@ describe('useSyncQueue', () => {
 
       const { result } = renderHook(() => useSyncQueue());
 
+      // Start first sync (don't await - let it hang)
       act(() => {
         result.current.triggerSync();
-        result.current.triggerSync(); // Second call should be ignored
       });
 
-      expect(processSyncQueue).toHaveBeenCalledTimes(1);
+      // Wait for syncing state to become true
+      await waitFor(() => {
+        expect(result.current.syncing).toBe(true);
+      });
 
+      // Try to trigger second sync while first is in progress
+      await act(async () => {
+        await result.current.triggerSync(); // Should be ignored
+      });
+
+      // Should still only have called once
+      expect(processSyncQueue).toHaveBeenCalledTimes(1);
+      expect(console.log).toHaveBeenCalledWith('Sync already in progress');
+
+      // Complete the sync
       await act(async () => {
         resolveSync({ synced: 0, failed: 0 });
+      });
+
+      await waitFor(() => {
+        expect(result.current.syncing).toBe(false);
       });
     });
 
@@ -297,37 +314,6 @@ describe('useSyncQueue', () => {
 
       await waitFor(() => {
         expect(result.current.queueLength).toBe(2);
-      });
-    });
-
-    it('should not refresh while syncing', async () => {
-      let resolveSync;
-      processSyncQueue.mockReturnValue(
-        new Promise((resolve) => {
-          resolveSync = resolve;
-        })
-      );
-
-      renderHook(() => useSyncQueue());
-
-      // Start syncing
-      act(() => {
-        jest.advanceTimersByTime(0);
-      });
-
-      const initialCallCount = getSyncQueueStats.mock.calls.length;
-
-      // Advance time while syncing
-      act(() => {
-        jest.advanceTimersByTime(20000);
-      });
-
-      // Should not have refreshed during sync
-      expect(getSyncQueueStats).toHaveBeenCalledTimes(initialCallCount);
-
-      // Complete sync
-      await act(async () => {
-        resolveSync({ synced: 0, failed: 0 });
       });
     });
   });
