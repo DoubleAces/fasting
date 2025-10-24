@@ -8,9 +8,22 @@ export default function InstallPrompt() {
   const [showPrompt, setShowPrompt] = useState(false);
   const [engagementTime, setEngagementTime] = useState(0);
   const [pageViews, setPageViews] = useState(0);
+  const [isSafari, setIsSafari] = useState(false);
+  const [isStandalone, setIsStandalone] = useState(false);
 
   // Track engagement and page views (FR-006)
   useEffect(() => {
+    // Detect Safari and standalone mode
+    const userAgent = window.navigator.userAgent.toLowerCase();
+    const safari = /safari/.test(userAgent) && !/chrome/.test(userAgent);
+    const standalone = window.matchMedia('(display-mode: standalone)').matches || 
+                      window.navigator.standalone === true;
+    
+    setIsSafari(safari);
+    setIsStandalone(standalone);
+    
+    console.log('Browser detection:', { safari, standalone, userAgent });
+
     // Track engagement time
     const startTime = Date.now();
     const timer = setInterval(() => {
@@ -28,14 +41,20 @@ export default function InstallPrompt() {
 
   // Show prompt after 30s engagement OR 2+ page views (FR-006)
   useEffect(() => {
-    if (isInstallable && !showPrompt) {
+    // Don't show if already in standalone mode
+    if (isStandalone) {
+      return;
+    }
+
+    // For Safari or Chrome-based browsers
+    if (isSafari || isInstallable) {
       const shouldShow = engagementTime >= 30000 || pageViews >= 2;
-      if (shouldShow) {
+      if (shouldShow && !showPrompt) {
         setShowPrompt(true);
-        console.log('✓ Install prompt criteria met');
+        console.log('✓ Install prompt criteria met', { isSafari, isInstallable });
       }
     }
-  }, [isInstallable, engagementTime, pageViews, showPrompt]);
+  }, [isInstallable, isSafari, isStandalone, engagementTime, pageViews, showPrompt]);
 
   const handleInstall = async () => {
     const outcome = await install();
@@ -50,8 +69,8 @@ export default function InstallPrompt() {
     sessionStorage.setItem('installPromptDismissed', 'true');
   };
 
-  // Don't render if not installable or already dismissed
-  if (!isInstallable || !showPrompt) {
+  // Don't render if not installable/Safari or already dismissed
+  if ((!isInstallable && !isSafari) || !showPrompt || isStandalone) {
     return null;
   }
 
@@ -97,23 +116,35 @@ export default function InstallPrompt() {
             id="install-prompt-description"
             className="text-sm text-gray-600 mb-3"
           >
-            Install our app for quick access and offline tracking
+            {isSafari ? (
+              <>
+                Tap the <strong>Share</strong> button <span className="inline-block">
+                  <svg className="w-4 h-4 inline" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M16 5l-1.42 1.42-1.59-1.59V16h-1.98V4.83L9.42 6.42 8 5l4-4 4 4zm4 5v11c0 1.1-.9 2-2 2H6c-1.1 0-2-.9-2-2V10c0-1.1.9-2 2-2h3v2H6v11h12V10h-3V8h3c1.1 0 2 .9 2 2z"/>
+                  </svg>
+                </span> then <strong>"Add to Home Screen"</strong>
+              </>
+            ) : (
+              'Install our app for quick access and offline tracking'
+            )}
           </p>
           
           <div className="flex gap-2">
-            <button
-              onClick={handleInstall}
-              className="flex-1 bg-purple-600 hover:bg-purple-700 text-white font-medium py-2 px-4 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
-              aria-label="Install app"
-            >
-              Install
-            </button>
+            {!isSafari && (
+              <button
+                onClick={handleInstall}
+                className="flex-1 bg-purple-600 hover:bg-purple-700 text-white font-medium py-2 px-4 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
+                aria-label="Install app"
+              >
+                Install
+              </button>
+            )}
             <button
               onClick={handleDismiss}
-              className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-2 px-4 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
+              className={`${isSafari ? 'flex-1' : 'flex-1'} bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-2 px-4 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2`}
               aria-label="Dismiss install prompt"
             >
-              Not Now
+              {isSafari ? 'Got it' : 'Not Now'}
             </button>
           </div>
         </div>
