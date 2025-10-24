@@ -7,6 +7,7 @@ import PWARegistration from "@/components/pwa/PWARegistration";
 import PeriodicSync from "@/components/pwa/PeriodicSync";
 import OfflineIndicator from "@/components/atoms/OfflineIndicator";
 import UpdateBanner from "@/components/molecules/UpdateBanner";
+import InstallPrompt from "@/components/molecules/InstallPrompt";
 import "./globals.css";
 
 export const metadata = {
@@ -50,6 +51,7 @@ export default function RootLayout({ children }) {
         <PeriodicSync />
         <OfflineIndicator />
         <UpdateBanner />
+        <InstallPrompt />
         <SessionProvider>
           <ToastProvider>
             <ConditionalLayout>
