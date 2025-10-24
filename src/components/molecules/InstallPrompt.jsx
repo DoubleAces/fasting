@@ -10,6 +10,7 @@ export default function InstallPrompt() {
   const [pageViews, setPageViews] = useState(0);
   const [isSafari, setIsSafari] = useState(false);
   const [isStandalone, setIsStandalone] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
 
   // Track engagement and page views (FR-006)
   useEffect(() => {
@@ -19,10 +20,15 @@ export default function InstallPrompt() {
     const standalone = window.matchMedia('(display-mode: standalone)').matches || 
                       window.navigator.standalone === true;
     
+    // Detect mobile device
+    const mobile = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent) ||
+                   (window.matchMedia && window.matchMedia('(max-width: 768px)').matches);
+    
     setIsSafari(safari);
     setIsStandalone(standalone);
+    setIsMobile(mobile);
     
-    console.log('Browser detection:', { safari, standalone, userAgent });
+    console.log('Browser detection:', { safari, standalone, mobile, userAgent });
 
     // Track engagement time
     const startTime = Date.now();
@@ -41,8 +47,8 @@ export default function InstallPrompt() {
 
   // Show prompt after 30s engagement OR 2+ page views (FR-006)
   useEffect(() => {
-    // Don't show if already in standalone mode
-    if (isStandalone) {
+    // Don't show if already in standalone mode or not on mobile
+    if (isStandalone || !isMobile) {
       return;
     }
 
@@ -51,10 +57,10 @@ export default function InstallPrompt() {
       const shouldShow = engagementTime >= 30000 || pageViews >= 2;
       if (shouldShow && !showPrompt) {
         setShowPrompt(true);
-        console.log('✓ Install prompt criteria met', { isSafari, isInstallable });
+        console.log('✓ Install prompt criteria met', { isSafari, isInstallable, isMobile });
       }
     }
-  }, [isInstallable, isSafari, isStandalone, engagementTime, pageViews, showPrompt]);
+  }, [isInstallable, isSafari, isStandalone, isMobile, engagementTime, pageViews, showPrompt]);
 
   const handleInstall = async () => {
     const outcome = await install();
@@ -69,8 +75,8 @@ export default function InstallPrompt() {
     sessionStorage.setItem('installPromptDismissed', 'true');
   };
 
-  // Don't render if not installable/Safari or already dismissed
-  if ((!isInstallable && !isSafari) || !showPrompt || isStandalone) {
+  // Don't render if not installable/Safari or already dismissed or not mobile
+  if ((!isInstallable && !isSafari) || !showPrompt || isStandalone || !isMobile) {
     return null;
   }
 
