@@ -113,7 +113,7 @@ export default withPWA({
       },
     },
     {
-      // Cache page navigations - network first, fallback to cache
+      // Cache page navigations - network first, fallback to cache, then offline page
       urlPattern: ({ request, url }) => {
         return request.mode === 'navigate' && 
                !url.pathname.startsWith('/_next') && 
@@ -127,6 +127,14 @@ export default withPWA({
           maxEntries: 50,
           maxAgeSeconds: 24 * 60 * 60,
         },
+        plugins: [
+          {
+            // Provide offline fallback when page not in cache
+            handlerDidError: async ({ request }) => {
+              return caches.match('/offline.html');
+            },
+          },
+        ],
       },
     },
   ],
