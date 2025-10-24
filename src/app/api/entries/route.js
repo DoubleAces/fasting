@@ -83,11 +83,16 @@ export const POST = withErrorHandler(async (request) => {
     return badRequestResponse('Validation failed', errors);
   }
 
+  // Get sync timestamp from header for conflict resolution
+  const syncTimestamp = request.headers.get('X-Sync-Timestamp');
+  const clientTimestamp = syncTimestamp ? parseInt(syncTimestamp, 10) : null;
+
   // Check if entry for this date already exists for this user
   console.log('🔍 Checking for existing entry:', {
     date: value.date,
     userId: session.user.id,
-    userEmail: session.user.email
+    userEmail: session.user.email,
+    syncTimestamp: clientTimestamp
   });
   
   const existingEntry = await Entry.findOne({ 
@@ -97,8 +102,71 @@ export const POST = withErrorHandler(async (request) => {
   
   console.log('🔍 Existing entry result:', existingEntry ? 'FOUND' : 'NOT FOUND');
   
+  // Conflict resolution: Last-write-wins strategy
   if (existingEntry) {
-    throw new ApiError('An entry for this date already exists', 409);
+    // If no sync timestamp provided, this is a regular request (not offline sync)
+    // Reject duplicate entries from regular requests
+    if (!clientTimestamp) {
+      throw new ApiError('An entry for this date already exists', 409);
+    }
+
+    // Conflict resolution: Compare timestamps
+    const serverTimestamp = new Date(existingEntry.createdAt).getTime();
+    
+    console.log('⚠️ Conflict detected:', {
+      clientTimestamp,
+      serverTimestamp,
+      clientNewer: clientTimestamp > serverTimestamp
+    });
+
+    // Client is newer - update existing entry
+    if (clientTimestamp > serverTimestamp) {
+      console.log('✓ Client wins - updating server entry');
+      
+      // Update existing entry with client data
+      existingEntry.startTime = value.startTime;
+      existingEntry.endTime = value.endTime;
+      existingEntry.notes = value.notes || '';
+      
+      // Recalculate fasting duration
+      let fastingDuration = null;
+      try {
+        if (value.extendedFastDenied) {
+          fastingDuration = null;
+        } else {
+          const previousEntry = await Entry.findOne({
+            userId: session.user.id,
+            date: { $lt: new Date(value.date) }
+          })
+            .sort({ date: -1 })
+            .limit(1);
+
+          if (previousEntry && previousEntry.endTime && value.startTime) {
+            const result = calculateFastingDuration(
+              previousEntry.endTime,
+              value.startTime,
+              previousEntry.date,
+              value.date
+            );
+            fastingDuration = result.totalMinutes;
+          }
+        }
+      } catch (calcError) {
+        console.warn('Could not calculate fasting duration:', calcError.message);
+      }
+      
+      existingEntry.fastingDuration = fastingDuration;
+      await existingEntry.save();
+      
+      return okResponse(existingEntry);
+    } else {
+      // Server is newer - return existing entry with conflict header
+      console.log('✓ Server wins - keeping server entry');
+      
+      const response = okResponse(existingEntry);
+      response.headers.set('X-Conflict-Resolved', 'server-wins');
+      return response;
+    }
   }
 
   // Calculate fasting duration if previous entry exists for this user
