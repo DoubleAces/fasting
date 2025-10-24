@@ -123,14 +123,14 @@ export default withPWA({
           maxAgeSeconds: 24 * 60 * 60, // 1 day
         },
         networkTimeoutSeconds: 5,
-        plugins: [
-          {
-            // Fallback to offline page if page not cached
-            handlerDidError: async () => {
-              return caches.match('/offline.html');
-            },
-          },
-        ],
+      },
+    },
+    {
+      // Always cache offline.html for fallback
+      urlPattern: /\/offline\.html$/,
+      handler: 'CacheFirst',
+      options: {
+        cacheName: 'offline-fallback-v1',
       },
     },
   ],

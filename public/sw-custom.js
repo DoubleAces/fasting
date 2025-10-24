@@ -140,6 +140,14 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('install', (event) => {
   console.log('[SW] Service worker installed');
   
+  // Pre-cache offline page for fallback
+  event.waitUntil(
+    caches.open('offline-fallback-v1').then((cache) => {
+      console.log('[SW] Caching offline page');
+      return cache.add('/offline.html');
+    })
+  );
+  
   // Skip waiting to activate immediately
   self.skipWaiting();
 });
