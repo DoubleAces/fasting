@@ -32,6 +32,9 @@ export default withPWA({
       { url: '/offline.html', revision: '1' },
     ],
     importScripts: ['sw-custom.js'],
+    // Handle navigation requests that fail
+    navigateFallback: '/offline.html',
+    navigateFallbackDenylist: [/^\/_next/, /^\/api/],
   },
   runtimeCaching: [
     {
@@ -110,27 +113,6 @@ export default withPWA({
           maxEntries: 32,
           maxAgeSeconds: 24 * 60 * 60, // 1 day
         },
-      },
-    },
-    {
-      // Cache page navigations (HTML) for offline support
-      urlPattern: ({ request }) => request.mode === 'navigate',
-      handler: 'NetworkFirst',
-      options: {
-        cacheName: 'pages-cache',
-        expiration: {
-          maxEntries: 50,
-          maxAgeSeconds: 24 * 60 * 60, // 1 day
-        },
-        networkTimeoutSeconds: 5,
-      },
-    },
-    {
-      // Always cache offline.html for fallback
-      urlPattern: /\/offline\.html$/,
-      handler: 'CacheFirst',
-      options: {
-        cacheName: 'offline-fallback-v1',
       },
     },
   ],
