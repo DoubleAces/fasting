@@ -8,6 +8,15 @@ A daily fasting and health metrics tracking application built with Next.js 14+, 
 - 🏋️ Monitor health metrics (weight, sleep, energy, hunger, well-being)
 - 📝 Record food intake notes
 - 📈 View historical data and trends
+- 🔍 **Entry Details with Personal Insights**:
+  - Comprehensive view of all entry data with visual timeline
+  - Personalized insights comparing each entry to your history
+  - Historical ranking (e.g., "Your #3 longest fast")
+  - Monthly achievements (longest fast this month)
+  - Average duration comparisons
+  - Typical breakfast time patterns
+  - Daily streak tracking
+  - "Best Day" badges for exceptional performance
 - ⚙️ Configurable measurement units (metric/imperial) and time formats (12h/24h)
 - 📱 Mobile-first responsive design
 - ♿ WCAG 2.1 Level AA accessible
