@@ -13,8 +13,9 @@ import TimeDisplay from '@/components/atoms/TimeDisplay';
 import FastingTimeline from '@/components/molecules/FastingTimeline';
 import EntryMetadata from '@/components/molecules/EntryMetadata';
 import EntryActions from '@/components/organisms/EntryActions';
+import EntryInsights from '@/components/organisms/EntryInsights';
 
-const EntryDetailsView = ({ entry, settings }) => {
+const EntryDetailsView = ({ entry, settings, insights }) => {
   if (!entry) return null;
 
   const timeFormat = settings?.timeFormat || '24h';
@@ -173,6 +174,11 @@ const EntryDetailsView = ({ entry, settings }) => {
             entryDate={entry.date}
           />
         </section>
+      )}
+
+      {/* Insights - only show if insights available */}
+      {insights && (
+        <EntryInsights insights={insights} />
       )}
 
       {/* Meal times */}

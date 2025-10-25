@@ -11,6 +11,7 @@ import { connectDB } from '@/lib/db';
 import Entry from '@/lib/models/Entry';
 import Settings from '@/lib/models/Settings';
 import EntryDetailsView from '@/components/organisms/EntryDetailsView';
+import { calculateInsights } from '@/lib/services/entryInsightsService';
 import Link from 'next/link';
 
 export default async function EntryDetailsPage({ params }) {
@@ -50,6 +51,15 @@ export default async function EntryDetailsPage({ params }) {
 
     // Fetch user settings
     const settings = await Settings.findOne({ userId }).lean();
+
+    // Calculate insights for this entry
+    let insights = null;
+    try {
+      insights = await calculateInsights(entry, userId);
+    } catch (error) {
+      console.error('Error calculating insights:', error);
+      // Continue without insights - non-critical feature
+    }
 
     // Convert MongoDB documents to plain objects with string IDs
     const serializedEntry = {
@@ -97,6 +107,7 @@ export default async function EntryDetailsPage({ params }) {
           <EntryDetailsView
             entry={serializedEntry}
             settings={serializedSettings}
+            insights={insights}
           />
         </div>
       </div>
