@@ -101,8 +101,11 @@ const entrySchema = new mongoose.Schema(
       maxlength: [2000, 'Food notes cannot exceed 2000 characters'],
     },
 
-    // Optional reference to source entry if copied from another entry
-    // Used for audit trail when using "Copy to Today" feature
+    /**
+     * @deprecated This field is no longer used as of October 2025.
+     * The "Copy to Today" feature has been removed.
+     * Existing entries may have this value populated, but new entries will not.
+     */
     templateSource: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Entry',

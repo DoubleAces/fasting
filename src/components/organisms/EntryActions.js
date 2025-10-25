@@ -7,7 +7,7 @@ import DeleteConfirmationModal from '@/components/DeleteConfirmationModal';
 
 /**
  * Entry Actions Component
- * Provides Edit, Delete, and Copy to Today actions for entry details page
+ * Provides Edit and Delete actions for entry details page
  * 
  * @param {object} entry - The entry object
  * @param {boolean} isToday - Whether this entry is for today
@@ -23,7 +23,6 @@ export default function EntryActions({
   const router = useRouter();
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [isCopying, setIsCopying] = useState(false);
   const [error, setError] = useState(null);
   const [streakImpact, setStreakImpact] = useState(null);
 
@@ -97,92 +96,13 @@ export default function EntryActions({
   };
 
   /**
-   * Handle Copy to Today action
-   */
-  const handleCopyToToday = async () => {
-    if (!isValid || isToday) return;
-    
-    setIsCopying(true);
-    setError(null);
-
-    try {
-      // First, check if today's entry already exists
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      
-      // Format date as YYYY-MM-DD in local timezone
-      const year = today.getFullYear();
-      const month = String(today.getMonth() + 1).padStart(2, '0');
-      const day = String(today.getDate()).padStart(2, '0');
-      const todayFormatted = `${year}-${month}-${day}`;
-      
-      const checkResponse = await fetch(
-        `/api/entries?date=${todayFormatted}`
-      );
-      
-      if (!checkResponse.ok) {
-        throw new Error('Failed to check existing entries');
-      }
-
-      const existingEntries = await checkResponse.json();
-      
-      if (existingEntries.entries && existingEntries.entries.length > 0) {
-        setError('You already have an entry for today. Please edit or delete it first.');
-        setIsCopying(false);
-        return;
-      }
-
-      // Create new entry with copied meal times
-      // Only include required fields and templateSource - omit optional fields
-      // Send date at noon UTC to avoid timezone display issues
-      // Custom validation ensures we only compare date part, not time
-      const newEntry = {
-        date: `${todayFormatted}T12:00:00.000Z`,
-        firstMealTime: entry.firstMealTime,
-        lastMealTime: entry.lastMealTime,
-        templateSource: entry._id, // Track where this came from
-      };
-
-      const response = await fetch('/api/entries', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(newEntry),
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        // Show detailed error message for debugging
-        if (data.errors && Array.isArray(data.errors)) {
-          const errorDetails = data.errors.map(e => `${e.field}: ${e.message}`).join(', ');
-          throw new Error(errorDetails);
-        }
-        throw new Error(data.error || 'Failed to copy entry');
-      }
-
-      const data = await response.json();
-
-      // Success - navigate to new entry
-      // API returns entry directly, not wrapped in an object
-      if (onSuccess) onSuccess('Entry copied to today successfully');
-      router.push(`/entries/${data._id}?message=Entry copied successfully`);
-      // Don't call router.refresh() - router.push will load the new page correctly
-    } catch (err) {
-      setError(err.message || 'Failed to copy entry');
-      setIsCopying(false);
-      if (onError) onError(err);
-    }
-  };
-
-  /**
    * Dismiss error message
    */
   const handleDismissError = () => {
     setError(null);
   };
 
-  const isLoading = isDeleting || isCopying;
+  const isLoading = isDeleting;
 
   return (
     <>
@@ -236,18 +156,6 @@ export default function EntryActions({
           aria-label="Delete entry"
         >
           {isDeleting ? 'Deleting...' : 'Delete'}
-        </button>
-
-        {/* Copy to Today Button */}
-        <button
-          onClick={handleCopyToToday}
-          disabled={!isValid || isToday || isLoading}
-          className="flex-1 min-h-[44px] min-w-[44px] px-6 py-2.5 bg-gray-600 text-white rounded-lg hover:bg-gray-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors font-medium focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
-          aria-label="Copy to today"
-          aria-disabled={isToday}
-          title={isToday ? 'You are already viewing today\'s entry' : 'Copy meal times to today'}
-        >
-          {isCopying ? 'Copying...' : 'Copy to Today'}
         </button>
       </div>
 

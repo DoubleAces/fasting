@@ -21,6 +21,8 @@ Auto-generated from all feature plans. Last updated: 2025-10-17
 - JavaScript (ES6+) / Next.js 15.5.6 (App Router) (010-pwa-conversion)
 - JavaScript ES6+ with Next.js 15.5.6 (App Router) (011-entry-details-page)
 - MongoDB with Mongoose schemas (Entry, User, Settings collections) (011-entry-details-page)
+- JavaScript ES6+ / Next.js 15.5.6 + React 18, Mongoose ODM, NextAuth.js (012-remove-copy-today)
+- MongoDB (Entry model with optional templateSource field) (012-remove-copy-today)
 
 ## Project Structure
 ```
@@ -36,9 +38,9 @@ npm test; npm run lint
 JavaScript ES6+ with Node.js 18+ (Next.js 14+): Follow standard conventions
 
 ## Recent Changes
+- 012-remove-copy-today: Added JavaScript ES6+ / Next.js 15.5.6 + React 18, Mongoose ODM, NextAuth.js
 - 011-entry-details-page: Added JavaScript ES6+ with Next.js 15.5.6 (App Router)
 - 010-pwa-conversion: Added JavaScript (ES6+) / Next.js 15.5.6 (App Router)
-- 009-backfill-fasting-calculation: Added JavaScript (ES6+) / Node.js with Next.js 14+ (App Router) + Next.js, Mongoose ODM, MongoDB Atlas, NextAuth.js
 
 <!-- MANUAL ADDITIONS START -->
 <!-- MANUAL ADDITIONS END -->
