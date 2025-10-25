@@ -49,6 +49,9 @@ import { getYesterday, getTomorrow, formatDate } from '@/lib/utils/dateUtils';
 import { badRequestResponse } from '@/lib/api/errorHandler';
 
 export const PUT = withErrorHandler(async (request, { params }) => {
+  // Await params (Next.js 15 requirement)
+  const { id } = await params;
+  
   // Check authentication
   const session = await auth();
   if (!session?.user?.id) {
@@ -58,7 +61,7 @@ export const PUT = withErrorHandler(async (request, { params }) => {
   await connectDB();
 
   // Check if entry exists
-  const existingEntry = await Entry.findById(params.id);
+  const existingEntry = await Entry.findById(id);
   if (!existingEntry) {
     return notFoundResponse('Entry');
   }
@@ -148,7 +151,7 @@ export const PUT = withErrorHandler(async (request, { params }) => {
 
   // Update entry
   const updatedEntry = await Entry.findByIdAndUpdate(
-    params.id,
+    id,
     { ...value, fastingDuration },
     { new: true, runValidators: true }
   );
@@ -225,6 +228,9 @@ export const PUT = withErrorHandler(async (request, { params }) => {
  */
 
 export const DELETE = withErrorHandler(async (request, { params }) => {
+  // Await params (Next.js 15 requirement)
+  const { id } = await params;
+  
   // Check authentication
   const session = await auth();
   if (!session?.user?.id) {
@@ -234,7 +240,7 @@ export const DELETE = withErrorHandler(async (request, { params }) => {
   await connectDB();
 
   // Find entry
-  const entry = await Entry.findById(params.id);
+  const entry = await Entry.findById(id);
   
   if (!entry) {
     return notFoundResponse('Entry');
@@ -314,27 +320,33 @@ export const DELETE = withErrorHandler(async (request, { params }) => {
       }
 
       // If confirmed, proceed with deletion and update
-      if (!checkOnly) {
-        // Delete the entry
-        await Entry.findByIdAndDelete(params.id);
+      // Delete the entry
+      await Entry.findByIdAndDelete(id);
 
-        // Update next entry's fasting duration based on user choice
-        if (createExtendedFast === 'false' && extendedFastCreated) {
-          // User chose not to create extended fast - keep original fasting duration unchanged
-          // Don't update the next entry at all, it will keep its existing fasting duration
-        } else {
-          // User confirmed extended fast or no extended fast detected - update normally
-          await Entry.findByIdAndUpdate(
-            nextEntry._id,
-            { fastingDuration: newFastingDuration }
-          );
-        }
+      // Update next entry's fasting duration based on user choice
+      if (createExtendedFast === 'false' && extendedFastCreated) {
+        // User chose not to create extended fast - keep original fasting duration unchanged
+        // Don't update the next entry at all, it will keep its existing fasting duration
+      } else {
+        // User confirmed extended fast or no extended fast detected - update normally
+        await Entry.findByIdAndUpdate(
+          nextEntry._id,
+          { fastingDuration: newFastingDuration }
+        );
       }
     } else {
-      // No next entry, just delete
-      if (!checkOnly) {
-        await Entry.findByIdAndDelete(params.id);
+      // No next entry
+      
+      // If checkOnly, return empty result
+      if (checkOnly) {
+        return okResponse({
+          extendedFastCreated: false,
+          extendedFastInfo: null
+        });
       }
+      
+      // Just delete the entry
+      await Entry.findByIdAndDelete(id);
     }
   } catch (calcError) {
     console.error('Error during delete operation:', calcError);

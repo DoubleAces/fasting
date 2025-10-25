@@ -1,4 +1,7 @@
+'use client';
+
 import React from 'react';
+import { useRouter } from 'next/navigation';
 import { format, parseISO } from 'date-fns';
 import Button from '@/components/atoms/Button';
 import LoadingSpinner from '@/components/atoms/LoadingSpinner';
@@ -28,9 +31,20 @@ export default function EntryList({
   error = '',
   className = '',
 }) {
+  const router = useRouter();
+
   // Get display preferences from settings
   const weightUnit = settings?.measurementSystem === 'imperial' ? 'lbs' : 'kg';
   const timeFormat = settings?.timeFormat || '24h';
+
+  // Handle row click to navigate to entry details
+  const handleRowClick = (entryId, event) => {
+    // Don't navigate if clicking on action buttons
+    if (event.target.closest('button')) {
+      return;
+    }
+    router.push(`/entries/${entryId}`);
+  };
 
   // Format time based on user settings
   const formatTime = (timeStr) => {
@@ -122,7 +136,12 @@ export default function EntryList({
         </thead>
         <tbody className="divide-y divide-gray-200">
           {entries.map((entry) => (
-            <tr key={entry._id} className="hover:bg-gray-50 transition-colors">
+            <tr 
+              key={entry._id} 
+              onClick={(e) => handleRowClick(entry._id, e)}
+              className="hover:bg-gray-50 transition-colors group cursor-pointer"
+              data-testid="entry-row"
+            >
               {/* Date */}
               <td className="px-4 py-3 whitespace-nowrap">
                 <span className="text-sm font-medium text-gray-900">
