@@ -23,6 +23,8 @@ Auto-generated from all feature plans. Last updated: 2025-10-17
 - MongoDB with Mongoose schemas (Entry, User, Settings collections) (011-entry-details-page)
 - JavaScript ES6+ / Next.js 15.5.6 + React 18, Mongoose ODM, NextAuth.js (012-remove-copy-today)
 - MongoDB (Entry model with optional templateSource field) (012-remove-copy-today)
+- JavaScript (ES6+) with React 18 + Next.js 15.5.6 (App Router), React Hook Form, Tailwind CSS (013-inline-fast-confirmation)
+- MongoDB with Mongoose ODM (Entry model with extendedFastConfirmed fields) (013-inline-fast-confirmation)
 
 ## Project Structure
 ```
@@ -38,9 +40,9 @@ npm test; npm run lint
 JavaScript ES6+ with Node.js 18+ (Next.js 14+): Follow standard conventions
 
 ## Recent Changes
+- 013-inline-fast-confirmation: Added JavaScript (ES6+) with React 18 + Next.js 15.5.6 (App Router), React Hook Form, Tailwind CSS
 - 012-remove-copy-today: Added JavaScript ES6+ / Next.js 15.5.6 + React 18, Mongoose ODM, NextAuth.js
 - 011-entry-details-page: Added JavaScript ES6+ with Next.js 15.5.6 (App Router)
-- 010-pwa-conversion: Added JavaScript (ES6+) / Next.js 15.5.6 (App Router)
 
 <!-- MANUAL ADDITIONS START -->
 <!-- MANUAL ADDITIONS END -->
