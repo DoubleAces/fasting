@@ -218,17 +218,6 @@ export const entrySchema = Joi.object({
     .messages({
       'boolean.base': 'Extended fast to next denied must be true or false',
     }),
-
-  /**
-   * Template source (optional)
-   * ObjectId of the entry this was copied from (for audit trail)
-   */
-  templateSource: Joi.string()
-    .pattern(/^[0-9a-fA-F]{24}$/)
-    .optional()
-    .messages({
-      'string.pattern.base': 'Template source must be a valid ObjectId',
-    }),
 }).options({
   stripUnknown: true, // Remove unknown fields
   abortEarly: false,  // Return all errors, not just the first one
