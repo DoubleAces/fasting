@@ -101,6 +101,32 @@ const EntryForm = ({
       [field]: value,
     }));
     
+    // T028: Reset extended fast confirmation state when time fields change
+    if (field === 'firstMealTime' || field === 'lastMealTime') {
+      setGapInfo(null);
+      setShowExtendedFastPrompt(false);
+      setCurrentPromptType(null);
+      setFormData(prev => ({
+        ...prev,
+        [field]: value,
+        extendedFastFromPreviousConfirmed: false,
+        extendedFastToNextConfirmed: false,
+        extendedFastDenied: false,
+        extendedFastToNextDenied: false,
+        extendedFastConfirmed: false,
+      }));
+      
+      // Clear error for this field when it has a value
+      if (value && errors[field]) {
+        setErrors(prev => {
+          const newErrors = { ...prev };
+          delete newErrors[field];
+          return newErrors;
+        });
+      }
+      return;
+    }
+    
     // Clear error for this field when it has a value
     if (value && errors[field]) {
       setErrors(prev => {
@@ -288,73 +314,22 @@ const EntryForm = ({
     return newErrors;
   };
 
-  // Handle form submission
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setApiError('');
-
-    // Validate form
-    const validationErrors = validateForm();
-    
-    // Use flushSync to ensure errors are set synchronously before checking
-    flushSync(() => {
-      setErrors(validationErrors);
-    });
-    
-    if (Object.keys(validationErrors).length > 0) {
-      return;
-    }
-
-    // Check for extended fasts ONLY if we haven't checked yet
-    if (!gapInfo && formData.date && formData.firstMealTime && formData.lastMealTime) {
-      setIsSubmitting(true);
-      try {
-        const params = new URLSearchParams({
-          date: formData.date,
-          firstMealTime: formData.firstMealTime,
-          lastMealTime: formData.lastMealTime
-        });
-        
-        const response = await fetch(`/api/entries/check-previous?${params.toString()}`);
-        const data = await response.json();
-        
-        setGapInfo(data);
-        
-        // If extended fast detected, show first popup and stop
-        if (data.isExtendedFast) {
-          if (data.isExtendedFastFromPrevious) {
-            setCurrentPromptType('from-previous');
-            setShowExtendedFastPrompt(true);
-          } else if (data.isExtendedFastToNext) {
-            setCurrentPromptType('to-next');
-            setShowExtendedFastPrompt(true);
-          }
-          setIsSubmitting(false);
-          return;
-        }
-      } catch (error) {
-        console.error('❌ Error checking for extended fast:', error);
-        setIsSubmitting(false);
-        return;
-      }
-    }
-
-    // Check if extended fast detected but not all prompts confirmed/denied yet
-    if (gapInfo?.isExtendedFast && !formData.extendedFastConfirmed) {
-      // Check if from-previous needs confirmation
-      if (gapInfo.isExtendedFastFromPrevious && !formData.extendedFastFromPreviousConfirmed && !formData.extendedFastDenied) {
-        setCurrentPromptType('from-previous');
-        setShowExtendedFastPrompt(true);
-        return;
-      }
-      // Check if to-next needs confirmation
-      if (gapInfo.isExtendedFastToNext && !formData.extendedFastToNextConfirmed && !formData.extendedFastToNextDenied) {
-        setCurrentPromptType('to-next');
-        setShowExtendedFastPrompt(true);
-        return;
-      }
-    }
-
+  /**
+   * T021/T045: Submit form data to API
+   * 
+   * Extracted from handleSubmit to enable reuse by confirmation handlers.
+   * Called directly by:
+   * - handleSubmit (for non-extended fasts or after all confirmations)
+   * - handleExtendedFastConfirmAndSave (after user confirms extended fast)
+   * - handleExtendedFastDenyAndSave (after user denies extended fast)
+   * 
+   * @async
+   * @function
+   * @returns {Promise<void>} Resolves when entry is saved, rejects on error
+   * @fires onSuccess - Callback with saved entry data on successful save
+   * @throws {Error} Sets apiError state if save fails
+   */
+  const submitForm = async () => {
     setIsSubmitting(true);
 
     try {
@@ -425,6 +400,310 @@ const EntryForm = ({
     }
   };
 
+  /**
+   * T025/T045: Handle "Yes" confirmation for extended fast - save immediately inline
+   * 
+   * User confirmed they fasted continuously during the detected gap.
+   * This sets the appropriate confirmation flag and either:
+   * - Shows the next confirmation inline (if sequential gap exists), OR
+   * - Saves the entry immediately with confirmed extended fast flag
+   * 
+   * Implements one-click save: user clicks "Yes, confirm extended fast" and
+   * the entry saves without needing a second "Update Entry" click.
+   * 
+   * @async
+   * @function
+   * @returns {Promise<void>} Resolves when entry is saved or next confirmation shown
+   * @see handleExtendedFastDenyAndSave - Handles "No" denial
+   * @see submitForm - Called to save entry after all confirmations
+   */
+  const handleExtendedFastConfirmAndSave = async () => {
+    // Set confirmation state based on current prompt type
+    let updatedFormData = { ...formData };
+    
+    if (currentPromptType === 'from-previous') {
+      // User confirmed extended fast FROM previous entry
+      updatedFormData = { 
+        ...updatedFormData, 
+        extendedFastFromPreviousConfirmed: true,
+        extendedFastDenied: false
+      };
+      setFormData(updatedFormData);
+      
+      // Check if to-next also needs confirmation (sequential gaps)
+      if (gapInfo?.isExtendedFastToNext && !formData.extendedFastToNextConfirmed && !formData.extendedFastToNextDenied) {
+        // T027: Show second confirmation INLINE (no setTimeout, no page refresh)
+        setCurrentPromptType('to-next');
+        setShowExtendedFastPrompt(true);
+        return;
+      }
+    } else if (currentPromptType === 'to-next') {
+      // User confirmed extended fast TO next entry
+      updatedFormData = { 
+        ...updatedFormData, 
+        extendedFastToNextConfirmed: true,
+        extendedFastToNextDenied: false
+      };
+      setFormData(updatedFormData);
+    }
+
+    // All confirmations done - submit immediately with updated data
+    // Note: Don't hide prompt yet - wait until save succeeds
+    
+    // T025: Call submitForm directly to save (inline, no second button click needed)
+    // Note: Using inline submission logic here instead of calling submitForm() 
+    // to avoid state timing issues with React's asynchronous setFormData
+    setIsSubmitting(true);
+    try {
+      // Prepare data for API
+      const payload = {
+        date: updatedFormData.date,
+        firstMealTime: updatedFormData.firstMealTime,
+        lastMealTime: updatedFormData.lastMealTime,
+        extendedFastConfirmed: updatedFormData.extendedFastFromPreviousConfirmed,
+        extendedFastDenied: updatedFormData.extendedFastDenied,
+        extendedFastToNextDenied: updatedFormData.extendedFastToNextDenied,
+      };
+
+      // Add optional fields only if they have values
+      if (updatedFormData.hoursOfSleep) {
+        payload.hoursOfSleep = parseFloat(updatedFormData.hoursOfSleep);
+      }
+      if (updatedFormData.morningWeight) {
+        payload.morningWeight = parseFloat(updatedFormData.morningWeight);
+      }
+      if (updatedFormData.hungerLevel) {
+        payload.hungerLevel = updatedFormData.hungerLevel;
+      }
+      if (updatedFormData.energyLevel) {
+        payload.energyLevel = updatedFormData.energyLevel;
+      }
+      if (updatedFormData.wellBeing) {
+        payload.wellBeing = updatedFormData.wellBeing;
+      }
+      if (updatedFormData.foodNotes) {
+        payload.foodNotes = updatedFormData.foodNotes;
+      }
+
+      // Make API request
+      const url = isEditMode ? `/api/entries/${entry._id}` : '/api/entries';
+      const method = isEditMode ? 'PUT' : 'POST';
+
+      const response = await fetch(url, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        
+        // If we have detailed validation errors, display them
+        if (errorData.errors && Array.isArray(errorData.errors)) {
+          const errorMessages = errorData.errors.map(err => `${err.field}: ${err.message}`).join('; ');
+          throw new Error(errorMessages);
+        }
+        
+        throw new Error(errorData.error || 'Failed to save entry');
+      }
+
+      const result = await response.json();
+
+      // Success! Now we can hide the prompt
+      setShowExtendedFastPrompt(false);
+
+      // Call success callback if provided
+      if (onSuccess) {
+        onSuccess(result.data);
+      }
+    } catch (error) {
+      // Keep prompt visible on error so user can try again
+      setApiError(error.message || 'Failed to save entry. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  /**
+   * T026/T045: Handle "No" denial for extended fast - save immediately inline
+   * 
+   * User indicated they DID eat during the detected gap (but didn't log it).
+   * This sets the appropriate denial flag and either:
+   * - Shows the next confirmation inline (if sequential gap exists), OR
+   * - Saves the entry immediately with denied extended fast flag
+   * 
+   * Implements one-click save: user clicks "No, I ate but didn't log" and
+   * the entry saves without needing a second "Update Entry" click.
+   * 
+   * @async
+   * @function
+   * @returns {Promise<void>} Resolves when entry is saved or next confirmation shown
+   * @see handleExtendedFastConfirmAndSave - Handles "Yes" confirmation
+   * @see submitForm - Called to save entry after all confirmations/denials
+   */
+  const handleExtendedFastDenyAndSave = async () => {
+    // Set denial state based on current prompt type
+    let updatedFormData = { ...formData };
+    
+    if (currentPromptType === 'from-previous') {
+      // User denied extended fast FROM previous entry (they ate but didn't log)
+      updatedFormData = { 
+        ...updatedFormData, 
+        extendedFastDenied: true,
+        extendedFastFromPreviousConfirmed: false
+      };
+      setFormData(updatedFormData);
+      
+      // Check if to-next also needs confirmation (sequential gaps)
+      if (gapInfo?.isExtendedFastToNext && !formData.extendedFastToNextConfirmed && !formData.extendedFastToNextDenied) {
+        // T027: Show second confirmation INLINE (no setTimeout, no page refresh)
+        setCurrentPromptType('to-next');
+        setShowExtendedFastPrompt(true);
+        return;
+      }
+    } else if (currentPromptType === 'to-next') {
+      // User denied extended fast TO next entry (they ate but didn't log)
+      updatedFormData = { 
+        ...updatedFormData, 
+        extendedFastToNextDenied: true,
+        extendedFastToNextConfirmed: false
+      };
+      setFormData(updatedFormData);
+    }
+
+    // All confirmations done - submit immediately with updated data
+    // Note: Don't hide prompt yet - wait until save succeeds
+    
+    // Call submitForm directly with updated data
+    setIsSubmitting(true);
+    try {
+      // Prepare data for API
+      const payload = {
+        date: updatedFormData.date,
+        firstMealTime: updatedFormData.firstMealTime,
+        lastMealTime: updatedFormData.lastMealTime,
+        extendedFastConfirmed: updatedFormData.extendedFastFromPreviousConfirmed,
+        extendedFastDenied: updatedFormData.extendedFastDenied,
+        extendedFastToNextDenied: updatedFormData.extendedFastToNextDenied,
+      };
+
+      // Add optional fields only if they have values
+      if (updatedFormData.hoursOfSleep) {
+        payload.hoursOfSleep = parseFloat(updatedFormData.hoursOfSleep);
+      }
+      if (updatedFormData.morningWeight) {
+        payload.morningWeight = parseFloat(updatedFormData.morningWeight);
+      }
+      if (updatedFormData.hungerLevel) {
+        payload.hungerLevel = updatedFormData.hungerLevel;
+      }
+      if (updatedFormData.energyLevel) {
+        payload.energyLevel = updatedFormData.energyLevel;
+      }
+      if (updatedFormData.wellBeing) {
+        payload.wellBeing = updatedFormData.wellBeing;
+      }
+      if (updatedFormData.foodNotes) {
+        payload.foodNotes = updatedFormData.foodNotes;
+      }
+
+      // Make API request
+      const url = isEditMode ? `/api/entries/${entry._id}` : '/api/entries';
+      const method = isEditMode ? 'PUT' : 'POST';
+
+      const response = await fetch(url, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        
+        // If we have detailed validation errors, display them
+        if (errorData.errors && Array.isArray(errorData.errors)) {
+          const errorMessages = errorData.errors.map(err => `${err.field}: ${err.message}`).join('; ');
+          throw new Error(errorMessages);
+        }
+        
+        throw new Error(errorData.error || 'Failed to save entry');
+      }
+
+      const result = await response.json();
+
+      // Success! Now we can hide the prompt
+      setShowExtendedFastPrompt(false);
+
+      // Call success callback if provided
+      if (onSuccess) {
+        onSuccess(result.data);
+      }
+    } catch (error) {
+      // Keep prompt visible on error so user can try again
+      setApiError(error.message || 'Failed to save entry. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Handle form submission
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setApiError('');
+
+    // Validate form
+    const validationErrors = validateForm();
+    
+    // Use flushSync to ensure errors are set synchronously before checking
+    flushSync(() => {
+      setErrors(validationErrors);
+    });
+    
+    if (Object.keys(validationErrors).length > 0) {
+      return;
+    }
+
+    // Check for extended fasts ONLY if we haven't checked yet
+    if (!gapInfo && formData.date && formData.firstMealTime && formData.lastMealTime) {
+      setIsSubmitting(true);
+      try {
+        const params = new URLSearchParams({
+          date: formData.date,
+          firstMealTime: formData.firstMealTime,
+          lastMealTime: formData.lastMealTime
+        });
+        
+        const response = await fetch(`/api/entries/check-previous?${params.toString()}`);
+        const data = await response.json();
+        
+        setGapInfo(data);
+        
+        // T024: If extended fast detected FROM PREVIOUS, show inline confirmation (don't submit yet)
+        // Note: We only prompt for FROM-PREVIOUS extended fasts because:
+        // 1. Entry model only has extendedFastConfirmed field (no to-next storage)
+        // 2. Prompting about future entries on first entry is confusing UX
+        // 3. Data model spec only includes backward-looking extended fast tracking
+        if (data.isExtendedFastFromPrevious) {
+          setCurrentPromptType('from-previous');
+          setShowExtendedFastPrompt(true);
+          setIsSubmitting(false);
+          return;
+        }
+      } catch (error) {
+        console.error('❌ Error checking for extended fast:', error);
+        setIsSubmitting(false);
+        return;
+      }
+    }
+
+    // T022: If no extended fast (or already confirmed), submit immediately
+    await submitForm();
+  };
+
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       {/* API Error Display */}
@@ -446,94 +725,7 @@ const EntryForm = ({
         max={new Date().toISOString().split('T')[0]}
       />
 
-      {/* Extended Fast Confirmation Prompt */}
-      {showExtendedFastPrompt && gapInfo && currentPromptType && (
-        <div className="p-4 bg-purple-50 border border-purple-200 rounded-lg">
-          <div className="flex items-start gap-3">
-            <span className="text-2xl" role="img" aria-label="Question">🤔</span>
-            <div className="flex-1">
-              {currentPromptType === 'from-previous' && gapInfo.fromPreviousFasting && gapInfo.previousEntry && (
-                <>
-                  <h4 className="text-sm font-semibold text-purple-900 mb-2">
-                    Extended Fast Detected ({gapInfo.fromPreviousFasting.formatted})
-                  </h4>
-                  <div className="text-sm text-purple-800 mb-3 space-y-1">
-                    <p className="font-medium">
-                      Fasting duration would be: <span className="text-purple-900 font-bold">{gapInfo.fromPreviousFasting.formatted}</span>
-                    </p>
-                    <p className="text-xs mt-1">
-                      From: {new Date(gapInfo.previousEntry.date).toLocaleDateString('en-GB', {
-                        day: '2-digit',
-                        month: '2-digit',
-                        year: 'numeric',
-                      })} at {gapInfo.previousEntry.lastMealTime} (last meal)
-                    </p>
-                    <p className="text-xs">
-                      To: {new Date(formData.date).toLocaleDateString('en-GB', {
-                        day: '2-digit',
-                        month: '2-digit',
-                        year: 'numeric',
-                      })} at {formData.firstMealTime} (first meal)
-                    </p>
-                    <p className="mt-2">
-                      Did you fast continuously for this entire period?
-                    </p>
-                  </div>
-                </>
-              )}
-              
-              {currentPromptType === 'to-next' && gapInfo.toNextFasting && gapInfo.nextEntry && (
-                <>
-                  <h4 className="text-sm font-semibold text-purple-900 mb-2">
-                    Extended Fast Detected ({gapInfo.toNextFasting.formatted})
-                  </h4>
-                  <div className="text-sm text-purple-800 mb-3 space-y-1">
-                    <p className="font-medium">
-                      Fasting duration would be: <span className="text-purple-900 font-bold">{gapInfo.toNextFasting.formatted}</span>
-                    </p>
-                    <p className="text-xs mt-1">
-                      From: {new Date(formData.date).toLocaleDateString('en-GB', {
-                        day: '2-digit',
-                        month: '2-digit',
-                        year: 'numeric',
-                      })} at {formData.lastMealTime} (last meal)
-                    </p>
-                    <p className="text-xs">
-                      To: {new Date(gapInfo.nextEntry.date).toLocaleDateString('en-GB', {
-                        day: '2-digit',
-                        month: '2-digit',
-                        year: 'numeric',
-                      })} at {gapInfo.nextEntry.firstMealTime} (first meal)
-                    </p>
-                    <p className="mt-2">
-                      Did you fast continuously for this entire period?
-                    </p>
-                  </div>
-                </>
-              )}
-              
-              <div className="flex gap-2">
-                <Button
-                  type="button"
-                  variant="primary"
-                  size="sm"
-                  onClick={handleExtendedFastConfirm}
-                >
-                  Yes, confirm extended fast
-                </Button>
-                <Button
-                  type="button"
-                  variant="secondary"
-                  size="sm"
-                  onClick={handleExtendedFastDeny}
-                >
-                  No, I ate but didn't log
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* T023: Extended Fast Confirmation Prompt REMOVED - now shown inline at bottom */}
 
       {/* Show confirmation when extended fast from previous is confirmed */}
       {formData.extendedFastFromPreviousConfirmed && gapInfo?.fromPreviousFasting && !showExtendedFastPrompt && gapInfo.previousEntry && (
@@ -650,26 +842,96 @@ const EntryForm = ({
       />
 
       {/* Form Actions */}
-      <div className="flex gap-4 justify-end pt-4 border-t border-gray-200">
-        {onCancel && (
-          <Button
-            type="button"
-            variant="outline"
-            onClick={onCancel}
-            disabled={isSubmitting}
-          >
-            Cancel
-          </Button>
+      {/* T029: aria-live announces button changes to screen readers */}
+      <div 
+        className="flex flex-col gap-3 pt-4 border-t border-gray-200"
+        aria-live="polite"
+        aria-atomic="true"
+      >
+        {/* T024/T046: Conditional rendering - show EITHER confirmation buttons OR submit button, never both
+            
+            This implements the inline confirmation UX:
+            1. Normal state: User sees "Update Entry" button
+            2. After form submit with extended fast detected: "Update Entry" button is REPLACED
+               by confirmation buttons ("Yes, confirm extended fast" / "No, I ate but didn't log")
+            3. After confirmation click: Entry saves immediately (one-click save)
+            
+            Key insight: By replacing the button rather than adding new buttons, we avoid
+            the confusing "Update Entry" + confirmation buttons showing simultaneously.
+        */}
+        {showExtendedFastPrompt && gapInfo && currentPromptType ? (
+          // Extended fast detected: Show question text and all buttons below
+          <>
+            {/* Extended Fast Question Text */}
+            <div className="text-sm text-gray-700 flex items-start gap-2">
+              <span className="text-lg flex-shrink-0" role="img" aria-label="Question">🤔</span>
+              <span className="font-medium">
+                {currentPromptType === 'from-previous' && gapInfo.fromPreviousFasting && (
+                  <>Extended fast detected ({gapInfo.fromPreviousFasting.formatted}). Did you fast continuously?</>
+                )}
+                {currentPromptType === 'to-next' && gapInfo.toNextFasting && (
+                  <>Extended fast detected ({gapInfo.toNextFasting.formatted}). Did you fast continuously?</>
+                )}
+              </span>
+            </div>
+            
+            {/* All buttons in one row: Cancel + Confirmation Buttons - T029: aria-live, T030: mobile responsive */}
+            <div className="flex flex-col sm:flex-row gap-2 sm:justify-end">
+              {onCancel && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={onCancel}
+                  disabled={isSubmitting}
+                >
+                  Cancel
+                </Button>
+              )}
+              <Button
+                type="button"
+                variant="primary"
+                size="sm"
+                onClick={handleExtendedFastConfirmAndSave}
+                disabled={isSubmitting}
+                loading={isSubmitting}
+              >
+                {isSubmitting ? 'Saving...' : 'Yes, confirm extended fast'}
+              </Button>
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                onClick={handleExtendedFastDenyAndSave}
+                disabled={isSubmitting}
+                loading={isSubmitting}
+              >
+                {isSubmitting ? 'Saving...' : "No, I ate but didn't log"}
+              </Button>
+            </div>
+          </>
+        ) : (
+          // Normal submit button (when no extended fast confirmation needed)
+          <div className="flex gap-4 justify-end">
+            {onCancel && (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onCancel}
+                disabled={isSubmitting}
+              >
+                Cancel
+              </Button>
+            )}
+            <Button
+              type="submit"
+              variant="primary"
+              disabled={isSubmitting}
+              loading={isSubmitting}
+            >
+              {isSubmitting ? 'Saving...' : isEditMode ? 'Update Entry' : 'Save Entry'}
+            </Button>
+          </div>
         )}
-        
-        <Button
-          type="submit"
-          variant="primary"
-          disabled={isSubmitting}
-          loading={isSubmitting}
-        >
-          {isSubmitting ? 'Saving...' : isEditMode ? 'Update Entry' : 'Save Entry'}
-        </Button>
       </div>
     </form>
   );
