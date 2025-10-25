@@ -31,15 +31,25 @@ export const GET = withErrorHandler(async (request) => {
   const { searchParams } = new URL(request.url);
   const limit = parseInt(searchParams.get('limit') || '30', 10);
   const skip = parseInt(searchParams.get('skip') || '0', 10);
+  const dateFilter = searchParams.get('date'); // Optional date filter (YYYY-MM-DD)
+
+  // Build query filter
+  const filter = { userId: session.user.id };
+  
+  // Add date filter if provided
+  if (dateFilter) {
+    const targetDate = new Date(dateFilter);
+    filter.date = targetDate;
+  }
 
   // Fetch entries for this user only with pagination
   const [entries, total] = await Promise.all([
-    Entry.find({ userId: session.user.id })
+    Entry.find(filter)
       .sort({ date: -1 }) // Reverse chronological order
       .limit(limit)
       .skip(skip)
       .lean(), // Convert to plain JavaScript objects for better performance
-    Entry.countDocuments({ userId: session.user.id })
+    Entry.countDocuments(filter)
   ]);
 
   return okResponse({

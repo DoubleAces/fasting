@@ -19,6 +19,8 @@ Auto-generated from all feature plans. Last updated: 2025-10-17
 - JavaScript (ES6+) / Node.js with Next.js 14+ (App Router) + Next.js, Mongoose ODM, MongoDB Atlas, NextAuth.js (009-backfill-fasting-calculation)
 - MongoDB Atlas (cloud database) - existing `entries` collection with userId and date compound index (009-backfill-fasting-calculation)
 - JavaScript (ES6+) / Next.js 15.5.6 (App Router) (010-pwa-conversion)
+- JavaScript ES6+ with Next.js 15.5.6 (App Router) (011-entry-details-page)
+- MongoDB with Mongoose schemas (Entry, User, Settings collections) (011-entry-details-page)
 
 ## Project Structure
 ```
@@ -34,9 +36,9 @@ npm test; npm run lint
 JavaScript ES6+ with Node.js 18+ (Next.js 14+): Follow standard conventions
 
 ## Recent Changes
+- 011-entry-details-page: Added JavaScript ES6+ with Next.js 15.5.6 (App Router)
 - 010-pwa-conversion: Added JavaScript (ES6+) / Next.js 15.5.6 (App Router)
 - 009-backfill-fasting-calculation: Added JavaScript (ES6+) / Node.js with Next.js 14+ (App Router) + Next.js, Mongoose ODM, MongoDB Atlas, NextAuth.js
-- 008-test-database-separation: Added JavaScript (ES6+) with Node.js (compatible with Next.js 15.5.6) + Jest 30.2.0, Mongoose 8.19.1, MongoDB 5.5, Dotenv 17.2.3, mongodb-memory-server 10.2.3
 
 <!-- MANUAL ADDITIONS START -->
 <!-- MANUAL ADDITIONS END -->

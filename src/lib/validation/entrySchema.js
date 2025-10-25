@@ -36,11 +36,40 @@ export const entrySchema = Joi.object({
   /**
    * Entry date (required)
    * Must be ISO date string (YYYY-MM-DD)
-   * Cannot be in the future
+   * Cannot be more than 1 day in the future (allows for timezone differences)
    */
   date: Joi.date()
     .iso()
-    .max('now')
+    .custom((value, helpers) => {
+      // Validate that date is not too far in the future
+      // Allow up to 1 day ahead to account for timezone differences
+      const inputDate = new Date(value);
+      const now = new Date();
+      
+      // Get the date portion in UTC
+      const inputYear = inputDate.getUTCFullYear();
+      const inputMonth = inputDate.getUTCMonth();
+      const inputDay = inputDate.getUTCDate();
+      
+      const nowYear = now.getUTCFullYear();
+      const nowMonth = now.getUTCMonth();
+      const nowDay = now.getUTCDate();
+      
+      // Create date-only comparison (YYYY-MM-DD)
+      const inputDateOnly = new Date(Date.UTC(inputYear, inputMonth, inputDay));
+      const nowDateOnly = new Date(Date.UTC(nowYear, nowMonth, nowDay));
+      
+      // Calculate difference in days
+      const diffDays = (inputDateOnly - nowDateOnly) / (1000 * 60 * 60 * 24);
+      
+      // Allow entries for up to 1 day in the future (accounts for timezone differences)
+      // This allows users in UTC+12 to create entries when server is still on previous day
+      if (diffDays > 1) {
+        return helpers.error('date.max');
+      }
+      
+      return value;
+    })
     .required()
     .messages({
       'date.base': 'Date must be a valid date',
@@ -188,6 +217,17 @@ export const entrySchema = Joi.object({
     .optional()
     .messages({
       'boolean.base': 'Extended fast to next denied must be true or false',
+    }),
+
+  /**
+   * Template source (optional)
+   * ObjectId of the entry this was copied from (for audit trail)
+   */
+  templateSource: Joi.string()
+    .pattern(/^[0-9a-fA-F]{24}$/)
+    .optional()
+    .messages({
+      'string.pattern.base': 'Template source must be a valid ObjectId',
     }),
 }).options({
   stripUnknown: true, // Remove unknown fields

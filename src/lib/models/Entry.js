@@ -100,6 +100,14 @@ const entrySchema = new mongoose.Schema(
       type: String,
       maxlength: [2000, 'Food notes cannot exceed 2000 characters'],
     },
+
+    // Optional reference to source entry if copied from another entry
+    // Used for audit trail when using "Copy to Today" feature
+    templateSource: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Entry',
+      default: null,
+    },
   },
   {
     // Automatically add createdAt and updatedAt timestamps

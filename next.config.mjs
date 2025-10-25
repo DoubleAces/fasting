@@ -69,6 +69,18 @@ export default withPWA({
       },
     },
     {
+      urlPattern: /^\/entries\/[^\/]+$/i,
+      handler: 'NetworkFirst',
+      options: {
+        cacheName: 'entry-details-cache',
+        expiration: {
+          maxEntries: 100,
+          maxAgeSeconds: 90 * 24 * 60 * 60, // 90 days
+        },
+        networkTimeoutSeconds: 10,
+      },
+    },
+    {
       urlPattern: /^\/api\/settings/i,
       handler: 'StaleWhileRevalidate',
       options: {
