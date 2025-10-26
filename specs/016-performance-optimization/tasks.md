@@ -20,56 +20,54 @@ This document provides atomic, test-driven implementation tasks for the performa
 
 | Phase | User Story | Task Count | Can Parallelize |
 |-------|-----------|------------|----------------|
-| **Phase 1** | Setup | 5 | Yes (T002-T004) |
-| **Phase 2** | Foundation | 6 | Yes (T006-T008) |
-| **Phase 3** | US1: Fast Entry Details | 8 | Partial (T015-T017) |
-| **Phase 4** | US2: Instant Settings | 6 | Partial (T022-T023) |
-| **Phase 5** | US3: Fast API Response | 5 | Partial (T029-T030) |
-| **Phase 6** | US4: Optimized Insights | 7 | Partial (T035-T037) |
-| **Phase 7** | US5: Cache Strategy | 4 | No (integration tasks) |
-| **Phase 8** | US6: Performance Monitoring | 6 | Yes (T049-T051) |
-| **Phase 9** | US7: Next.js Caching | 5 | Partial (T056-T057) |
-| **Phase 10** | Polish | 4 | Yes (T060-T062) |
-| **TOTAL** | | **56 tasks** | **20+ parallel** |
+| **Phase 1** | Setup | 3 | Yes (T001-T002) |
+| **Phase 2** | Foundation | 8 | Yes (T004-T006) |
+| **Phase 3** | US1: Fast Entry Details | 9 | Partial (T013-T015) |
+| **Phase 4** | US2: Instant Settings | 6 | Partial (T021-T022) |
+| **Phase 5** | US3: Fast API Response | 5 | Partial (T027-T028) |
+| **Phase 6** | US4: Optimized Insights | 7 | Partial (T033-T035) |
+| **Phase 7** | US5: Cache Strategy | 3 | No (integration tasks) |
+| **Phase 8** | US6: Performance Monitoring | 9 | Yes (T046-T048) |
+| **Phase 9** | US7: Next.js Caching | 6 | Partial (T053-T054) |
+| **Phase 10** | Polish | 7 | Yes (T057-T059) |
+| **TOTAL** | | **63 tasks** | **20+ parallel** |
 
 ---
 
 ## Phase 1: Setup & Environment (Independent)
 
-**Goal**: Prepare development environment and install dependencies for performance optimization.
+**Goal**: Prepare development environment and configure cache settings for performance optimization.
 
-**Independent Test**: Redis connects successfully, ioredis package installed, environment variables configured.
+**Independent Test**: Environment variables configured, cache TTL settings defined.
 
 ### Tasks
 
-- [ ] T001 Install Redis server and verify connection (redis-cli ping returns PONG)
-- [ ] T002 [P] Install ioredis package: npm install ioredis@^5.3.0
-- [ ] T003 [P] Create .env.local with Redis configuration (REDIS_HOST, REDIS_PORT, CACHE_TTL_SETTINGS, CACHE_TTL_INSIGHTS)
-- [ ] T004 [P] Add performance logging environment variable: ENABLE_PERFORMANCE_LOGGING=true
-- [ ] T005 Verify Redis connection works from Node.js (node -e "require('ioredis')... .ping()")
+- [ ] T001 [P] Install node-cache package for in-memory caching: npm install node-cache@^5.1.2
+- [ ] T002 [P] Create .env.local with cache configuration (CACHE_TTL_SETTINGS=3600, CACHE_TTL_INSIGHTS=1800, ENABLE_PERFORMANCE_LOGGING=true)
+- [ ] T003 Verify node-cache works with simple test (node -e "const NodeCache = require('node-cache'); const cache = new NodeCache(); cache.set('test', 'value'); console.log(cache.get('test'));")
 
-**Acceptance**: Redis server running, ioredis installed, environment configured, connection verified.
+**Acceptance**: node-cache installed, environment configured with cache TTLs, simple cache test passes.
 
 ---
 
 ## Phase 2: Foundation - Cache Service & Database Indexes (Blocking Prerequisites)
 
-**Goal**: Implement core cache abstraction layer and database performance indexes. These are foundational components required by all user stories.
+**Goal**: Implement core in-memory cache abstraction layer and database performance indexes. These are foundational components required by all user stories.
 
-**Independent Test**: Cache service get/set/del operations work correctly. Database indexes created and queries use indexes.
+**Independent Test**: Cache service get/set/del operations work correctly with TTL expiration. Database indexes created and queries use indexes.
 
 ### Tasks
 
-- [ ] T006 [P] Write unit tests for CacheService.get() in tests/unit/services/cacheService.test.js (test cache hit, miss, Redis unavailable)
-- [ ] T007 [P] Write unit tests for CacheService.set() in tests/unit/services/cacheService.test.js (test TTL, graceful failure)
-- [ ] T008 [P] Write unit tests for CacheService.del() and delPattern() in tests/unit/services/cacheService.test.js
-- [ ] T009 Implement CacheService class in src/lib/services/cacheService.js (constructor, get, set, del, delPattern, isEnabled, getStats methods per contract)
-- [ ] T010 Run CacheService unit tests and verify all pass (npm test tests/unit/services/cacheService.test.js)
-- [ ] T011 Create database migration script migrations/004-add-performance-indexes.js (add userId_fastingDuration and userId_date_insights indexes)
-- [ ] T012 Run migration to create indexes (node scripts/run-migration.js 004-add-performance-indexes)
-- [ ] T013 Verify indexes created using db.entries.getIndexes() and explain() query plans
+- [ ] T004 [P] Write unit tests for CacheService.get() in tests/unit/services/cacheService.test.js (test cache hit, miss, TTL expiration)
+- [ ] T005 [P] Write unit tests for CacheService.set() in tests/unit/services/cacheService.test.js (test TTL, overwrite existing)
+- [ ] T006 [P] Write unit tests for CacheService.del() and delPattern() in tests/unit/services/cacheService.test.js
+- [ ] T007 Implement CacheService class in src/lib/services/cacheService.js (using node-cache: constructor, get, set, del, delPattern, isEnabled, getStats methods per contract)
+- [ ] T008 Run CacheService unit tests and verify all pass (npm test tests/unit/services/cacheService.test.js)
+- [ ] T009 Create database migration script migrations/004-add-performance-indexes.js (add userId_fastingDuration and userId_date_insights indexes)
+- [ ] T010 Run migration to create indexes (node scripts/run-migration.js 004-add-performance-indexes)
+- [ ] T011 Verify indexes created using db.entries.getIndexes() and explain() query plans
 
-**Acceptance**: All CacheService tests pass. Database indexes created. Queries use indexes (verified via explain()).
+**Acceptance**: All CacheService tests pass with in-memory caching. Database indexes created. Queries use indexes (verified via explain()).
 
 **Blocker for**: All subsequent user story phases depend on cache service and indexes.
 
@@ -91,21 +89,21 @@ This document provides atomic, test-driven implementation tasks for the performa
 
 ### Tasks
 
-- [ ] T014 [US1] Write integration test for entry details page load time in tests/e2e/entry-details-performance.spec.js (measure total time, query count)
-- [ ] T015 [P] [US1] Write unit tests for cached insights retrieval in tests/unit/services/entryInsightsService.test.js (test cache hit/miss, aggregation correctness)
-- [ ] T016 [P] [US1] Write tests for cache invalidation on entry mutation in tests/unit/services/entryInsightsService.test.js
-- [ ] T017 [P] [US1] Create performance logger utility in src/lib/utils/performanceLogger.js (logPerformance, withPerformanceTracking functions)
-- [ ] T018 [US1] Refactor entryInsightsService.calculateInsights() to use single aggregation pipeline in src/lib/services/entryInsightsService.js (replace 5+ queries with $facet)
-- [ ] T019 [US1] Add caching to entryInsightsService.calculateInsights() using CacheService with 30-min TTL
-- [ ] T020 [US1] Add cache invalidation methods: invalidateInsightsForUser(), invalidateInsightsForEntry() in src/lib/services/entryInsightsService.js
-- [ ] T021 [US1] Update entry details page in src/app/entries/[id]/page.js to use cached insights service and add ISR revalidation (export const revalidate = 300)
-- [ ] T022 [US1] Run entry details performance test and verify <500ms load time (npm test tests/e2e/entry-details-performance.spec.js)
+- [ ] T012 [US1] Write integration test for entry details page load time in tests/e2e/entry-details-performance.spec.js (measure total time, query count)
+- [ ] T013 [P] [US1] Write unit tests for cached insights retrieval in tests/unit/services/entryInsightsService.test.js (test cache hit/miss, aggregation correctness)
+- [ ] T014 [P] [US1] Write tests for cache invalidation on entry mutation in tests/unit/services/entryInsightsService.test.js
+- [ ] T015 [P] [US1] Create performance logger utility in src/lib/utils/performanceLogger.js (logPerformance, withPerformanceTracking functions)
+- [ ] T016 [US1] Refactor entryInsightsService.calculateInsights() to use single aggregation pipeline in src/lib/services/entryInsightsService.js (replace 5+ queries with $facet)
+- [ ] T017 [US1] Add caching to entryInsightsService.calculateInsights() using CacheService with 30-min TTL
+- [ ] T018 [US1] Add cache invalidation methods: invalidateInsightsForUser(), invalidateInsightsForEntry() in src/lib/services/entryInsightsService.js
+- [ ] T019 [US1] Update entry details page in src/app/entries/[id]/page.js to use cached insights service and add ISR revalidation (export const revalidate = 300)
+- [ ] T020 [US1] Run entry details performance test and verify <500ms load time (npm test tests/e2e/entry-details-performance.spec.js)
 
 **Acceptance**: Entry details page loads <500ms, query count reduced to 2-3, all tests pass.
 
 **Dependencies**: Requires Phase 2 (CacheService, indexes) complete.
 
-**Parallel Opportunities**: T015-T017 can run in parallel (different files, no dependencies).
+**Parallel Opportunities**: T013-T015 can run in parallel (different files, no dependencies).
 
 ---
 
@@ -125,18 +123,18 @@ This document provides atomic, test-driven implementation tasks for the performa
 
 ### Tasks
 
-- [ ] T023 [P] [US2] Write unit tests for SettingsService.getSettings() in tests/unit/services/settingsService.test.js (test cache hit, miss, fallback)
-- [ ] T024 [P] [US2] Write unit tests for SettingsService.updateSettings() in tests/unit/services/settingsService.test.js (test invalidation)
-- [ ] T025 [US2] Implement SettingsService class in src/lib/services/settingsService.js (getSettings, updateSettings, createSettings methods per contract)
-- [ ] T026 [US2] Run SettingsService unit tests and verify all pass (npm test tests/unit/services/settingsService.test.js)
-- [ ] T027 [US2] Update existing settings usage in codebase to use SettingsService (find Settings.findOne calls, replace with settingsService.getSettings)
-- [ ] T028 [US2] Add cache invalidation to settings update API routes in src/app/api/settings/route.js
+- [ ] T021 [P] [US2] Write unit tests for SettingsService.getSettings() in tests/unit/services/settingsService.test.js (test cache hit, miss, fallback)
+- [ ] T022 [P] [US2] Write unit tests for SettingsService.updateSettings() in tests/unit/services/settingsService.test.js (test invalidation)
+- [ ] T023 [US2] Implement SettingsService class in src/lib/services/settingsService.js (getSettings, updateSettings, createSettings methods per contract)
+- [ ] T024 [US2] Run SettingsService unit tests and verify all pass (npm test tests/unit/services/settingsService.test.js)
+- [ ] T025 [US2] Update existing settings usage in codebase to use SettingsService (find Settings.findOne calls, replace with settingsService.getSettings)
+- [ ] T026 [US2] Add cache invalidation to settings update API routes in src/app/api/settings/route.js
 
 **Acceptance**: Settings cached with 1-hour TTL, cache hit rate >80% after warmup, all tests pass.
 
 **Dependencies**: Requires Phase 2 (CacheService) complete.
 
-**Parallel Opportunities**: T023-T024 can run in parallel (test files).
+**Parallel Opportunities**: T021-T022 can run in parallel (test files).
 
 ---
 
@@ -156,17 +154,17 @@ This document provides atomic, test-driven implementation tasks for the performa
 
 ### Tasks
 
-- [ ] T029 [P] [US3] Write integration tests for API endpoint response times in tests/integration/api/entries.test.js (measure GET, POST, date range queries)
-- [ ] T030 [P] [US3] Write tests to verify index usage in tests/unit/models/Entry.test.js (use explain() to confirm index usage)
-- [ ] T031 [US3] Update Entry model queries to use compound indexes in src/lib/models/Entry.js (add .hint() if needed for query planner)
-- [ ] T032 [US3] Optimize GET /api/entries queries with indexed userId + date in src/app/api/entries/route.js
-- [ ] T033 [US3] Run API performance tests and verify <200ms response times (npm test tests/integration/api/entries.test.js)
+- [ ] T027 [P] [US3] Write integration tests for API endpoint response times in tests/integration/api/entries.test.js (measure GET, POST, date range queries)
+- [ ] T028 [P] [US3] Write tests to verify index usage in tests/unit/models/Entry.test.js (use explain() to confirm index usage)
+- [ ] T029 [US3] Update Entry model queries to use compound indexes in src/lib/models/Entry.js (add .hint() if needed for query planner)
+- [ ] T030 [US3] Optimize GET /api/entries queries with indexed userId + date in src/app/api/entries/route.js
+- [ ] T031 [US3] Run API performance tests and verify <200ms response times (npm test tests/integration/api/entries.test.js)
 
 **Acceptance**: All API endpoints respond <200ms, queries use indexes, all tests pass.
 
 **Dependencies**: Requires Phase 2 (indexes) complete.
 
-**Parallel Opportunities**: T029-T030 can run in parallel (different test files).
+**Parallel Opportunities**: T027-T028 can run in parallel (different test files).
 
 ---
 
@@ -186,29 +184,29 @@ This document provides atomic, test-driven implementation tasks for the performa
 
 ### Tasks
 
-- [ ] T034 [US4] Write test comparing aggregation pipeline vs multi-query performance in tests/unit/services/entryInsightsService.test.js
-- [ ] T035 [P] [US4] Write unit tests for aggregation pipeline correctness in tests/unit/services/entryInsightsService.test.js (verify longestThisMonth, historicalRank, averageDuration, typicalBreakfast facets)
-- [ ] T036 [P] [US4] Write tests for edge cases: no duration, no entries, single entry in tests/unit/services/entryInsightsService.test.js
-- [ ] T037 [P] [US4] Write tests verifying aggregation uses indexes in tests/unit/services/entryInsightsService.test.js (explain() output)
-- [ ] T038 [US4] Implement aggregation pipeline with $facet for multiple insights in src/lib/services/entryInsightsService.js
-- [ ] T039 [US4] Add proper projections to aggregation stages (only fetch needed fields)
-- [ ] T040 [US4] Run insight calculation tests and verify 3-5x performance improvement (npm test tests/unit/services/entryInsightsService.test.js)
+- [ ] T032 [US4] Write test comparing aggregation pipeline vs multi-query performance in tests/unit/services/entryInsightsService.test.js
+- [ ] T033 [P] [US4] Write unit tests for aggregation pipeline correctness in tests/unit/services/entryInsightsService.test.js (verify longestThisMonth, historicalRank, averageDuration, typicalBreakfast facets)
+- [ ] T034 [P] [US4] Write tests for edge cases: no duration, no entries, single entry in tests/unit/services/entryInsightsService.test.js
+- [ ] T035 [P] [US4] Write tests verifying aggregation uses indexes in tests/unit/services/entryInsightsService.test.js (explain() output)
+- [ ] T036 [US4] Implement aggregation pipeline with $facet for multiple insights in src/lib/services/entryInsightsService.js
+- [ ] T037 [US4] Add proper projections to aggregation stages (only fetch needed fields)
+- [ ] T038 [US4] Run insight calculation tests and verify 3-5x performance improvement (npm test tests/unit/services/entryInsightsService.test.js)
 
 **Acceptance**: Single aggregation pipeline replaces 5 queries, <100ms execution time, all tests pass.
 
 **Dependencies**: Requires Phase 2 (indexes) complete. Can run parallel with Phase 4, 5.
 
-**Parallel Opportunities**: T035-T037 can run in parallel (different test scenarios).
+**Parallel Opportunities**: T033-T035 can run in parallel (different test scenarios).
 
 ---
 
 ## Phase 7: User Story 5 - Cache Strategy Implementation (P2)
 
-**User Story**: Redis caching layer reduces database load for frequently accessed, infrequently changing data.
+**User Story**: In-memory caching layer reduces database load for frequently accessed, infrequently changing data.
 
 **Why Priority P2**: Caching eliminates redundant calculations and database queries, improving performance for all users.
 
-**Independent Test**: Enable Redis caching, monitor cache hit rates (>80% for settings, >70% for insights after warmup).
+**Independent Test**: Enable caching, monitor cache hit rates (>80% for settings, >70% for insights after warmup).
 
 **Acceptance Criteria**:
 - Settings cached with 1-hour TTL after first fetch
@@ -219,12 +217,11 @@ This document provides atomic, test-driven implementation tasks for the performa
 
 ### Tasks
 
-- [ ] T041 [US5] Write integration test for end-to-end cache flow in tests/integration/cache-flow.test.js (write → invalidate → read)
-- [ ] T042 [US5] Write test for graceful fallback when Redis unavailable in tests/integration/cache-fallback.test.js
-- [ ] T043 [US5] Update API routes to invalidate insight caches on entry mutations in src/app/api/entries/route.js (POST, PUT, DELETE)
-- [ ] T044 [US5] Add revalidatePath calls for Next.js cache in API routes (revalidatePath('/entries/[id]'), revalidatePath('/entries'))
+- [ ] T039 [US5] Write integration test for end-to-end cache flow in tests/integration/cache-flow.test.js (write → invalidate → read)
+- [ ] T040 [US5] Update API routes to invalidate insight caches on entry mutations in src/app/api/entries/route.js (POST, PUT, DELETE)
+- [ ] T041 [US5] Add revalidatePath calls for Next.js cache in API routes (revalidatePath('/entries/[id]'), revalidatePath('/entries'))
 
-**Acceptance**: Cache hit rate >80% settings, >70% insights, graceful Redis fallback works, all tests pass.
+**Acceptance**: Cache hit rate >80% settings, >70% insights, all tests pass.
 
 **Dependencies**: Requires Phase 3, 4, 6 (services implemented with caching).
 
@@ -249,21 +246,21 @@ This document provides atomic, test-driven implementation tasks for the performa
 
 ### Tasks
 
-- [ ] T045 [US6] Create performance logger utility in src/lib/utils/performanceLogger.js (if not created in T017)
-- [ ] T046 [US6] Write tests for performance logging in tests/unit/utils/performanceLogger.test.js
-- [ ] T047 [US6] Add performance logging middleware for API routes in src/lib/middleware/performanceMiddleware.js
-- [ ] T048 [US6] Add Core Web Vitals tracking to root layout in src/app/layout.js (if using Vercel Analytics)
-- [ ] T049 [P] [US6] Add performance logging to entry details page in src/app/entries/[id]/page.js
-- [ ] T050 [P] [US6] Add performance logging to API routes in src/app/api/entries/route.js
-- [ ] T051 [P] [US6] Create cache stats monitoring endpoint in src/app/api/cache-stats/route.js (return cache.getStats())
-- [ ] T052 [US6] Write E2E test measuring Core Web Vitals in tests/e2e/core-web-vitals.spec.js
-- [ ] T053 [US6] Run Core Web Vitals test and verify targets met (npm test tests/e2e/core-web-vitals.spec.js)
+- [ ] T042 [US6] Create performance logger utility in src/lib/utils/performanceLogger.js (if not created in T015)
+- [ ] T043 [US6] Write tests for performance logging in tests/unit/utils/performanceLogger.test.js
+- [ ] T044 [US6] Add performance logging middleware for API routes in src/lib/middleware/performanceMiddleware.js
+- [ ] T045 [US6] Add Core Web Vitals tracking to root layout in src/app/layout.js (if using Vercel Analytics)
+- [ ] T046 [P] [US6] Add performance logging to entry details page in src/app/entries/[id]/page.js
+- [ ] T047 [P] [US6] Add performance logging to API routes in src/app/api/entries/route.js
+- [ ] T048 [P] [US6] Create cache stats monitoring endpoint in src/app/api/cache-stats/route.js (return cache.getStats())
+- [ ] T049 [US6] Write E2E test measuring Core Web Vitals in tests/e2e/core-web-vitals.spec.js
+- [ ] T050 [US6] Run Core Web Vitals test and verify targets met (npm test tests/e2e/core-web-vitals.spec.js)
 
 **Acceptance**: Core Web Vitals tracked and meet targets, performance metrics logged, all tests pass.
 
 **Dependencies**: Requires Phase 3 (entry details page optimized).
 
-**Parallel Opportunities**: T049-T051 can run in parallel (different files).
+**Parallel Opportunities**: T046-T048 can run in parallel (different files).
 
 ---
 
@@ -283,18 +280,18 @@ This document provides atomic, test-driven implementation tasks for the performa
 
 ### Tasks
 
-- [ ] T054 [US7] Write test verifying ISR revalidation in tests/integration/nextjs-cache.test.js
-- [ ] T055 [US7] Write test for on-demand revalidation in tests/integration/nextjs-cache.test.js
-- [ ] T056 [P] [US7] Add revalidate export to entry details page in src/app/entries/[id]/page.js (export const revalidate = 300)
-- [ ] T057 [P] [US7] Add revalidate export to entries list page in src/app/entries/page.js (if exists)
-- [ ] T058 [US7] Update generateStaticParams for entry details page in src/app/entries/[id]/page.js (pre-render recent entries)
-- [ ] T059 [US7] Run ISR tests and verify cache behavior (npm test tests/integration/nextjs-cache.test.js)
+- [ ] T051 [US7] Write test verifying ISR revalidation in tests/integration/nextjs-cache.test.js
+- [ ] T052 [US7] Write test for on-demand revalidation in tests/integration/nextjs-cache.test.js
+- [ ] T053 [P] [US7] Add revalidate export to entry details page in src/app/entries/[id]/page.js (export const revalidate = 300)
+- [ ] T054 [P] [US7] Add revalidate export to entries list page in src/app/entries/page.js (if exists)
+- [ ] T055 [US7] Update generateStaticParams for entry details page in src/app/entries/[id]/page.js (pre-render recent entries)
+- [ ] T056 [US7] Run ISR tests and verify cache behavior (npm test tests/integration/nextjs-cache.test.js)
 
 **Acceptance**: ISR configured with 5-minute revalidation, on-demand revalidation works, all tests pass.
 
 **Dependencies**: Requires Phase 3 (entry details page updated).
 
-**Parallel Opportunities**: T056-T057 can run in parallel (different pages).
+**Parallel Opportunities**: T053-T054 can run in parallel (different pages).
 
 ---
 
@@ -306,19 +303,19 @@ This document provides atomic, test-driven implementation tasks for the performa
 
 ### Tasks
 
-- [ ] T060 [P] Add JSDoc comments to CacheService API in src/lib/services/cacheService.js
-- [ ] T061 [P] Add JSDoc comments to SettingsService API in src/lib/services/settingsService.js
-- [ ] T062 [P] Add JSDoc comments to EntryInsightsService API in src/lib/services/entryInsightsService.js
-- [ ] T063 Create performance benchmark script in scripts/benchmark-performance.js (measure all targets)
-- [ ] T064 Run full test suite and verify 100% pass rate (npm test)
-- [ ] T065 Run performance benchmarks and verify all targets met (node scripts/benchmark-performance.js)
-- [ ] T066 Update project documentation with performance optimization details
+- [ ] T057 [P] Add JSDoc comments to CacheService API in src/lib/services/cacheService.js
+- [ ] T058 [P] Add JSDoc comments to SettingsService API in src/lib/services/settingsService.js
+- [ ] T059 [P] Add JSDoc comments to EntryInsightsService API in src/lib/services/entryInsightsService.js
+- [ ] T060 Create performance benchmark script in scripts/benchmark-performance.js (measure all targets)
+- [ ] T061 Run full test suite and verify 100% pass rate (npm test)
+- [ ] T062 Run performance benchmarks and verify all targets met (node scripts/benchmark-performance.js)
+- [ ] T063 Update project documentation with performance optimization details
 
 **Acceptance**: All tests pass, all performance targets met, documentation complete.
 
 **Dependencies**: Requires all previous phases complete.
 
-**Parallel Opportunities**: T060-T062 can run in parallel (different files).
+**Parallel Opportunities**: T057-T059 can run in parallel (different files).
 
 ---
 
@@ -402,7 +399,7 @@ npm test tests/unit/services/entryInsightsService.test.js --testNamePattern="edg
 
 **Priority 1**: User Story 1 (Fast Entry Details Page Load)
 - Phases: 1, 2, 3 only
-- Task count: 19 tasks
+- Task count: 20 tasks (T001-T020)
 - Estimated time: 1 day
 - Deliverable: Entry details page loads <500ms with reduced queries
 
@@ -498,13 +495,14 @@ After completing all phases:
 
 ## Summary
 
-- **Total Tasks**: 66 (T001-T066)
+- **Total Tasks**: 63 (T001-T063)
 - **Parallelizable**: 20+ tasks marked [P]
 - **User Stories**: 7 (US1-US7), each independently testable
-- **MVP**: Phases 1-3 (19 tasks, ~1 day)
-- **Full Feature**: All phases (66 tasks, ~2-3 days)
+- **MVP**: Phases 1-3 (20 tasks, ~1 day)
+- **Full Feature**: All phases (63 tasks, ~2-3 days)
 - **TDD Enforced**: Tests written before implementation (constitutional requirement)
 - **Story Independence**: Each story delivers value independently
+- **Caching Strategy**: In-memory cache using node-cache (no Redis infrastructure required)
 
 **Next Steps**:
 1. Start with Phase 1 (Setup)
