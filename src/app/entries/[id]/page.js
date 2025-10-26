@@ -25,6 +25,29 @@ import Link from 'next/link';
 // This provides near-static performance while keeping data reasonably fresh
 export const revalidate = 300;
 
+// Generate static params for recent entries at build time
+// This pre-renders the most commonly accessed entries
+export async function generateStaticParams() {
+  try {
+    await connectDB();
+    
+    // Get the 10 most recent entries across all users
+    // In production, you might want to limit this to specific users or criteria
+    const recentEntries = await Entry.find()
+      .sort({ createdAt: -1 })
+      .limit(10)
+      .select('_id')
+      .lean();
+    
+    return recentEntries.map((entry) => ({
+      id: entry._id.toString(),
+    }));
+  } catch (error) {
+    console.error('Error generating static params:', error);
+    return []; // Return empty array on error to prevent build failure
+  }
+}
+
 export default async function EntryDetailsPage({ params }) {
   // Start performance tracking
   const perfLogger = performanceLogger('Page: Entry Details');

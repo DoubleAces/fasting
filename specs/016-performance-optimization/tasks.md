@@ -304,9 +304,12 @@ This document provides atomic, test-driven implementation tasks for the performa
 
 - [ ] T051 [US7] Write test verifying ISR revalidation in tests/integration/nextjs-cache.test.js
 - [ ] T052 [US7] Write test for on-demand revalidation in tests/integration/nextjs-cache.test.js
-- [ ] T053 [P] [US7] Add revalidate export to entry details page in src/app/entries/[id]/page.js (export const revalidate = 300)
-- [ ] T054 [P] [US7] Add revalidate export to entries list page in src/app/entries/page.js (if exists)
-- [ ] T055 [US7] Update generateStaticParams for entry details page in src/app/entries/[id]/page.js (pre-render recent entries)
+- [X] T053 [P] [US7] Add revalidate export to entry details page in src/app/entries/[id]/page.js (export const revalidate = 300)
+  Note: ALREADY EXISTS - ISR configured with 5-minute (300 second) revalidation.
+- [X] T054 [P] [US7] Add revalidate export to entries list page in src/app/entries/page.js (if exists)
+  Note: N/A - Entries list is a Client Component ('use client'), ISR not applicable.
+- [X] T055 [US7] Update generateStaticParams for entry details page in src/app/entries/[id]/page.js (pre-render recent entries)
+  Note: Added generateStaticParams to pre-render 10 most recent entries at build time.
 - [ ] T056 [US7] Run ISR tests and verify cache behavior (npm test tests/integration/nextjs-cache.test.js)
 
 **Acceptance**: ISR configured with 5-minute revalidation, on-demand revalidation works, all tests pass.
