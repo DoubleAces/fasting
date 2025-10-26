@@ -548,3 +548,20 @@ export function isBestDay(entry, averageDuration) {
     entry.morningWeight != null
   );
 }
+
+/**
+ * Get cache statistics for monitoring
+ * @returns {Object} Cache statistics (keys, hits, misses, hitRate)
+ */
+export function getCacheStats() {
+  const stats = cache.getStats();
+  return {
+    keys: stats.keys,
+    hits: stats.hits,
+    misses: stats.misses,
+    hitRate: stats.hits + stats.misses > 0
+      ? ((stats.hits / (stats.hits + stats.misses)) * 100).toFixed(1) + '%'
+      : '0%'
+  };
+}
+

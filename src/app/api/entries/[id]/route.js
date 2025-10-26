@@ -49,11 +49,6 @@ export const GET = withErrorHandler(async (request, { params }) => {
  * Authentication: Required
  */
 
-import { validateEntry } from '@/lib/validation/entrySchema';
-import { calculateFastingDuration } from '@/lib/utils/fastingCalculator';
-import { getYesterday, getTomorrow, formatDate } from '@/lib/utils/dateUtils';
-import { badRequestResponse } from '@/lib/api/errorHandler';
-
 export const PUT = withErrorHandler(async (request, { params }) => {
   // Await params (Next.js 15 requirement)
   const { id } = await params;
