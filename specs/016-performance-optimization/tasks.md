@@ -89,10 +89,10 @@ This document provides atomic, test-driven implementation tasks for the performa
 
 ### Tasks
 
-- [ ] T012 [US1] Write integration test for entry details page load time in tests/e2e/entry-details-performance.spec.js (measure total time, query count)
-- [ ] T013 [P] [US1] Write unit tests for cached insights retrieval in tests/unit/services/entryInsightsService.test.js (test cache hit/miss, aggregation correctness)
-- [ ] T014 [P] [US1] Write tests for cache invalidation on entry mutation in tests/unit/services/entryInsightsService.test.js
-- [ ] T015 [P] [US1] Create performance logger utility in src/lib/utils/performanceLogger.js (logPerformance, withPerformanceTracking functions)
+- [X] T012 [US1] Write integration test for entry details page load time in tests/e2e/entry-details-performance.spec.js (measure total time, query count)
+- [X] T013 [P] [US1] Write unit tests for cached insights retrieval in tests/unit/services/entryInsightsService.test.js (test cache hit/miss, aggregation correctness)
+- [X] T014 [P] [US1] Write tests for cache invalidation on entry mutation in tests/unit/services/entryInsightsService.test.js
+- [X] T015 [P] [US1] Create performance logger utility in src/lib/utils/performanceLogger.js (logPerformance, withPerformanceTracking functions)
 - [ ] T016 [US1] Refactor entryInsightsService.calculateInsights() to use single aggregation pipeline in src/lib/services/entryInsightsService.js (replace 5+ queries with $facet)
 - [ ] T017 [US1] Add caching to entryInsightsService.calculateInsights() using CacheService with 30-min TTL
 - [ ] T018 [US1] Add cache invalidation methods: invalidateInsightsForUser(), invalidateInsightsForEntry() in src/lib/services/entryInsightsService.js

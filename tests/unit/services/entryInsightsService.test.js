@@ -536,4 +536,42 @@ describe('entryInsightsService', () => {
       // Will be validated through integration tests instead
     });
   });
+
+  describe('calculateInsights() with caching (T013)', () => {
+    // NOTE: These tests will be fully implemented after caching is added to the service
+    // For now, they document the expected behavior
+    
+    it('should cache insights after first calculation', async () => {
+      // Will test that insights are cached with 30-minute TTL
+      // Cache key format: `insights:${userId}:${entryId}`
+      test.skip(true, 'Implemented in T017 - Add caching to calculateInsights()');
+    });
+
+    it('should return cached insights on subsequent calls', async () => {
+      // Will test that second call returns cached data without DB queries
+      test.skip(true, 'Implemented in T017 - Add caching to calculateInsights()');
+    });
+
+    it('should handle cache expiration and recalculate', async () => {
+      // Will test that expired cache triggers fresh calculation
+      test.skip(true, 'Implemented in T017 - Add caching to calculateInsights()');
+    });
+  });
+
+  describe('cache invalidation (T014)', () => {
+    it('should invalidate insights cache for specific entry', async () => {
+      // Will test invalidateInsightsForEntry() function
+      test.skip(true, 'Implemented in T018 - Add cache invalidation methods');
+    });
+
+    it('should invalidate all insights for user', async () => {
+      // Will test invalidateInsightsForUser() function  
+      test.skip(true, 'Implemented in T018 - Add cache invalidation methods');
+    });
+
+    it('should invalidate on entry update/delete', async () => {
+      // Will test that entry mutations trigger cache invalidation
+      test.skip(true, 'Implemented in T018 - Add cache invalidation methods');
+    });
+  });
 });
