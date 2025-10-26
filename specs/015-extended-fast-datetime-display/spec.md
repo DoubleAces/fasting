@@ -5,6 +5,16 @@
 **Status**: Draft  
 **Input**: User description: "Add date/time range display to extended fast confirmation prompts so users can see when their fasting window started and ended (e.g., 'Oct 22 at 18:00 → Oct 23 at 20:00') in addition to the duration, making it easier to understand and verify extended fast periods"
 
+## Clarifications
+
+### Session 2025-10-26
+
+- Q: When the extended fast date/time range display encounters missing meal time data (e.g., previous entry exists but has no lastMealTime), how should the system respond? → A: No popup shown (cannot calculate extended fast without meal times)
+- Q: When date/time ranges span midnight (e.g., "Oct 22 at 23:30 → Oct 23 at 01:00"), how should the system display this to ensure clarity? → A: Always show both full dates (e.g., "Oct 22 at 23:30 → Oct 23 at 01:00")
+- Q: How should single-digit hours be formatted in the time display (e.g., 9:00 AM vs 09:00 AM)? → A: Without leading zero (9:00, not 09:00)
+- Q: How should date formats be localized for international users (e.g., "Oct 22" vs "22 Oct" vs "10/22")? → A: Use "22 Oct" (day-month) format for all users consistently
+- Q: How should the system handle timezone display when dates are stored in UTC but users may be in different timezones? → A: Display times exactly as user entered them (no timezone conversion)
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - View Extended Fast Date/Time Range (Priority: P1)
@@ -13,13 +23,13 @@ When creating or editing an entry that triggers an extended fast prompt (>24 hou
 
 **Why this priority**: Core value of the feature - users need to understand the exact time window of their extended fast to make informed confirmation decisions. Without date/time context, a "26 hours" duration is abstract and hard to verify.
 
-**Independent Test**: Can be fully tested by creating an entry that has a >24 hour gap from the previous entry (e.g., previous entry last meal at Oct 22 18:00, new entry first meal at Oct 23 20:00). User should see "Oct 22 at 18:00 → Oct 23 at 20:00" displayed along with "26 hours".
+**Independent Test**: Can be fully tested by creating an entry that has a >24 hour gap from the previous entry (e.g., previous entry last meal at Oct 22 18:00, new entry first meal at Oct 23 20:00). User should see "22 Oct at 18:00 → 23 Oct at 20:00" displayed along with "26 hours".
 
 **Acceptance Scenarios**:
 
-1. **Given** I have an entry on Oct 22 with last meal at 18:00, **When** I create a new entry for Oct 23 with first meal at 20:00 (26 hour gap), **Then** the extended fast prompt displays "Extended fast detected (26 hours): Oct 22 at 18:00 → Oct 23 at 20:00. Did you fast continuously?"
+1. **Given** I have an entry on Oct 22 with last meal at 18:00, **When** I create a new entry for Oct 23 with first meal at 20:00 (26 hour gap), **Then** the extended fast prompt displays "Extended fast detected (26 hours): 22 Oct at 18:00 → 23 Oct at 20:00. Did you fast continuously?"
 
-2. **Given** I have an entry on Oct 20 with last meal at 14:00, **When** I create a new entry for Oct 22 with first meal at 16:00 (50 hour gap), **Then** the extended fast prompt displays "Extended fast detected (50 hours): Oct 20 at 14:00 → Oct 22 at 16:00. Did you fast continuously?"
+2. **Given** I have an entry on Oct 20 with last meal at 14:00, **When** I create a new entry for Oct 22 with first meal at 16:00 (50 hour gap), **Then** the extended fast prompt displays "Extended fast detected (50 hours): 20 Oct at 14:00 → 22 Oct at 16:00. Did you fast continuously?"
 
 3. **Given** I create an entry that creates an extended fast TO the next entry (future gap), **When** the prompt appears, **Then** I see the date/time range showing current entry's last meal time to next entry's first meal time
 
@@ -35,7 +45,7 @@ When filling a gap between two entries (creating both "from-previous" and "to-ne
 
 **Acceptance Scenarios**:
 
-1. **Given** I have entries on Oct 20 (last meal 14:00) and Oct 24 (first meal 16:00), **When** I create an entry for Oct 22 (first meal 16:00, last meal 18:00) creating two extended fasts, **Then** the first prompt shows "Oct 20 at 14:00 → Oct 22 at 16:00" and the second prompt shows "Oct 22 at 18:00 → Oct 24 at 16:00"
+1. **Given** I have entries on Oct 20 (last meal 14:00) and Oct 24 (first meal 16:00), **When** I create an entry for Oct 22 (first meal 16:00, last meal 18:00) creating two extended fasts, **Then** the first prompt shows "20 Oct at 14:00 → 22 Oct at 16:00" and the second prompt shows "22 Oct at 18:00 → 24 Oct at 16:00"
 
 2. **Given** I'm viewing a sequential extended fast prompt, **When** I confirm the first extended fast, **Then** the prompt updates to show the second time period with different start/end dates and times
 
@@ -51,9 +61,9 @@ The date/time ranges displayed in extended fast prompts respect the user's time 
 
 **Acceptance Scenarios**:
 
-1. **Given** my time format setting is 12-hour, **When** an extended fast prompt appears showing Oct 22 at 18:00, **Then** the time is displayed as "Oct 22 at 6:00 PM"
+1. **Given** my time format setting is 12-hour, **When** an extended fast prompt appears showing Oct 22 at 18:00, **Then** the time is displayed as "22 Oct at 6:00 PM"
 
-2. **Given** my time format setting is 24-hour, **When** an extended fast prompt appears showing Oct 22 at 18:00, **Then** the time is displayed as "Oct 22 at 18:00"
+2. **Given** my time format setting is 24-hour, **When** an extended fast prompt appears showing Oct 22 at 18:00, **Then** the time is displayed as "22 Oct at 18:00"
 
 3. **Given** I change my time format preference from 12-hour to 24-hour, **When** I trigger a new extended fast prompt, **Then** the date/time range reflects the updated format
 
@@ -61,28 +71,28 @@ The date/time ranges displayed in extended fast prompts respect the user's time 
 
 ### Edge Cases
 
-- What happens when date/time ranges span midnight (e.g., Oct 22 at 23:30 → Oct 23 at 01:00)?
-- How does system handle date/time display for users in different timezones (dates stored in UTC)?
-- What happens if previous entry or next entry data is incomplete (missing last/first meal time)?
-- How are single-digit hours formatted (e.g., 9:00 vs 09:00)?
-- How are date formats localized (Oct 22 vs 22 Oct vs 10/22)?
+- Midnight-spanning ranges: Always show both full dates even for consecutive days (e.g., "22 Oct at 23:30 → 23 Oct at 01:00") to maintain clarity
+- Timezone handling: Display times exactly as user entered them without timezone conversion (user sees what they input)
+- Missing meal time data: Extended fast cannot be calculated or displayed if previous entry's lastMealTime or next entry's firstMealTime is missing (no prompt shown in this case)
+- Hour formatting: Single-digit hours displayed without leading zero (e.g., 9:00, not 09:00) for natural readability
+- Date localization: Use consistent "22 Oct" (day-month) format for all users regardless of locale
 
 ## Requirements *(mandatory)*
 
 ### Functional Requirements
 
-- **FR-001**: System MUST display both date and time for the start of an extended fast period (previous entry's last meal date/time)
-- **FR-002**: System MUST display both date and time for the end of an extended fast period (current/next entry's first meal date/time)
+- **FR-001**: System MUST display both date and time for the start of an extended fast period (previous entry's last meal date/time as entered by user)
+- **FR-002**: System MUST display both date and time for the end of an extended fast period (current/next entry's first meal date/time as entered by user)
 - **FR-003**: System MUST display date/time range in a clear "start → end" format alongside the duration
-- **FR-004**: System MUST format times according to user's time format preference (12-hour or 24-hour)
-- **FR-005**: System MUST format dates in a readable month-day format (e.g., "Oct 22" not "2025-10-22")
-- **FR-006**: System MUST handle date/time ranges that span multiple days correctly (show both dates even if different)
+- **FR-004**: System MUST format times according to user's time format preference (12-hour or 24-hour), with single-digit hours displayed without leading zero (e.g., 9:00 not 09:00)
+- **FR-005**: System MUST format dates consistently in "Day Month" format (e.g., "22 Oct") for all users regardless of locale
+- **FR-006**: System MUST always show both full dates in date/time ranges, even when spanning consecutive days (e.g., "22 Oct at 23:30 → 23 Oct at 01:00")
 - **FR-007**: System MUST display correct date/time ranges for "from-previous" extended fast prompts (previous entry's last meal → current entry's first meal)
 - **FR-008**: System MUST display correct date/time ranges for "to-next" extended fast prompts (current entry's last meal → next entry's first meal)
 - **FR-009**: System MUST show different date/time ranges when multiple sequential extended fast prompts appear
 - **FR-010**: System MUST preserve existing extended fast detection logic (>24 hours threshold)
 - **FR-011**: System MUST preserve existing confirmation button functionality (confirm/deny behavior unchanged)
-- **FR-012**: System MUST gracefully handle missing date/time data by falling back to duration-only display
+- **FR-012**: Extended fast prompts are only shown when complete meal time data exists (previous entry has lastMealTime and current/next entry has firstMealTime); no fallback display needed as extended fast cannot be calculated without this data
 
 ### Key Entities *(include if feature involves data)*
 

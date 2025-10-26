@@ -1955,4 +1955,897 @@ describe('EntryForm Component', () => {
       expect(entrySaveCalls.length).toBe(1);
     });
   });
+
+  // Feature 015: Extended Fast Date/Time Range Display Tests
+  describe('Date/Time Formatting Functions', () => {
+    describe('formatDateToDayMonth', () => {
+      it('should format ISO date string to "DD Mon" format', () => {
+        // This test will fail until formatDateToDayMonth is implemented
+        const EntryFormModule = require('@/components/organisms/EntryForm');
+        const { formatDateToDayMonth } = EntryFormModule;
+        
+        const result = formatDateToDayMonth('2025-10-22');
+        expect(result).toBe('22 Oct');
+      });
+
+      it('should handle full ISO timestamp with time', () => {
+        const EntryFormModule = require('@/components/organisms/EntryForm');
+        const { formatDateToDayMonth } = EntryFormModule;
+        
+        const result = formatDateToDayMonth('2025-10-22T00:00:00.000Z');
+        expect(result).toBe('22 Oct');
+      });
+
+      it('should pad single-digit days with zero', () => {
+        const EntryFormModule = require('@/components/organisms/EntryForm');
+        const { formatDateToDayMonth } = EntryFormModule;
+        
+        const result = formatDateToDayMonth('2025-10-05');
+        expect(result).toBe('05 Oct');
+      });
+
+      it('should format all month abbreviations correctly', () => {
+        const EntryFormModule = require('@/components/organisms/EntryForm');
+        const { formatDateToDayMonth } = EntryFormModule;
+        
+        expect(formatDateToDayMonth('2025-01-15')).toBe('15 Jan');
+        expect(formatDateToDayMonth('2025-02-28')).toBe('28 Feb');
+        expect(formatDateToDayMonth('2025-03-10')).toBe('10 Mar');
+        expect(formatDateToDayMonth('2025-04-05')).toBe('05 Apr');
+        expect(formatDateToDayMonth('2025-05-20')).toBe('20 May');
+        expect(formatDateToDayMonth('2025-06-15')).toBe('15 Jun');
+        expect(formatDateToDayMonth('2025-07-04')).toBe('04 Jul');
+        expect(formatDateToDayMonth('2025-08-25')).toBe('25 Aug');
+        expect(formatDateToDayMonth('2025-09-11')).toBe('11 Sep');
+        expect(formatDateToDayMonth('2025-10-31')).toBe('31 Oct');
+        expect(formatDateToDayMonth('2025-11-22')).toBe('22 Nov');
+        expect(formatDateToDayMonth('2025-12-25')).toBe('25 Dec');
+      });
+
+      it('should handle end-of-month dates', () => {
+        const EntryFormModule = require('@/components/organisms/EntryForm');
+        const { formatDateToDayMonth } = EntryFormModule;
+        
+        expect(formatDateToDayMonth('2025-01-31')).toBe('31 Jan');
+        expect(formatDateToDayMonth('2025-02-28')).toBe('28 Feb');
+      });
+    });
+
+    describe('formatTimeByPreference - 12h format', () => {
+      it('should convert afternoon time to 12h format', () => {
+        const EntryFormModule = require('@/components/organisms/EntryForm');
+        const { formatTimeByPreference } = EntryFormModule;
+        
+        const result = formatTimeByPreference('18:00', '12h');
+        expect(result).toBe('6:00 PM');
+      });
+
+      it('should convert morning time to 12h format', () => {
+        const EntryFormModule = require('@/components/organisms/EntryForm');
+        const { formatTimeByPreference } = EntryFormModule;
+        
+        const result = formatTimeByPreference('09:30', '12h');
+        expect(result).toBe('9:30 AM');
+      });
+
+      it('should handle midnight (00:00) as 12:00 AM', () => {
+        const EntryFormModule = require('@/components/organisms/EntryForm');
+        const { formatTimeByPreference } = EntryFormModule;
+        
+        const result = formatTimeByPreference('00:00', '12h');
+        expect(result).toBe('12:00 AM');
+      });
+
+      it('should handle noon (12:00) as 12:00 PM', () => {
+        const EntryFormModule = require('@/components/organisms/EntryForm');
+        const { formatTimeByPreference } = EntryFormModule;
+        
+        const result = formatTimeByPreference('12:00', '12h');
+        expect(result).toBe('12:00 PM');
+      });
+
+      it('should handle 12:01 PM correctly', () => {
+        const EntryFormModule = require('@/components/organisms/EntryForm');
+        const { formatTimeByPreference } = EntryFormModule;
+        
+        const result = formatTimeByPreference('12:01', '12h');
+        expect(result).toBe('12:01 PM');
+      });
+
+      it('should handle 11:59 PM correctly', () => {
+        const EntryFormModule = require('@/components/organisms/EntryForm');
+        const { formatTimeByPreference } = EntryFormModule;
+        
+        const result = formatTimeByPreference('23:59', '12h');
+        expect(result).toBe('11:59 PM');
+      });
+
+      it('should not pad single-digit hours with leading zero', () => {
+        const EntryFormModule = require('@/components/organisms/EntryForm');
+        const { formatTimeByPreference } = EntryFormModule;
+        
+        const result = formatTimeByPreference('09:00', '12h');
+        expect(result).toBe('9:00 AM');
+      });
+
+      it('should pad single-digit minutes with zero', () => {
+        const EntryFormModule = require('@/components/organisms/EntryForm');
+        const { formatTimeByPreference } = EntryFormModule;
+        
+        const result = formatTimeByPreference('09:05', '12h');
+        expect(result).toBe('9:05 AM');
+      });
+    });
+
+    describe('formatTimeByPreference - 24h format', () => {
+      it('should return 24h time without modification', () => {
+        const EntryFormModule = require('@/components/organisms/EntryForm');
+        const { formatTimeByPreference } = EntryFormModule;
+        
+        const result = formatTimeByPreference('18:00', '24h');
+        expect(result).toBe('18:00');
+      });
+
+      it('should not pad single-digit hours with leading zero', () => {
+        const EntryFormModule = require('@/components/organisms/EntryForm');
+        const { formatTimeByPreference } = EntryFormModule;
+        
+        const result = formatTimeByPreference('09:30', '24h');
+        expect(result).toBe('9:30');
+      });
+
+      it('should handle midnight as 0:00', () => {
+        const EntryFormModule = require('@/components/organisms/EntryForm');
+        const { formatTimeByPreference } = EntryFormModule;
+        
+        const result = formatTimeByPreference('00:00', '24h');
+        expect(result).toBe('0:00');
+      });
+
+      it('should handle noon as 12:00', () => {
+        const EntryFormModule = require('@/components/organisms/EntryForm');
+        const { formatTimeByPreference } = EntryFormModule;
+        
+        const result = formatTimeByPreference('12:00', '24h');
+        expect(result).toBe('12:00');
+      });
+
+      it('should pad minutes with zero', () => {
+        const EntryFormModule = require('@/components/organisms/EntryForm');
+        const { formatTimeByPreference } = EntryFormModule;
+        
+        const result = formatTimeByPreference('09:05', '24h');
+        expect(result).toBe('9:05');
+      });
+    });
+  });
+
+  describe('Extended Fast Date/Time Range Display', () => {
+    it('should display date/time range in from-previous prompt (24h format)', async () => {
+      const user = userEvent.setup();
+      const mockOnSuccess = jest.fn();
+
+      const gapInfo = {
+        hasGap: true,
+        daysSinceLast: 2,
+        hasPreviousEntry: true,
+        isExtendedFast: true,
+        isExtendedFastFromPrevious: true,
+        extendedFastDirection: 'from-previous',
+        previousEntry: {
+          _id: 'prev123',
+          date: '2025-10-22',
+          lastMealTime: '18:00'
+        },
+        fromPreviousFasting: { formatted: '26 hours' }
+      };
+
+      fetch.mockImplementation((url) => {
+        if (url.includes('check-previous')) {
+          return Promise.resolve({
+            ok: true,
+            json: async () => (gapInfo),
+          });
+        }
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({ success: true, data: {} }),
+        });
+      });
+
+      render(<EntryForm onSuccess={mockOnSuccess} settings={{ timeFormat: '24h' }} />);
+
+      await fillDateInput(user, '2025-10-23');
+      await fillTimeInput(user, 'First Meal Time', '20:00');
+      await fillTimeInput(user, 'Last Meal Time', '21:00');
+
+      const submitButton = screen.getByRole('button', { name: /save entry/i });
+      await user.click(submitButton);
+
+      await waitFor(() => {
+        expect(screen.getByText(/extended fast detected/i)).toBeInTheDocument();
+        expect(screen.getByText(/22 Oct at 18:00 → 23 Oct at 20:00/i)).toBeInTheDocument();
+      });
+    });
+
+    it('should display date/time range in from-previous prompt (12h format)', async () => {
+      const user = userEvent.setup();
+      const mockOnSuccess = jest.fn();
+
+      const gapInfo = {
+        hasGap: true,
+        daysSinceLast: 2,
+        hasPreviousEntry: true,
+        isExtendedFast: true,
+        isExtendedFastFromPrevious: true,
+        extendedFastDirection: 'from-previous',
+        previousEntry: {
+          _id: 'prev123',
+          date: '2025-10-22',
+          lastMealTime: '18:00'
+        },
+        fromPreviousFasting: { formatted: '26 hours' }
+      };
+
+      fetch.mockImplementation((url) => {
+        if (url.includes('check-previous')) {
+          return Promise.resolve({
+            ok: true,
+            json: async () => (gapInfo),
+          });
+        }
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({ success: true, data: {} }),
+        });
+      });
+
+      render(<EntryForm onSuccess={mockOnSuccess} settings={{ timeFormat: '12h' }} />);
+
+      await fillDateInput(user, '2025-10-23');
+      await fillTimeInput(user, 'First Meal Time', '08:00');
+      await fillTimeInput(user, 'Last Meal Time', '09:00');
+
+      const submitButton = screen.getByRole('button', { name: /save entry/i });
+      await user.click(submitButton);
+
+      await waitFor(() => {
+        expect(screen.getByText(/extended fast detected/i)).toBeInTheDocument();
+        expect(screen.getByText(/6:00 PM.*8:00 AM/i)).toBeInTheDocument();
+      });
+    });
+
+    it('should display date/time range in to-next prompt', async () => {
+      const user = userEvent.setup();
+      const mockOnSuccess = jest.fn();
+
+      const gapInfo = {
+        hasGap: true,
+        daysSinceLast: 2,
+        hasPreviousEntry: true,
+        isExtendedFast: true,
+        isExtendedFastFromPrevious: true,
+        isExtendedFastToNext: true,
+        extendedFastDirection: 'from-previous', // Initially from-previous
+        previousEntry: {
+          _id: 'prev123',
+          date: '2025-10-20',
+          lastMealTime: '12:00'
+        },
+        nextEntry: {
+          _id: 'next123',
+          date: '2025-10-24',
+          firstMealTime: '18:00'
+        },
+        fromPreviousFasting: { formatted: '54 hours' },
+        toNextFasting: { formatted: '48 hours' }
+      };
+
+      fetch.mockImplementation((url) => {
+        if (url.includes('check-previous')) {
+          return Promise.resolve({
+            ok: true,
+            json: async () => (gapInfo),
+          });
+        }
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({ success: true, data: {} }),
+        });
+      });
+
+      render(<EntryForm onSuccess={mockOnSuccess} settings={{ timeFormat: '24h' }} />);
+
+      await fillDateInput(user, '2025-10-22');
+      await fillTimeInput(user, 'First Meal Time', '12:00');
+      await fillTimeInput(user, 'Last Meal Time', '18:00');
+
+      const submitButton = screen.getByRole('button', { name: /save entry/i });
+      await user.click(submitButton);
+
+      // First wait for from-previous prompt
+      await waitFor(() => {
+        expect(screen.getByText(/extended fast detected/i)).toBeInTheDocument();
+        expect(screen.getByText(/20 Oct at 12:00 → 22 Oct at 12:00/i)).toBeInTheDocument();
+      });
+
+      // Confirm from-previous
+      const firstYesButton = screen.getByRole('button', { name: /yes, confirm extended fast/i });
+      await user.click(firstYesButton);
+
+      // Now wait for to-next prompt to appear
+      await waitFor(() => {
+        expect(screen.getByText(/22 Oct at 18:00 → 24 Oct at 18:00/i)).toBeInTheDocument();
+      });
+    });
+
+    it('should display both dates when fast spans midnight', async () => {
+      const user = userEvent.setup();
+      const mockOnSuccess = jest.fn();
+
+      const gapInfo = {
+        hasGap: true,
+        daysSinceLast: 1,
+        hasPreviousEntry: true,
+        isExtendedFast: true,
+        isExtendedFastFromPrevious: true,
+        extendedFastDirection: 'from-previous',
+        previousEntry: {
+          _id: 'prev123',
+          date: '2025-10-22',
+          lastMealTime: '23:30'
+        },
+        fromPreviousFasting: { formatted: '25 hours 30 minutes' }
+      };
+
+      fetch.mockImplementation((url) => {
+        if (url.includes('check-previous')) {
+          return Promise.resolve({
+            ok: true,
+            json: async () => (gapInfo),
+          });
+        }
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({ success: true, data: {} }),
+        });
+      });
+
+      render(<EntryForm onSuccess={mockOnSuccess} settings={{ timeFormat: '24h' }} />);
+
+      await fillDateInput(user, '2025-10-23');
+      await fillTimeInput(user, 'First Meal Time', '01:00');
+      await fillTimeInput(user, 'Last Meal Time', '21:00');
+
+      const submitButton = screen.getByRole('button', { name: /save entry/i });
+      await user.click(submitButton);
+
+      await waitFor(() => {
+        const promptText = screen.getByText(/22 Oct.*23 Oct/i);
+        expect(promptText).toBeInTheDocument();
+        expect(promptText).toHaveTextContent('22 Oct at 23:30');
+        expect(promptText).toHaveTextContent('23 Oct at 1:00');
+      });
+    });
+
+    it('should display duration and date/time range on separate lines (mobile layout)', async () => {
+      const user = userEvent.setup();
+      const mockOnSuccess = jest.fn();
+
+      const gapInfo = {
+        hasGap: true,
+        daysSinceLast: 2,
+        hasPreviousEntry: true,
+        isExtendedFast: true,
+        isExtendedFastFromPrevious: true,
+        extendedFastDirection: 'from-previous',
+        previousEntry: {
+          _id: 'prev123',
+          date: '2025-10-22',
+          lastMealTime: '18:00'
+        },
+        fromPreviousFasting: { formatted: '26 hours' }
+      };
+
+      fetch.mockImplementation((url) => {
+        if (url.includes('check-previous')) {
+          return Promise.resolve({
+            ok: true,
+            json: async () => (gapInfo),
+          });
+        }
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({ success: true, data: {} }),
+        });
+      });
+
+      render(<EntryForm onSuccess={mockOnSuccess} settings={{ timeFormat: '24h' }} />);
+
+      await fillDateInput(user, '2025-10-23');
+      await fillTimeInput(user, 'First Meal Time', '20:00');
+      await fillTimeInput(user, 'Last Meal Time', '21:00');
+
+      const submitButton = screen.getByRole('button', { name: /save entry/i });
+      await user.click(submitButton);
+
+      await waitFor(() => {
+        const prompt = screen.getByText(/extended fast detected/i).closest('div');
+        
+        expect(prompt).toHaveTextContent('Extended fast detected (26 hours)');
+        
+        const html = prompt.innerHTML;
+        expect(html).toContain('26 hours');
+        expect(html).toContain('22 Oct at 18:00');
+      });
+    });
+
+    it('should maintain existing behavior when user confirms extended fast', async () => {
+      const user = userEvent.setup();
+      const mockOnSuccess = jest.fn();
+
+      const gapInfo = {
+        hasGap: true,
+        daysSinceLast: 2,
+        hasPreviousEntry: true,
+        isExtendedFast: true,
+        isExtendedFastFromPrevious: true,
+        extendedFastDirection: 'from-previous',
+        previousEntry: {
+          _id: 'prev123',
+          date: '2025-10-22',
+          lastMealTime: '18:00'
+        },
+        fromPreviousFasting: { formatted: '26 hours' }
+      };
+
+      fetch.mockImplementation((url) => {
+        if (url.includes('check-previous')) {
+          return Promise.resolve({
+            ok: true,
+            json: async () => (gapInfo),
+          });
+        }
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({ success: true, data: {} }),
+        });
+      });
+
+      render(<EntryForm onSuccess={mockOnSuccess} settings={{ timeFormat: '24h' }} />);
+
+      await fillDateInput(user, '2025-10-23');
+      await fillTimeInput(user, 'First Meal Time', '20:00');
+      await fillTimeInput(user, 'Last Meal Time', '21:00');
+
+      const submitButton = screen.getByRole('button', { name: /save entry/i });
+      await user.click(submitButton);
+
+      await waitFor(() => {
+        expect(screen.getByText(/22 Oct at 18:00/i)).toBeInTheDocument();
+      });
+
+      const yesButton = screen.getByRole('button', { name: /yes/i });
+      await user.click(yesButton);
+
+      await waitFor(() => {
+        expect(mockOnSuccess).toHaveBeenCalled();
+      });
+    });
+  });
+
+  describe('User Story 2: Sequential Extended Fast Date/Time Clarity', () => {
+    it('should display different date/time ranges for sequential from-previous and to-next prompts', async () => {
+      const user = userEvent.setup();
+      const mockOnSuccess = jest.fn();
+
+      const gapInfo = {
+        hasGap: true,
+        daysSinceLast: 2,
+        hasPreviousEntry: true,
+        isExtendedFast: true,
+        isExtendedFastFromPrevious: true,
+        isExtendedFastToNext: true,
+        previousEntry: {
+          _id: 'prev123',
+          date: '2025-10-20',
+          lastMealTime: '14:00'
+        },
+        nextEntry: {
+          _id: 'next123',
+          date: '2025-10-24',
+          firstMealTime: '16:00'
+        },
+        fromPreviousFasting: { formatted: '50 hours' },
+        toNextFasting: { formatted: '46 hours' }
+      };
+
+      fetch.mockImplementation((url) => {
+        if (url.includes('check-previous')) {
+          return Promise.resolve({
+            ok: true,
+            json: async () => (gapInfo),
+          });
+        }
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({ success: true, data: {} }),
+        });
+      });
+
+      render(<EntryForm onSuccess={mockOnSuccess} settings={{ timeFormat: '24h' }} />);
+
+      await fillDateInput(user, '2025-10-22');
+      await fillTimeInput(user, 'First Meal Time', '16:00');
+      await fillTimeInput(user, 'Last Meal Time', '18:00');
+
+      const submitButton = screen.getByRole('button', { name: /save entry/i });
+      await user.click(submitButton);
+
+      // First prompt: from-previous (20 Oct at 14:00 → 22 Oct at 16:00)
+      await waitFor(() => {
+        expect(screen.getByText(/20 Oct at 14:00 → 22 Oct at 16:00/i)).toBeInTheDocument();
+      });
+
+      const firstYesButton = screen.getByRole('button', { name: /yes, confirm extended fast/i });
+      await user.click(firstYesButton);
+
+      // Second prompt: to-next (22 Oct at 18:00 → 24 Oct at 16:00)
+      await waitFor(() => {
+        expect(screen.getByText(/22 Oct at 18:00 → 24 Oct at 16:00/i)).toBeInTheDocument();
+      });
+
+      // Verify first prompt range is no longer visible
+      expect(screen.queryByText(/20 Oct at 14:00 → 22 Oct at 16:00/i)).not.toBeInTheDocument();
+    });
+
+    it('should show previousEntry → formData range in first prompt', async () => {
+      const user = userEvent.setup();
+      const mockOnSuccess = jest.fn();
+
+      const gapInfo = {
+        hasGap: true,
+        daysSinceLast: 3,
+        hasPreviousEntry: true,
+        isExtendedFast: true,
+        isExtendedFastFromPrevious: true,
+        previousEntry: {
+          _id: 'prev123',
+          date: '2025-10-19',
+          lastMealTime: '20:00'
+        },
+        fromPreviousFasting: { formatted: '68 hours' }
+      };
+
+      fetch.mockImplementation((url) => {
+        if (url.includes('check-previous')) {
+          return Promise.resolve({
+            ok: true,
+            json: async () => (gapInfo),
+          });
+        }
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({ success: true, data: {} }),
+        });
+      });
+
+      render(<EntryForm onSuccess={mockOnSuccess} settings={{ timeFormat: '24h' }} />);
+
+      await fillDateInput(user, '2025-10-22');
+      await fillTimeInput(user, 'First Meal Time', '16:00');
+      await fillTimeInput(user, 'Last Meal Time', '18:00');
+
+      const submitButton = screen.getByRole('button', { name: /save entry/i });
+      await user.click(submitButton);
+
+      await waitFor(() => {
+        // Should show previous entry's last meal → current entry's first meal
+        expect(screen.getByText(/19 Oct at 20:00/i)).toBeInTheDocument();
+        expect(screen.getByText(/22 Oct at 16:00/i)).toBeInTheDocument();
+        expect(screen.getByText(/19 Oct at 20:00 → 22 Oct at 16:00/i)).toBeInTheDocument();
+      });
+    });
+
+    it('should show formData → nextEntry range in second prompt', async () => {
+      const user = userEvent.setup();
+      const mockOnSuccess = jest.fn();
+
+      const gapInfo = {
+        hasGap: true,
+        daysSinceLast: 1,
+        hasPreviousEntry: true,
+        isExtendedFast: true,
+        isExtendedFastFromPrevious: true,
+        isExtendedFastToNext: true,
+        previousEntry: {
+          _id: 'prev123',
+          date: '2025-10-20',
+          lastMealTime: '22:00'
+        },
+        nextEntry: {
+          _id: 'next123',
+          date: '2025-10-23',
+          firstMealTime: '08:00'
+        },
+        fromPreviousFasting: { formatted: '26 hours' },
+        toNextFasting: { formatted: '38 hours' }
+      };
+
+      fetch.mockImplementation((url) => {
+        if (url.includes('check-previous')) {
+          return Promise.resolve({
+            ok: true,
+            json: async () => (gapInfo),
+          });
+        }
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({ success: true, data: {} }),
+        });
+      });
+
+      render(<EntryForm onSuccess={mockOnSuccess} settings={{ timeFormat: '24h' }} />);
+
+      await fillDateInput(user, '2025-10-22');
+      await fillTimeInput(user, 'First Meal Time', '00:00');
+      await fillTimeInput(user, 'Last Meal Time', '18:00');
+
+      const submitButton = screen.getByRole('button', { name: /save entry/i });
+      await user.click(submitButton);
+
+      // First prompt
+      await waitFor(() => {
+        expect(screen.getByText(/20 Oct at 22:00 → 22 Oct at 0:00/i)).toBeInTheDocument();
+      });
+
+      const firstYesButton = screen.getByRole('button', { name: /yes, confirm extended fast/i });
+      await user.click(firstYesButton);
+
+      // Second prompt: should show current entry's last meal → next entry's first meal
+      await waitFor(() => {
+        expect(screen.getByText(/22 Oct at 18:00/i)).toBeInTheDocument();
+        expect(screen.getByText(/23 Oct at 8:00/i)).toBeInTheDocument();
+        expect(screen.getByText(/22 Oct at 18:00 → 23 Oct at 8:00/i)).toBeInTheDocument();
+      });
+    });
+
+    it('should clear first prompt range after confirmation before showing second prompt', async () => {
+      const user = userEvent.setup();
+      const mockOnSuccess = jest.fn();
+
+      const gapInfo = {
+        hasGap: true,
+        daysSinceLast: 1,
+        hasPreviousEntry: true,
+        isExtendedFast: true,
+        isExtendedFastFromPrevious: true,
+        isExtendedFastToNext: true,
+        previousEntry: {
+          _id: 'prev123',
+          date: '2025-10-21',
+          lastMealTime: '15:00'
+        },
+        nextEntry: {
+          _id: 'next123',
+          date: '2025-10-23',
+          firstMealTime: '17:00'
+        },
+        fromPreviousFasting: { formatted: '25 hours' },
+        toNextFasting: { formatted: '27 hours' }
+      };
+
+      fetch.mockImplementation((url) => {
+        if (url.includes('check-previous')) {
+          return Promise.resolve({
+            ok: true,
+            json: async () => (gapInfo),
+          });
+        }
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({ success: true, data: {} }),
+        });
+      });
+
+      render(<EntryForm onSuccess={mockOnSuccess} settings={{ timeFormat: '24h' }} />);
+
+      await fillDateInput(user, '2025-10-22');
+      await fillTimeInput(user, 'First Meal Time', '16:00');
+      await fillTimeInput(user, 'Last Meal Time', '18:00');
+
+      const submitButton = screen.getByRole('button', { name: /save entry/i });
+      await user.click(submitButton);
+
+      // First prompt visible
+      await waitFor(() => {
+        expect(screen.getByText(/21 Oct at 15:00 → 22 Oct at 16:00/i)).toBeInTheDocument();
+      });
+
+      const firstYesButton = screen.getByRole('button', { name: /yes, confirm extended fast/i });
+      await user.click(firstYesButton);
+
+      // After clicking Yes, first range should disappear
+      await waitFor(() => {
+        expect(screen.queryByText(/21 Oct at 15:00 → 22 Oct at 16:00/i)).not.toBeInTheDocument();
+      });
+
+      // Second prompt should now be visible
+      await waitFor(() => {
+        expect(screen.getByText(/22 Oct at 18:00 → 23 Oct at 17:00/i)).toBeInTheDocument();
+      });
+    });
+  });
+
+  describe('User Story 3: Respect User Time Format Preference', () => {
+    it('should display times with AM/PM when user preference is 12h format', async () => {
+      const user = userEvent.setup();
+      const mockOnSuccess = jest.fn();
+
+      const gapInfo = {
+        hasGap: true,
+        daysSinceLast: 1,
+        hasPreviousEntry: true,
+        isExtendedFast: true,
+        isExtendedFastFromPrevious: true,
+        previousEntry: {
+          _id: 'prev123',
+          date: '2025-10-22',
+          lastMealTime: '18:00'
+        },
+        fromPreviousFasting: { formatted: '26 hours' }
+      };
+
+      fetch.mockImplementation((url) => {
+        if (url.includes('check-previous')) {
+          return Promise.resolve({
+            ok: true,
+            json: async () => (gapInfo),
+          });
+        }
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({ success: true, data: {} }),
+        });
+      });
+
+      render(<EntryForm onSuccess={mockOnSuccess} settings={{ timeFormat: '12h' }} />);
+
+      await fillDateInput(user, '2025-10-23');
+      await fillTimeInput(user, 'First Meal Time', '08:00');
+      await fillTimeInput(user, 'Last Meal Time', '09:00');
+
+      const submitButton = screen.getByRole('button', { name: /save entry/i });
+      await user.click(submitButton);
+
+      await waitFor(() => {
+        // Should display times in 12h format with AM/PM
+        expect(screen.getByText(/22 Oct at 6:00 PM/i)).toBeInTheDocument();
+        expect(screen.getByText(/23 Oct at 8:00 AM/i)).toBeInTheDocument();
+        expect(screen.getByText(/22 Oct at 6:00 PM → 23 Oct at 8:00 AM/i)).toBeInTheDocument();
+        
+        // Should NOT contain 24h format
+        expect(screen.queryByText(/18:00/i)).not.toBeInTheDocument();
+      });
+    });
+
+    it('should display times without AM/PM when user preference is 24h format', async () => {
+      const user = userEvent.setup();
+      const mockOnSuccess = jest.fn();
+
+      const gapInfo = {
+        hasGap: true,
+        daysSinceLast: 1,
+        hasPreviousEntry: true,
+        isExtendedFast: true,
+        isExtendedFastFromPrevious: true,
+        previousEntry: {
+          _id: 'prev123',
+          date: '2025-10-22',
+          lastMealTime: '14:30'
+        },
+        fromPreviousFasting: { formatted: '29.5 hours' }
+      };
+
+      fetch.mockImplementation((url) => {
+        if (url.includes('check-previous')) {
+          return Promise.resolve({
+            ok: true,
+            json: async () => (gapInfo),
+          });
+        }
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({ success: true, data: {} }),
+        });
+      });
+
+      render(<EntryForm onSuccess={mockOnSuccess} settings={{ timeFormat: '24h' }} />);
+
+      await fillDateInput(user, '2025-10-23');
+      await fillTimeInput(user, 'First Meal Time', '20:00');
+      await fillTimeInput(user, 'Last Meal Time', '21:00');
+
+      const submitButton = screen.getByRole('button', { name: /save entry/i });
+      await user.click(submitButton);
+
+      await waitFor(() => {
+        // Should display times in 24h format without AM/PM
+        expect(screen.getByText(/22 Oct at 14:30/i)).toBeInTheDocument();
+        expect(screen.getByText(/23 Oct at 20:00/i)).toBeInTheDocument();
+        expect(screen.getByText(/22 Oct at 14:30 → 23 Oct at 20:00/i)).toBeInTheDocument();
+        
+        // Should NOT contain AM/PM
+        expect(screen.queryByText(/AM/i)).not.toBeInTheDocument();
+        expect(screen.queryByText(/PM/i)).not.toBeInTheDocument();
+      });
+    });
+
+    it('should respect time format preference for both sequential prompts', async () => {
+      const user = userEvent.setup();
+      const mockOnSuccess = jest.fn();
+
+      const gapInfo = {
+        hasGap: true,
+        daysSinceLast: 2,
+        hasPreviousEntry: true,
+        isExtendedFast: true,
+        isExtendedFastFromPrevious: true,
+        isExtendedFastToNext: true,
+        previousEntry: {
+          _id: 'prev123',
+          date: '2025-10-20',
+          lastMealTime: '19:00'
+        },
+        nextEntry: {
+          _id: 'next123',
+          date: '2025-10-24',
+          firstMealTime: '07:00'
+        },
+        fromPreviousFasting: { formatted: '45 hours' },
+        toNextFasting: { formatted: '60 hours' }
+      };
+
+      fetch.mockImplementation((url) => {
+        if (url.includes('check-previous')) {
+          return Promise.resolve({
+            ok: true,
+            json: async () => (gapInfo),
+          });
+        }
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({ success: true, data: {} }),
+        });
+      });
+
+      render(<EntryForm onSuccess={mockOnSuccess} settings={{ timeFormat: '12h' }} />);
+
+      await fillDateInput(user, '2025-10-22');
+      await fillTimeInput(user, 'First Meal Time', '04:00');
+      await fillTimeInput(user, 'Last Meal Time', '07:00');
+
+      const submitButton = screen.getByRole('button', { name: /save entry/i });
+      await user.click(submitButton);
+
+      // First prompt: should display in 12h format
+      await waitFor(() => {
+        expect(screen.getByText(/20 Oct at 7:00 PM/i)).toBeInTheDocument();
+        expect(screen.getByText(/22 Oct at 4:00 AM/i)).toBeInTheDocument();
+      });
+
+      const firstYesButton = screen.getByRole('button', { name: /yes, confirm extended fast/i });
+      await user.click(firstYesButton);
+
+      // Second prompt: should also display in 12h format
+      await waitFor(() => {
+        expect(screen.getByText(/22 Oct at 7:00 AM/i)).toBeInTheDocument();
+        expect(screen.getByText(/24 Oct at 7:00 AM/i)).toBeInTheDocument();
+      });
+
+      // Both prompts should have used 12h format (no 19:00, 04:00, or 07:00 visible)
+      expect(screen.queryByText(/19:00/i)).not.toBeInTheDocument();
+      expect(screen.queryByText(/04:00/i)).not.toBeInTheDocument();
+    });
+  });
 });
