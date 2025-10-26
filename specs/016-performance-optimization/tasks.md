@@ -58,11 +58,11 @@ This document provides atomic, test-driven implementation tasks for the performa
 
 ### Tasks
 
-- [ ] T004 [P] Write unit tests for CacheService.get() in tests/unit/services/cacheService.test.js (test cache hit, miss, TTL expiration)
-- [ ] T005 [P] Write unit tests for CacheService.set() in tests/unit/services/cacheService.test.js (test TTL, overwrite existing)
-- [ ] T006 [P] Write unit tests for CacheService.del() and delPattern() in tests/unit/services/cacheService.test.js
-- [ ] T007 Implement CacheService class in src/lib/services/cacheService.js (using node-cache: constructor, get, set, del, delPattern, isEnabled, getStats methods per contract)
-- [ ] T008 Run CacheService unit tests and verify all pass (npm test tests/unit/services/cacheService.test.js)
+- [X] T004 [P] Write unit tests for CacheService.get() in tests/unit/services/cacheService.test.js (test cache hit, miss, TTL expiration)
+- [X] T005 [P] Write unit tests for CacheService.set() in tests/unit/services/cacheService.test.js (test TTL, overwrite existing)
+- [X] T006 [P] Write unit tests for CacheService.del() and delPattern() in tests/unit/services/cacheService.test.js
+- [X] T007 Implement CacheService class in src/lib/services/serverCacheService.js (using node-cache: constructor, get, set, del, delPattern, isEnabled, getStats methods per contract)
+- [X] T008 Run CacheService unit tests and verify all pass (npm test tests/unit/services/cacheService.test.js)
 - [ ] T009 Create database migration script migrations/004-add-performance-indexes.js (add userId_fastingDuration and userId_date_insights indexes)
 - [ ] T010 Run migration to create indexes (node scripts/run-migration.js 004-add-performance-indexes)
 - [ ] T011 Verify indexes created using db.entries.getIndexes() and explain() query plans
