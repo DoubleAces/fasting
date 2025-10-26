@@ -513,7 +513,7 @@ git grep "handleError" src/components/
 
 ---
 
-- [ ] T013 [US2] Generate comprehensive component audit report in specs/014-codebase-cleanup-refactor/audit-report.md
+- [x] T013 [US2] Generate comprehensive component audit report in specs/014-codebase-cleanup-refactor/audit-report.md
 
 **Actions**:
 Create detailed report with:
@@ -577,7 +577,7 @@ Create detailed report with:
 
 ---
 
-- [ ] T014 [US2] Run full test suite to validate no regressions from User Story 1 and document User Story 2 completion
+- [x] T014 [US2] Run full test suite to validate no regressions from User Story 1 and document User Story 2 completion
 
 **Actions**:
 ```powershell
@@ -618,7 +618,7 @@ git commit -m "docs: add User Story 2 component audit report
 
 ### US3: Define Standards
 
-- [ ] T015 [US3] Document standard API error response format in specs/014-codebase-cleanup-refactor/api-standards.md
+- [x] T015 [US3] Document standard API error response format in specs/014-codebase-cleanup-refactor/api-standards.md
 
 **Actions**:
 Create `api-standards.md` with:
@@ -669,7 +669,7 @@ return NextResponse.json(
 
 ### US3: Audit API Routes
 
-- [ ] T016 [US3] Audit all 40 API routes in src/app/api/ against standards checklist
+- [x] T016 [US3] Audit all 40 API routes in src/app/api/ against standards checklist
 
 **Actions**:
 1. For each route in src/app/api/:
@@ -700,7 +700,7 @@ File: src/app/api/entries/route.js
 
 ---
 
-- [ ] T017 [US3] Search for database queries and check optimization (indexes, projections, limits)
+- [x] T017 [US3] Search for database queries and check optimization (indexes, projections, limits)
 
 **Actions**:
 ```powershell
@@ -725,7 +725,7 @@ git grep "\.aggregate(" src/app/api/
 
 ---
 
-- [ ] T018 [US3] Generate comprehensive API audit report in specs/014-codebase-cleanup-refactor/api-audit-report.md
+- [x] T018 [US3] Generate comprehensive API audit report in specs/014-codebase-cleanup-refactor/api-audit-report.md
 
 **Actions**:
 Create report with:
