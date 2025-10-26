@@ -15,9 +15,9 @@ import { notFound, redirect } from 'next/navigation';
 import { auth } from '@/lib/auth';
 import { connectDB } from '@/lib/db';
 import Entry from '@/lib/models/Entry';
-import Settings from '@/lib/models/Settings';
 import EntryDetailsView from '@/components/organisms/EntryDetailsView';
 import { calculateInsights } from '@/lib/services/entryInsightsService';
+import { settingsService } from '@/lib/services/settingsService';
 import { performanceLogger } from '@/lib/utils/performanceLogger';
 import Link from 'next/link';
 
@@ -66,9 +66,14 @@ export default async function EntryDetailsPage({ params }) {
       redirect('/entries');
     }
 
-    // Fetch user settings
+    // Fetch user settings (cached with 1-hour TTL)
     queryCount++;
-    const settings = await Settings.findOne({ userId }).lean();
+    const settingsStartTime = Date.now();
+    const settings = await settingsService.getSettings(userId);
+    const settingsTime = Date.now() - settingsStartTime;
+    
+    // Settings cache hit detection (<10ms = cached)
+    const settingsCacheHit = settingsTime < 10;
 
     // Calculate insights for this entry (cached for 30 minutes)
     let insights = null;
