@@ -66,7 +66,6 @@ const EntryForm = ({
   const [gapInfo, setGapInfo] = useState(null);
   const [showExtendedFastPrompt, setShowExtendedFastPrompt] = useState(false);
   const [currentPromptType, setCurrentPromptType] = useState(null); // 'from-previous' or 'to-next'
-  const [checkingGap, setCheckingGap] = useState(false);
 
   // Loading state
   const [isSubmitting, setIsSubmitting] = useState(false);
