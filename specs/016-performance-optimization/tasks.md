@@ -265,13 +265,16 @@ This document provides atomic, test-driven implementation tasks for the performa
 
 ### Tasks
 
-- [ ] T042 [US6] Create performance logger utility in src/lib/utils/performanceLogger.js (if not created in T015)
-- [ ] T043 [US6] Write tests for performance logging in tests/unit/utils/performanceLogger.test.js
+- [X] T042 [US6] Create performance logger utility in src/lib/utils/performanceLogger.js (if not created in T015)
+  Note: Already exists from T015. Provides performanceLogger(), withPerformanceTracking(), formatBytes(), logPerformance().
+- [X] T043 [US6] Write tests for performance logging in tests/unit/utils/performanceLogger.test.js
+  Note: Created 19 comprehensive tests - ALL PASSING. Tests cover timing, metadata, memory tracking, error handling.
 - [ ] T044 [US6] Add performance logging middleware for API routes in src/lib/middleware/performanceMiddleware.js
 - [ ] T045 [US6] Add Core Web Vitals tracking to root layout in src/app/layout.js (if using Vercel Analytics)
 - [ ] T046 [P] [US6] Add performance logging to entry details page in src/app/entries/[id]/page.js
 - [ ] T047 [P] [US6] Add performance logging to API routes in src/app/api/entries/route.js
-- [ ] T048 [P] [US6] Create cache stats monitoring endpoint in src/app/api/cache-stats/route.js (return cache.getStats())
+- [X] T048 [P] [US6] Create cache stats monitoring endpoint in src/app/api/cache-stats/route.js (return cache.getStats())
+  Note: Created endpoint returning stats from settingsService and entryInsightsService. Shows hits/misses, keys, hit rates.
 - [ ] T049 [US6] Write E2E test measuring Core Web Vitals in tests/e2e/core-web-vitals.spec.js
 - [ ] T050 [US6] Run Core Web Vitals test and verify targets met (npm test tests/e2e/core-web-vitals.spec.js)
 
