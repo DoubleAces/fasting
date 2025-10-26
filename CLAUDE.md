@@ -25,6 +25,12 @@ Auto-generated from all feature plans. Last updated: 2025-10-17
 - MongoDB (Entry model with optional templateSource field) (012-remove-copy-today)
 - JavaScript (ES6+) with React 18 + Next.js 15.5.6 (App Router), React Hook Form, Tailwind CSS (013-inline-fast-confirmation)
 - MongoDB with Mongoose ODM (Entry model with extendedFastConfirmed fields) (013-inline-fast-confirmation)
+- JavaScript (ES6+) / React 18 / Next.js 15.5.6 + Next.js App Router, React, Tailwind CSS, Mongoose, NextAuth.js v5 (014-codebase-cleanup-refactor)
+- MongoDB with Mongoose ODM (no schema changes - refactoring only) (014-codebase-cleanup-refactor)
+- JavaScript (ES6+) with React 18 + Next.js 15.5.6 (App Router), Tailwind CSS for styling (015-extended-fast-datetime-display)
+- MongoDB with Mongoose ODM (Entry model - no schema changes required) (015-extended-fast-datetime-display)
+- JavaScript (ES6+), Node.js 18+ + Next.js 15+ (App Router), MongoDB 4.0+, Mongoose ODM, Redis 6+, ioredis or node-redis client (016-performance-optimization)
+- MongoDB with Mongoose schemas (Entry, Settings collections) (016-performance-optimization)
 
 ## Project Structure
 ```
@@ -40,9 +46,9 @@ npm test; npm run lint
 JavaScript ES6+ with Node.js 18+ (Next.js 14+): Follow standard conventions
 
 ## Recent Changes
-- 013-inline-fast-confirmation: Added JavaScript (ES6+) with React 18 + Next.js 15.5.6 (App Router), React Hook Form, Tailwind CSS
-- 012-remove-copy-today: Added JavaScript ES6+ / Next.js 15.5.6 + React 18, Mongoose ODM, NextAuth.js
-- 011-entry-details-page: Added JavaScript ES6+ with Next.js 15.5.6 (App Router)
+- 016-performance-optimization: Added JavaScript (ES6+), Node.js 18+ + Next.js 15+ (App Router), MongoDB 4.0+, Mongoose ODM, Redis 6+, ioredis or node-redis client
+- 015-extended-fast-datetime-display: Added JavaScript (ES6+) with React 18 + Next.js 15.5.6 (App Router), Tailwind CSS for styling
+- 014-codebase-cleanup-refactor: Added JavaScript (ES6+) / React 18 / Next.js 15.5.6 + Next.js App Router, React, Tailwind CSS, Mongoose, NextAuth.js v5
 
 <!-- MANUAL ADDITIONS START -->
 <!-- MANUAL ADDITIONS END -->
