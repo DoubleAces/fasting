@@ -96,7 +96,7 @@ This document provides atomic, test-driven implementation tasks for the performa
 - [X] T016 [US1] Refactor entryInsightsService.calculateInsights() to use single aggregation pipeline in src/lib/services/entryInsightsService.js (replace 5+ queries with $facet)
 - [X] T017 [US1] Add caching to entryInsightsService.calculateInsights() using CacheService with 30-min TTL
 - [X] T018 [US1] Add cache invalidation methods: invalidateInsightsForUser(), invalidateInsightsForEntry() in src/lib/services/entryInsightsService.js
-- [ ] T019 [US1] Update entry details page in src/app/entries/[id]/page.js to use cached insights service and add ISR revalidation (export const revalidate = 300)
+- [X] T019 [US1] Update entry details page in src/app/entries/[id]/page.js to use cached insights service and add ISR revalidation (export const revalidate = 300)
 - [ ] T020 [US1] Run entry details performance test and verify <500ms load time (npm test tests/e2e/entry-details-performance.spec.js)
 
 **Acceptance**: Entry details page loads <500ms, query count reduced to 2-3, all tests pass.
