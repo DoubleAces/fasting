@@ -2,7 +2,14 @@
 
 **Feature**: Add date/time range display to extended fast confirmation prompts  
 **Branch**: `015-extended-fast-datetime-display`  
-**Input**: Design documents from `/specs/015-extended-fast-datetime-display/`
+**Status**: ✅ **SHIPPED** - Commit db46352 (October 26, 2025)  
+**Test Coverage**: 81 tests passing (50 existing + 31 new)
+
+## Summary
+- **Implementation**: 45 lines added to EntryForm.js (2 utility functions + JSX updates)
+- **Tests**: 840 lines added (24 unit tests + 7 integration tests)
+- **Zero regressions**: All existing functionality preserved
+- **TDD workflow**: Complete (Red → Green → Verification)
 
 ## Format: `[ID] [P?] [Story] Description`
 - **[P]**: Can run in parallel (different files, no dependencies)
