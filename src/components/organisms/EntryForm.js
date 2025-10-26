@@ -8,6 +8,41 @@ import Button from '@/components/atoms/Button';
 import ErrorMessage from '@/components/atoms/ErrorMessage';
 
 /**
+ * Format an ISO date string to "DD Mon" format (e.g., "22 Oct").
+ * @param {string} dateString - ISO date string (e.g., "2025-10-22" or "2025-10-22T00:00:00.000Z")
+ * @returns {string} Formatted date in "DD Mon" format (e.g., "22 Oct")
+ */
+export const formatDateToDayMonth = (dateString) => {
+  const date = new Date(dateString);
+  const formatted = date.toLocaleDateString('en-US', { 
+    day: '2-digit', 
+    month: 'short' 
+  });
+  // toLocaleDateString returns "Oct 22", we want "22 Oct"
+  const [month, day] = formatted.split(' ');
+  return `${day} ${month}`;
+};
+
+/**
+ * Format 24-hour time string to user's preferred format (12h or 24h).
+ * @param {string} time24h - Time in "HH:mm" format (e.g., "18:00", "09:30")
+ * @param {string} format - Either "12h" or "24h" (from settings.timeFormat)
+ * @returns {string} Formatted time (e.g., "6:00 PM" for 12h, "18:00" for 24h)
+ */
+export const formatTimeByPreference = (time24h, format) => {
+  const [hours, minutes] = time24h.split(':').map(Number);
+  
+  if (format === '12h') {
+    const period = hours >= 12 ? 'PM' : 'AM';
+    const displayHours = hours % 12 || 12; // Convert 0 to 12, 13 to 1, etc.
+    return `${displayHours}:${minutes.toString().padStart(2, '0')} ${period}`;
+  }
+  
+  // 24h format - no leading zero on single-digit hours per clarification
+  return `${hours}:${minutes.toString().padStart(2, '0')}`;
+};
+
+/**
  * EntryForm Organism Component
  * 
  * Main form for creating and editing daily fasting entries.
@@ -771,10 +806,16 @@ const EntryForm = ({
               <span className="text-lg flex-shrink-0" role="img" aria-label="Question">🤔</span>
               <span className="font-medium">
                 {currentPromptType === 'from-previous' && gapInfo.fromPreviousFasting && (
-                  <>Extended fast detected ({gapInfo.fromPreviousFasting.formatted}). Did you fast continuously?</>
+                  <>
+                    Extended fast detected ({gapInfo.fromPreviousFasting.formatted}):<br />
+                    {formatDateToDayMonth(gapInfo.previousEntry.date)} at {formatTimeByPreference(gapInfo.previousEntry.lastMealTime, timeFormat)} → {formatDateToDayMonth(formData.date)} at {formatTimeByPreference(formData.firstMealTime, timeFormat)}. Did you fast continuously?
+                  </>
                 )}
-                {currentPromptType === 'to-next' && gapInfo.toNextFasting && (
-                  <>Extended fast detected ({gapInfo.toNextFasting.formatted}). Did you fast continuously?</>
+                {currentPromptType === 'to-next' && gapInfo.toNextFasting && gapInfo.nextEntry && (
+                  <>
+                    Extended fast detected ({gapInfo.toNextFasting.formatted}):<br />
+                    {formatDateToDayMonth(formData.date)} at {formatTimeByPreference(formData.lastMealTime, timeFormat)} → {formatDateToDayMonth(gapInfo.nextEntry.date)} at {formatTimeByPreference(gapInfo.nextEntry.firstMealTime, timeFormat)}. Did you fast continuously?
+                  </>
                 )}
               </span>
             </div>
