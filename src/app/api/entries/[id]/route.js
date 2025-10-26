@@ -9,6 +9,12 @@ import { connectDB } from '@/lib/db';
 import Entry from '@/lib/models/Entry';
 import { withErrorHandler, okResponse, notFoundResponse, unauthorizedResponse, forbiddenResponse } from '@/lib/api/errorHandler';
 import { auth } from '@/lib/auth';
+import { validateEntry } from '@/lib/validation/entrySchema';
+import { calculateFastingDuration } from '@/lib/utils/fastingCalculator';
+import { getYesterday, getTomorrow, formatDate } from '@/lib/utils/dateUtils';
+import { badRequestResponse } from '@/lib/api/errorHandler';
+import { revalidatePath } from 'next/cache';
+import { invalidateInsightsForEntry, invalidateInsightsForEntries } from '@/lib/services/entryInsightsService';
 
 export const GET = withErrorHandler(async (request, { params }) => {
   // Check authentication
@@ -215,6 +221,38 @@ export const PUT = withErrorHandler(async (request, { params }) => {
     }
   }
 
+  // Invalidate caches for the updated entry and any affected entries
+  try {
+    const affectedIds = [updatedEntry._id];
+    
+    // If we updated the next entry too, invalidate its cache
+    if (dateChanged || lastMealChanged) {
+      const nextEntry = await Entry.findOne({
+        userId: session.user.id,
+        date: { $gt: new Date(value.date) }
+      })
+      .sort({ date: 1 })
+      .limit(1)
+      .select('_id');
+      
+      if (nextEntry) {
+        affectedIds.push(nextEntry._id);
+      }
+    }
+    
+    // Invalidate insights caches for all affected entries
+    await invalidateInsightsForEntries(session.user.id, affectedIds);
+    
+    // Revalidate Next.js cache for entry pages
+    revalidatePath('/entries');
+    revalidatePath(`/entries/${id}`);
+    
+    console.log('✅ Caches invalidated for updated entry');
+  } catch (cacheError) {
+    console.warn('Could not invalidate caches:', cacheError.message);
+    // Continue - don't fail update if cache invalidation fails
+  }
+
   return okResponse(updatedEntry);
 });
 
@@ -351,6 +389,34 @@ export const DELETE = withErrorHandler(async (request, { params }) => {
   } catch (calcError) {
     console.error('Error during delete operation:', calcError);
     return errorResponse('Failed to process deletion', 500);
+  }
+
+  // Invalidate caches for the deleted entry and any affected entries
+  try {
+    // Invalidate insights cache for the deleted entry
+    await invalidateInsightsForEntry(session.user.id, id);
+    
+    // If we updated the next entry, invalidate its cache too
+    const nextEntry = await Entry.findOne({
+      userId: session.user.id,
+      date: { $gt: entry.date }
+    })
+    .sort({ date: 1 })
+    .limit(1)
+    .select('_id');
+    
+    if (nextEntry) {
+      await invalidateInsightsForEntry(session.user.id, nextEntry._id);
+    }
+    
+    // Revalidate Next.js cache for entry pages
+    revalidatePath('/entries');
+    revalidatePath(`/entries/${id}`);
+    
+    console.log('✅ Caches invalidated for deleted entry');
+  } catch (cacheError) {
+    console.warn('Could not invalidate caches:', cacheError.message);
+    // Continue - don't fail delete if cache invalidation fails
   }
 
   return okResponse({
