@@ -66,7 +66,6 @@ const EntryForm = ({
   const [gapInfo, setGapInfo] = useState(null);
   const [showExtendedFastPrompt, setShowExtendedFastPrompt] = useState(false);
   const [currentPromptType, setCurrentPromptType] = useState(null); // 'from-previous' or 'to-next'
-  const [checkingGap, setCheckingGap] = useState(false);
 
   // Loading state
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -96,10 +95,6 @@ const EntryForm = ({
   const handleChange = (field) => (e) => {
     // Handle both event objects and direct values (for custom components)
     const value = typeof e === 'string' ? e : e.target.value;
-    setFormData(prev => ({
-      ...prev,
-      [field]: value,
-    }));
     
     // T028: Reset extended fast confirmation state when time fields change
     if (field === 'firstMealTime' || field === 'lastMealTime') {
@@ -126,6 +121,12 @@ const EntryForm = ({
       }
       return;
     }
+    
+    // For all other fields, just update normally
+    setFormData(prev => ({
+      ...prev,
+      [field]: value,
+    }));
     
     // Clear error for this field when it has a value
     if (value && errors[field]) {
@@ -209,47 +210,6 @@ const EntryForm = ({
       ...prev,
       [field]: value,
     }));
-  };
-
-  // Handle extended fast confirmation
-  const handleExtendedFastConfirm = () => {
-    if (currentPromptType === 'from-previous') {
-      setFormData(prev => ({ ...prev, extendedFastFromPreviousConfirmed: true }));
-    } else if (currentPromptType === 'to-next') {
-      setFormData(prev => ({ ...prev, extendedFastToNextConfirmed: true }));
-    }
-    setShowExtendedFastPrompt(false);
-    
-    // Check if there's a second popup to show
-    if (currentPromptType === 'from-previous' && gapInfo?.isExtendedFastToNext && !formData.extendedFastToNextConfirmed && !formData.extendedFastToNextDenied) {
-      setTimeout(() => {
-        setCurrentPromptType('to-next');
-        setShowExtendedFastPrompt(true);
-      }, 100);
-    } else {
-      // All prompts handled, allow submission
-      setFormData(prev => ({ ...prev, extendedFastConfirmed: true }));
-    }
-  };
-
-  const handleExtendedFastDeny = () => {
-    if (currentPromptType === 'from-previous') {
-      setFormData(prev => ({ ...prev, extendedFastDenied: true }));
-    } else if (currentPromptType === 'to-next') {
-      setFormData(prev => ({ ...prev, extendedFastToNextDenied: true }));
-    }
-    setShowExtendedFastPrompt(false);
-    
-    // Check if there's a second popup to show
-    if (currentPromptType === 'from-previous' && gapInfo?.isExtendedFastToNext && !formData.extendedFastToNextConfirmed && !formData.extendedFastToNextDenied) {
-      setTimeout(() => {
-        setCurrentPromptType('to-next');
-        setShowExtendedFastPrompt(true);
-      }, 100);
-    } else {
-      // All prompts handled, allow submission
-      setFormData(prev => ({ ...prev, extendedFastConfirmed: true }));
-    }
   };
 
   // Validate form
@@ -401,58 +361,18 @@ const EntryForm = ({
   };
 
   /**
-   * T025/T045: Handle "Yes" confirmation for extended fast - save immediately inline
+   * Submit form data with extended fast confirmation status
    * 
-   * User confirmed they fasted continuously during the detected gap.
-   * This sets the appropriate confirmation flag and either:
-   * - Shows the next confirmation inline (if sequential gap exists), OR
-   * - Saves the entry immediately with confirmed extended fast flag
-   * 
-   * Implements one-click save: user clicks "Yes, confirm extended fast" and
-   * the entry saves without needing a second "Update Entry" click.
+   * Core submission logic extracted to eliminate duplication between confirm/deny handlers.
+   * Handles API request, error handling, and success callback.
    * 
    * @async
    * @function
-   * @returns {Promise<void>} Resolves when entry is saved or next confirmation shown
-   * @see handleExtendedFastDenyAndSave - Handles "No" denial
-   * @see submitForm - Called to save entry after all confirmations
+   * @param {Object} updatedFormData - Entry data to submit (includes all form fields)
+   * @returns {Promise<void>} Resolves when entry is saved successfully
+   * @throws {Error} Sets apiError state on failure (does not reject)
    */
-  const handleExtendedFastConfirmAndSave = async () => {
-    // Set confirmation state based on current prompt type
-    let updatedFormData = { ...formData };
-    
-    if (currentPromptType === 'from-previous') {
-      // User confirmed extended fast FROM previous entry
-      updatedFormData = { 
-        ...updatedFormData, 
-        extendedFastFromPreviousConfirmed: true,
-        extendedFastDenied: false
-      };
-      setFormData(updatedFormData);
-      
-      // Check if to-next also needs confirmation (sequential gaps)
-      if (gapInfo?.isExtendedFastToNext && !formData.extendedFastToNextConfirmed && !formData.extendedFastToNextDenied) {
-        // T027: Show second confirmation INLINE (no setTimeout, no page refresh)
-        setCurrentPromptType('to-next');
-        setShowExtendedFastPrompt(true);
-        return;
-      }
-    } else if (currentPromptType === 'to-next') {
-      // User confirmed extended fast TO next entry
-      updatedFormData = { 
-        ...updatedFormData, 
-        extendedFastToNextConfirmed: true,
-        extendedFastToNextDenied: false
-      };
-      setFormData(updatedFormData);
-    }
-
-    // All confirmations done - submit immediately with updated data
-    // Note: Don't hide prompt yet - wait until save succeeds
-    
-    // T025: Call submitForm directly to save (inline, no second button click needed)
-    // Note: Using inline submission logic here instead of calling submitForm() 
-    // to avoid state timing issues with React's asynchronous setFormData
+  const submitFormWithData = async (updatedFormData) => {
     setIsSubmitting(true);
     try {
       // Prepare data for API
@@ -527,6 +447,60 @@ const EntryForm = ({
   };
 
   /**
+   * T025/T045: Handle "Yes" confirmation for extended fast - save immediately inline
+   * 
+   * User confirmed they fasted continuously during the detected gap.
+   * This sets the appropriate confirmation flag and either:
+   * - Shows the next confirmation inline (if sequential gap exists), OR
+   * - Saves the entry immediately with confirmed extended fast flag
+   * 
+   * Implements one-click save: user clicks "Yes, confirm extended fast" and
+   * the entry saves without needing a second "Update Entry" click.
+   * 
+   * @async
+   * @function
+   * @returns {Promise<void>} Resolves when entry is saved or next confirmation shown
+   * @see handleExtendedFastDenyAndSave - Handles "No" denial
+   * @see submitForm - Called to save entry after all confirmations
+   */
+  const handleExtendedFastConfirmAndSave = async () => {
+    // Set confirmation state based on current prompt type
+    let updatedFormData = { ...formData };
+    
+    if (currentPromptType === 'from-previous') {
+      // User confirmed extended fast FROM previous entry
+      updatedFormData = { 
+        ...updatedFormData, 
+        extendedFastFromPreviousConfirmed: true,
+        extendedFastDenied: false
+      };
+      setFormData(updatedFormData);
+      
+      // Check if to-next also needs confirmation (sequential gaps)
+      if (gapInfo?.isExtendedFastToNext && !formData.extendedFastToNextConfirmed && !formData.extendedFastToNextDenied) {
+        // T027: Show second confirmation INLINE (no setTimeout, no page refresh)
+        setCurrentPromptType('to-next');
+        setShowExtendedFastPrompt(true);
+        return;
+      }
+    } else if (currentPromptType === 'to-next') {
+      // User confirmed extended fast TO next entry
+      updatedFormData = { 
+        ...updatedFormData, 
+        extendedFastToNextConfirmed: true,
+        extendedFastToNextDenied: false
+      };
+      setFormData(updatedFormData);
+    }
+
+    // All confirmations done - submit immediately with updated data
+    // Note: Don't hide prompt yet - wait until save succeeds
+    
+    // T025: Call extracted submission function (inline, no second button click needed)
+    await submitFormWithData(updatedFormData);
+  };
+
+  /**
    * T026/T045: Handle "No" denial for extended fast - save immediately inline
    * 
    * User indicated they DID eat during the detected gap (but didn't log it).
@@ -576,78 +550,8 @@ const EntryForm = ({
     // All confirmations done - submit immediately with updated data
     // Note: Don't hide prompt yet - wait until save succeeds
     
-    // Call submitForm directly with updated data
-    setIsSubmitting(true);
-    try {
-      // Prepare data for API
-      const payload = {
-        date: updatedFormData.date,
-        firstMealTime: updatedFormData.firstMealTime,
-        lastMealTime: updatedFormData.lastMealTime,
-        extendedFastConfirmed: updatedFormData.extendedFastFromPreviousConfirmed,
-        extendedFastDenied: updatedFormData.extendedFastDenied,
-        extendedFastToNextDenied: updatedFormData.extendedFastToNextDenied,
-      };
-
-      // Add optional fields only if they have values
-      if (updatedFormData.hoursOfSleep) {
-        payload.hoursOfSleep = parseFloat(updatedFormData.hoursOfSleep);
-      }
-      if (updatedFormData.morningWeight) {
-        payload.morningWeight = parseFloat(updatedFormData.morningWeight);
-      }
-      if (updatedFormData.hungerLevel) {
-        payload.hungerLevel = updatedFormData.hungerLevel;
-      }
-      if (updatedFormData.energyLevel) {
-        payload.energyLevel = updatedFormData.energyLevel;
-      }
-      if (updatedFormData.wellBeing) {
-        payload.wellBeing = updatedFormData.wellBeing;
-      }
-      if (updatedFormData.foodNotes) {
-        payload.foodNotes = updatedFormData.foodNotes;
-      }
-
-      // Make API request
-      const url = isEditMode ? `/api/entries/${entry._id}` : '/api/entries';
-      const method = isEditMode ? 'PUT' : 'POST';
-
-      const response = await fetch(url, {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        
-        // If we have detailed validation errors, display them
-        if (errorData.errors && Array.isArray(errorData.errors)) {
-          const errorMessages = errorData.errors.map(err => `${err.field}: ${err.message}`).join('; ');
-          throw new Error(errorMessages);
-        }
-        
-        throw new Error(errorData.error || 'Failed to save entry');
-      }
-
-      const result = await response.json();
-
-      // Success! Now we can hide the prompt
-      setShowExtendedFastPrompt(false);
-
-      // Call success callback if provided
-      if (onSuccess) {
-        onSuccess(result.data);
-      }
-    } catch (error) {
-      // Keep prompt visible on error so user can try again
-      setApiError(error.message || 'Failed to save entry. Please try again.');
-    } finally {
-      setIsSubmitting(false);
-    }
+    // Call extracted submission function with updated data
+    await submitFormWithData(updatedFormData);
   };
 
   // Handle form submission
