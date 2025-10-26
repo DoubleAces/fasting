@@ -42,9 +42,9 @@ This document provides atomic, test-driven implementation tasks for the performa
 
 ### Tasks
 
-- [ ] T001 [P] Install node-cache package for in-memory caching: npm install node-cache@^5.1.2
-- [ ] T002 [P] Create .env.local with cache configuration (CACHE_TTL_SETTINGS=3600, CACHE_TTL_INSIGHTS=1800, ENABLE_PERFORMANCE_LOGGING=true)
-- [ ] T003 Verify node-cache works with simple test (node -e "const NodeCache = require('node-cache'); const cache = new NodeCache(); cache.set('test', 'value'); console.log(cache.get('test'));")
+- [X] T001 [P] Install node-cache package for in-memory caching: npm install node-cache@^5.1.2
+- [X] T002 [P] Create .env.local with cache configuration (CACHE_TTL_SETTINGS=3600, CACHE_TTL_INSIGHTS=1800, ENABLE_PERFORMANCE_LOGGING=true)
+- [X] T003 Verify node-cache works with simple test (node -e "const NodeCache = require('node-cache'); const cache = new NodeCache(); cache.set('test', 'value'); console.log(cache.get('test'));")
 
 **Acceptance**: node-cache installed, environment configured with cache TTLs, simple cache test passes.
 
