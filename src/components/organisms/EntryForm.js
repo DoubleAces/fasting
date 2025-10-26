@@ -211,47 +211,6 @@ const EntryForm = ({
     }));
   };
 
-  // Handle extended fast confirmation
-  const handleExtendedFastConfirm = () => {
-    if (currentPromptType === 'from-previous') {
-      setFormData(prev => ({ ...prev, extendedFastFromPreviousConfirmed: true }));
-    } else if (currentPromptType === 'to-next') {
-      setFormData(prev => ({ ...prev, extendedFastToNextConfirmed: true }));
-    }
-    setShowExtendedFastPrompt(false);
-    
-    // Check if there's a second popup to show
-    if (currentPromptType === 'from-previous' && gapInfo?.isExtendedFastToNext && !formData.extendedFastToNextConfirmed && !formData.extendedFastToNextDenied) {
-      setTimeout(() => {
-        setCurrentPromptType('to-next');
-        setShowExtendedFastPrompt(true);
-      }, 100);
-    } else {
-      // All prompts handled, allow submission
-      setFormData(prev => ({ ...prev, extendedFastConfirmed: true }));
-    }
-  };
-
-  const handleExtendedFastDeny = () => {
-    if (currentPromptType === 'from-previous') {
-      setFormData(prev => ({ ...prev, extendedFastDenied: true }));
-    } else if (currentPromptType === 'to-next') {
-      setFormData(prev => ({ ...prev, extendedFastToNextDenied: true }));
-    }
-    setShowExtendedFastPrompt(false);
-    
-    // Check if there's a second popup to show
-    if (currentPromptType === 'from-previous' && gapInfo?.isExtendedFastToNext && !formData.extendedFastToNextConfirmed && !formData.extendedFastToNextDenied) {
-      setTimeout(() => {
-        setCurrentPromptType('to-next');
-        setShowExtendedFastPrompt(true);
-      }, 100);
-    } else {
-      // All prompts handled, allow submission
-      setFormData(prev => ({ ...prev, extendedFastConfirmed: true }));
-    }
-  };
-
   // Validate form
   const validateForm = () => {
     const newErrors = {};
