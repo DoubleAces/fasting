@@ -1,0 +1,41 @@
+﻿
+> fasting-tracker@0.1.0 lint
+> eslint src/components/
+
+node.exe : (node:30312) ESLintIgnoreWarning: The ".eslintignore" file is no longer 
+supported. Switch to using the "ignores" property in "eslint.config.js": 
+https://eslint.org/docs/latest/use/configure/migration-guide#ignoring-files
+At C:\nvm4w\nodejs\npm.ps1:29 char:3
++   & $NODE_EXE $NPM_CLI_JS $args
++   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ((node:30312) ES...#ignoring-files:String) 
+    [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+(Use `node --trace-warnings ...` to show where the warning was created)
+
+C:\Code projects\fasting\src\components\molecules\TimeInput.js
+  87:6  warning  React Hook React.useEffect has a missing dependency: 'parseTime'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\Code projects\fasting\src\components\organisms\EntryDetailsView.js
+  156:123  error  `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`  react/no-unescaped-entities
+
+C:\Code projects\fasting\src\components\organisms\FAQList.js
+  81:22  error  `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`  react/no-unescaped-entities
+  81:53  error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  81:67  error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+
+C:\Code projects\fasting\src\components\organisms\ForgotPasswordForm.js
+  184:42  error  `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`  react/no-unescaped-entities
+
+C:\Code projects\fasting\src\components\organisms\LoginForm.js
+  303:47  error  `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`  react/no-unescaped-entities
+
+C:\Code projects\fasting\src\components\organisms\PrivacyContent.js
+   60:181  error  `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`  react/no-unescaped-entities
+  188:226  error  `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`  react/no-unescaped-entities
+  265:51   error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  265:71   error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+
+Γ£û 11 problems (10 errors, 1 warning)
+

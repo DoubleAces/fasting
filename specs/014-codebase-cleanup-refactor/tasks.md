@@ -440,7 +440,9 @@ git commit -m "docs: add manual QA report for User Story 1 (EntryForm refactorin
 
 ### US2: Automated Analysis
 
-- [ ] T010 [US2] Run ESLint on all components and save report to specs/014-codebase-cleanup-refactor/eslint-report.txt
+---
+
+- [x] T010 [US2] Run ESLint on all components and save report to specs/014-codebase-cleanup-refactor/eslint-report.txt
 
 **Actions**:
 ```powershell
@@ -461,7 +463,9 @@ Get-Content "C:\Code projects\fasting\specs\014-codebase-cleanup-refactor\eslint
 
 ### US2: Manual Component Audit
 
-- [ ] T011 [US2] Audit all 110 components in src/components/ using checklist (unused imports, props, state, duplicate helpers, error handling, useEffect cleanup, naming, accessibility)
+---
+
+- [x] T011 [US2] Audit all 110 components in src/components/ using checklist (unused imports, props, state, duplicate helpers, error handling, useEffect cleanup, naming, accessibility)
 
 **Actions**:
 1. Create audit checklist template
@@ -486,7 +490,7 @@ Get-Content "C:\Code projects\fasting\specs\014-codebase-cleanup-refactor\eslint
 
 ---
 
-- [ ] T012 [US2] Search for duplicate utility functions across components using git grep
+- [x] T012 [US2] Search for duplicate utility functions across components using git grep
 
 **Actions**:
 ```powershell
