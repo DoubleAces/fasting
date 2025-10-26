@@ -9,7 +9,7 @@ import { notFound, redirect } from 'next/navigation';
 import { auth } from '@/lib/auth';
 import { connectDB } from '@/lib/db';
 import Entry from '@/lib/models/Entry';
-import Settings from '@/lib/models/Settings';
+import { settingsService } from '@/lib/services/settingsService';
 import EntryFormWrapper from './EntryFormWrapper';
 import Link from 'next/link';
 
@@ -48,8 +48,8 @@ export default async function EditEntryPage({ params }) {
       redirect('/entries');
     }
 
-    // Fetch user settings
-    const settings = await Settings.findOne({ userId }).lean();
+    // Fetch user settings (cached)
+    const settings = await settingsService.getSettings(userId);
 
     // Convert MongoDB documents to plain objects with string IDs
     const serializedEntry = {

@@ -16,6 +16,8 @@ import { auth } from '@/lib/auth';
 import { validateEntry } from '@/lib/validation/entrySchema';
 import { calculateFastingDuration } from '@/lib/utils/fastingCalculator';
 import { getYesterday, formatDate } from '@/lib/utils/dateUtils';
+import { revalidatePath } from 'next/cache';
+import { invalidateInsightsForEntry, invalidateInsightsForUser } from '@/lib/services/entryInsightsService';
 
 export const GET = withErrorHandler(async (request) => {
   // Check authentication
@@ -292,6 +294,34 @@ export const POST = withErrorHandler(async (request) => {
   } catch (backfillError) {
     console.warn('Could not backfill next entry fasting duration:', backfillError.message);
     // Continue - don't fail entry creation if backfill update fails
+  }
+
+  // Invalidate caches for the new entry and any affected entries
+  try {
+    // Invalidate insights cache for the new entry
+    await invalidateInsightsForEntry(session.user.id, entry._id);
+    
+    // If this entry affects the next entry (backfill), invalidate that too
+    const nextEntry = await Entry.findOne({
+      userId: session.user.id,
+      date: { $gt: new Date(value.date) }
+    })
+    .sort({ date: 1 })
+    .limit(1)
+    .select('_id');
+    
+    if (nextEntry) {
+      await invalidateInsightsForEntry(session.user.id, nextEntry._id);
+    }
+    
+    // Revalidate Next.js cache for entry list and detail pages
+    revalidatePath('/entries');
+    revalidatePath(`/entries/${entry._id}`);
+    
+    console.log('✅ Caches invalidated for new entry');
+  } catch (cacheError) {
+    console.warn('Could not invalidate caches:', cacheError.message);
+    // Continue - don't fail entry creation if cache invalidation fails
   }
 
   return createdResponse(entry);

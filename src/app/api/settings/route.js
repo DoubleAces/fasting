@@ -3,10 +3,11 @@
  * Retrieve current user preferences for measurement system and time format
  * 
  * Returns default settings if none exist
+ * Settings are cached with 1-hour TTL for performance
  */
 
 import { connectDB } from '@/lib/db';
-import Settings from '@/lib/models/Settings';
+import { settingsService } from '@/lib/services/settingsService';
 import { auth } from '@/lib/auth';
 import { withErrorHandler, okResponse, unauthorizedResponse } from '@/lib/api/errorHandler';
 
@@ -19,8 +20,8 @@ export const GET = withErrorHandler(async (request) => {
 
   await connectDB();
 
-  // Find settings for authenticated user
-  let settings = await Settings.findOne({ userId: session.user.id });
+  // Find settings for authenticated user (cached)
+  let settings = await settingsService.getSettings(session.user.id);
 
   if (!settings) {
     // Return default settings without saving
@@ -39,6 +40,7 @@ export const GET = withErrorHandler(async (request) => {
  * Update user preferences
  * 
  * Creates settings if they don't exist (first-time setup)
+ * Automatically invalidates cache on update
  */
 
 import { validateSettings } from '@/lib/validation/settingsSchema';
@@ -66,16 +68,10 @@ export const PUT = withErrorHandler(async (request) => {
     return badRequestResponse('Validation failed', errors);
   }
 
-  // Update or create settings for authenticated user (upsert)
-  const settings = await Settings.findOneAndUpdate(
-    { userId: session.user.id },
-    { ...value, userId: session.user.id },
-    { 
-      new: true, 
-      upsert: true, 
-      runValidators: true,
-      setDefaultsOnInsert: true
-    }
+  // Update or create settings using SettingsService (handles cache invalidation)
+  const settings = await settingsService.updateSettings(
+    session.user.id,
+    value
   );
 
   return okResponse(settings);

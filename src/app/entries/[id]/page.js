@@ -3,18 +3,57 @@
  * 
  * Server Component that fetches and displays comprehensive details for a single fasting entry.
  * Handles authentication, authorization, and 404 cases.
+ * 
+ * Performance Optimizations:
+ * - Uses cached insights (30-minute TTL)
+ * - Optimized aggregation pipeline (1 query vs 5+)
+ * - ISR with 5-minute revalidation
+ * - Performance logging enabled
  */
 
 import { notFound, redirect } from 'next/navigation';
 import { auth } from '@/lib/auth';
 import { connectDB } from '@/lib/db';
 import Entry from '@/lib/models/Entry';
-import Settings from '@/lib/models/Settings';
 import EntryDetailsView from '@/components/organisms/EntryDetailsView';
 import { calculateInsights } from '@/lib/services/entryInsightsService';
+import { settingsService } from '@/lib/services/settingsService';
+import { performanceLogger } from '@/lib/utils/performanceLogger';
 import Link from 'next/link';
 
+// ISR Configuration: Revalidate every 5 minutes (300 seconds)
+// This provides near-static performance while keeping data reasonably fresh
+export const revalidate = 300;
+
+// Generate static params for recent entries at build time
+// This pre-renders the most commonly accessed entries
+export async function generateStaticParams() {
+  try {
+    await connectDB();
+    
+    // Get the 10 most recent entries across all users
+    // In production, you might want to limit this to specific users or criteria
+    const recentEntries = await Entry.find()
+      .sort({ createdAt: -1 })
+      .limit(10)
+      .select('_id')
+      .lean();
+    
+    return recentEntries.map((entry) => ({
+      id: entry._id.toString(),
+    }));
+  } catch (error) {
+    console.error('Error generating static params:', error);
+    return []; // Return empty array on error to prevent build failure
+  }
+}
+
 export default async function EntryDetailsPage({ params }) {
+  // Start performance tracking
+  const perfLogger = performanceLogger('Page: Entry Details');
+  let queryCount = 0;
+  let cacheHit = false;
+  
   // Await params (Next.js 15 requirement)
   const { id } = await params;
   
@@ -38,6 +77,7 @@ export default async function EntryDetailsPage({ params }) {
     await connectDB();
 
     // Fetch entry
+    queryCount++;
     const entry = await Entry.findById(entryId).lean();
 
     if (!entry) {
@@ -49,17 +89,42 @@ export default async function EntryDetailsPage({ params }) {
       redirect('/entries');
     }
 
-    // Fetch user settings
-    const settings = await Settings.findOne({ userId }).lean();
+    // Fetch user settings (cached with 1-hour TTL)
+    queryCount++;
+    const settingsStartTime = Date.now();
+    const settings = await settingsService.getSettings(userId);
+    const settingsTime = Date.now() - settingsStartTime;
+    
+    // Settings cache hit detection (<10ms = cached)
+    const settingsCacheHit = settingsTime < 10;
 
-    // Calculate insights for this entry
+    // Calculate insights for this entry (cached for 30 minutes)
     let insights = null;
     try {
+      const insightsStartTime = Date.now();
       insights = await calculateInsights(entry, userId);
+      const insightsTime = Date.now() - insightsStartTime;
+      
+      // If insights calculation was fast (<50ms), it was likely cached
+      cacheHit = insightsTime < 50;
+      
+      // Count as query only if not cached
+      if (!cacheHit) {
+        queryCount++;
+      }
     } catch (error) {
       console.error('Error calculating insights:', error);
       // Continue without insights - non-critical feature
     }
+
+    // Log performance metrics
+    perfLogger.end({
+      userId,
+      entryId,
+      queryCount,
+      cacheHit,
+      hasInsights: insights !== null,
+    });
 
     // Convert MongoDB documents to plain objects with string IDs
     const serializedEntry = {
