@@ -95,10 +95,6 @@ const EntryForm = ({
   const handleChange = (field) => (e) => {
     // Handle both event objects and direct values (for custom components)
     const value = typeof e === 'string' ? e : e.target.value;
-    setFormData(prev => ({
-      ...prev,
-      [field]: value,
-    }));
     
     // T028: Reset extended fast confirmation state when time fields change
     if (field === 'firstMealTime' || field === 'lastMealTime') {
@@ -125,6 +121,12 @@ const EntryForm = ({
       }
       return;
     }
+    
+    // For all other fields, just update normally
+    setFormData(prev => ({
+      ...prev,
+      [field]: value,
+    }));
     
     // Clear error for this field when it has a value
     if (value && errors[field]) {
