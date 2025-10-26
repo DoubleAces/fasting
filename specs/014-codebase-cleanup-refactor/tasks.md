@@ -333,7 +333,9 @@ git commit -m "refactor(EntryForm): consolidate double setFormData calls in hand
 
 ### US1: Manual QA
 
-- [ ] T009 [US1] Perform manual QA of extended fast confirmation flow and document results in specs/014-codebase-cleanup-refactor/qa-report.md
+---
+
+- [x] T009 [US1] Perform manual QA of extended fast confirmation flow and document results in specs/014-codebase-cleanup-refactor/qa-report.md
 
 **Actions**:
 1. Start dev server: `npm run dev`
