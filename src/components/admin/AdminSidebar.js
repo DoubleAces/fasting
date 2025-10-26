@@ -14,7 +14,7 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { LayoutDashboard, Users, Settings, FileText } from 'lucide-react';
+import { LayoutDashboard, Users, Settings, FileText, Activity } from 'lucide-react';
 
 export default function AdminSidebar({ user }) {
   const navItems = [
@@ -27,6 +27,11 @@ export default function AdminSidebar({ user }) {
       name: 'Users',
       href: '/dashboard/users',
       icon: Users,
+    },
+    {
+      name: 'Performance',
+      href: '/dashboard/performance',
+      icon: Activity,
     },
     {
       name: 'Content',
