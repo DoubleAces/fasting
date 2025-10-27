@@ -50,16 +50,6 @@ export function calculateElapsedTime(lastMealTime, now, entryDate = null) {
   const elapsedMinutes = endTotalMinutes - startTotalMinutes;
   const elapsed = elapsedMinutes * 60 * 1000; // Convert back to milliseconds
   
-  console.log('⏱️ Timer Calculation:', {
-    lastMealTime,
-    lastMealDateLocal: lastMealDate.toString(),
-    nowLocal: now.toString(),
-    elapsedMinutes,
-    elapsedMs: elapsed,
-    elapsedHours: elapsed / (1000 * 60 * 60),
-    note: 'Using wall-clock calculation to avoid DST issues'
-  });
-  
   return elapsed >= 0 ? elapsed : 0;
 }
 

@@ -85,18 +85,7 @@ export default function EntriesPage() {
   // Detect active or completed fast from any entry
   const activeFast = useMemo(() => {
     const today = new Date().toISOString().split('T')[0];
-    const result = getActiveFast(entries, today);
-    console.log('🔍 Debug Timer:', {
-      today,
-      entriesCount: entries.length,
-      allEntries: entries.map(e => ({
-        date: e.date,
-        lastMealTime: e.lastMealTime,
-        firstMealTime: e.firstMealTime
-      })),
-      result
-    });
-    return result;
+    return getActiveFast(entries, today);
   }, [entries]);
 
   const handleEdit = (entry) => {
