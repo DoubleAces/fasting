@@ -1,0 +1,374 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Component Contracts - Improve Form Inputs",
+  "description": "Prop interfaces and contracts for DateInput and TimeInput components",
+  "version": "1.0.0",
+  "components": {
+    "DateInput": {
+      "description": "Date input field with HTML5 calendar picker. Displays a single input with native browser date picker.",
+      "type": "molecule",
+      "path": "src/components/molecules/DateInput.js",
+      "props": {
+        "id": {
+          "type": "string",
+          "required": true,
+          "description": "Unique identifier for the input element. Used for accessibility (label htmlFor, aria-describedby).",
+          "example": "entry-date"
+        },
+        "label": {
+          "type": "string",
+          "required": true,
+          "description": "Label text displayed above the input field.",
+          "example": "Date"
+        },
+        "value": {
+          "type": "string",
+          "required": true,
+          "description": "Current date value in ISO format (YYYY-MM-DD). Empty string if no date selected.",
+          "format": "ISO 8601 date",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+          "example": "2025-10-27"
+        },
+        "onChange": {
+          "type": "function",
+          "required": true,
+          "description": "Callback invoked when date changes. Receives ISO date string (YYYY-MM-DD) as argument.",
+          "signature": "(value: string) => void",
+          "example": "(isoDate) => setFormData({ ...formData, date: isoDate })"
+        },
+        "onBlur": {
+          "type": "function",
+          "required": false,
+          "default": "undefined",
+          "description": "Callback invoked when input loses focus. No arguments.",
+          "signature": "() => void",
+          "example": "() => validateDateField()"
+        },
+        "error": {
+          "type": "string",
+          "required": false,
+          "default": "undefined",
+          "description": "Error message to display below the input. If provided, input shows error state with aria-invalid.",
+          "example": "Date cannot be in the future"
+        },
+        "required": {
+          "type": "boolean",
+          "required": false,
+          "default": false,
+          "description": "Whether the field is required. Shows asterisk in label and sets HTML required attribute.",
+          "example": true
+        },
+        "max": {
+          "type": "string",
+          "required": false,
+          "default": "today",
+          "description": "Maximum selectable date in ISO format (YYYY-MM-DD). Defaults to today. Dates after this are disabled in picker.",
+          "format": "ISO 8601 date",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+          "example": "2025-10-27"
+        }
+      },
+      "emits": [
+        {
+          "event": "onChange",
+          "payload": "string (ISO date YYYY-MM-DD)",
+          "description": "Emitted when user selects a date from the calendar picker or types a valid date.",
+          "example": "2025-10-27"
+        },
+        {
+          "event": "onBlur",
+          "payload": "void",
+          "description": "Emitted when the input field loses focus.",
+          "example": null
+        }
+      ],
+      "accessibility": {
+        "role": "input (implicit)",
+        "ariaLabel": "Provided by htmlFor association with Label component",
+        "ariaInvalid": "Set to true when error prop is provided",
+        "ariaDescribedBy": "Set to {id}-error when error message is displayed",
+        "ariaRequired": "Set when required prop is true",
+        "keyboardNav": [
+          "Tab: Focus input",
+          "Enter/Space: Open calendar picker",
+          "Arrow keys: Navigate dates in picker",
+          "Escape: Close picker"
+        ]
+      },
+      "testingNotes": {
+        "userEvent": "Use userEvent.type() or userEvent.click() to open picker",
+        "mockValue": "Use fireEvent.change() with { target: { value: '2025-10-27' } }",
+        "accessibility": "Test with @testing-library/jest-dom toBeAccessible()",
+        "integration": "Verify onChange receives ISO format string"
+      }
+    },
+    "TimeInput": {
+      "description": "Time input field with HTML5 time picker. Displays a single input with native browser time picker.",
+      "type": "molecule",
+      "path": "src/components/molecules/TimeInput.js",
+      "props": {
+        "id": {
+          "type": "string",
+          "required": true,
+          "description": "Unique identifier for the input element. Used for accessibility (label htmlFor, aria-describedby).",
+          "example": "first-meal-time"
+        },
+        "label": {
+          "type": "string",
+          "required": true,
+          "description": "Label text displayed above the input field.",
+          "example": "First Meal Time"
+        },
+        "value": {
+          "type": "string",
+          "required": true,
+          "description": "Current time value in 24-hour HH:mm format. Empty string if no time selected.",
+          "format": "HH:mm (24-hour)",
+          "pattern": "^([01]?[0-9]|2[0-3]):[0-5][0-9]$",
+          "example": "14:30"
+        },
+        "onChange": {
+          "type": "function",
+          "required": true,
+          "description": "Callback invoked when time changes. Receives time string in 24-hour HH:mm format.",
+          "signature": "(value: string) => void",
+          "example": "(time) => setFormData({ ...formData, firstMealTime: time })"
+        },
+        "onBlur": {
+          "type": "function",
+          "required": false,
+          "default": "undefined",
+          "description": "Callback invoked when input loses focus. No arguments.",
+          "signature": "() => void",
+          "example": "() => validateTimeField()"
+        },
+        "error": {
+          "type": "string",
+          "required": false,
+          "default": "undefined",
+          "description": "Error message to display below the input. If provided, input shows error state with aria-invalid.",
+          "example": "Last meal time must be after first meal time"
+        },
+        "required": {
+          "type": "boolean",
+          "required": false,
+          "default": false,
+          "description": "Whether the field is required. Shows asterisk in label and sets HTML required attribute.",
+          "example": true
+        },
+        "format": {
+          "type": "string",
+          "required": false,
+          "default": "24h",
+          "enum": ["12h", "24h"],
+          "description": "ADVISORY ONLY. Indicates user's preferred time format. Browser may display time based on OS locale instead. Value is always returned in 24-hour HH:mm format.",
+          "example": "12h",
+          "note": "This prop does not control display in HTML5 time inputs. Browser uses OS locale settings."
+        }
+      },
+      "emits": [
+        {
+          "event": "onChange",
+          "payload": "string (HH:mm 24-hour)",
+          "description": "Emitted when user selects a time from the picker or types a valid time. Always in 24-hour format.",
+          "example": "14:30"
+        },
+        {
+          "event": "onBlur",
+          "payload": "void",
+          "description": "Emitted when the input field loses focus.",
+          "example": null
+        }
+      ],
+      "accessibility": {
+        "role": "input (implicit)",
+        "ariaLabel": "Provided by htmlFor association with Label component",
+        "ariaInvalid": "Set to true when error prop is provided",
+        "ariaDescribedBy": "Set to {id}-error when error message is displayed",
+        "ariaRequired": "Set when required prop is true",
+        "keyboardNav": [
+          "Tab: Focus input",
+          "Enter/Space: Open time picker",
+          "Arrow keys: Increment/decrement time in picker",
+          "Escape: Close picker"
+        ]
+      },
+      "testingNotes": {
+        "userEvent": "Use userEvent.type() or userEvent.click() to open picker",
+        "mockValue": "Use fireEvent.change() with { target: { value: '14:30' } }",
+        "accessibility": "Test with @testing-library/jest-dom toBeAccessible()",
+        "integration": "Verify onChange receives HH:mm format (24-hour)",
+        "formatNote": "Do not test display format - browser controls this based on locale"
+      }
+    }
+  },
+  "sharedTypes": {
+    "ErrorMessageProps": {
+      "id": {
+        "type": "string",
+        "required": true,
+        "description": "ID for aria-describedby association"
+      },
+      "children": {
+        "type": "string",
+        "required": true,
+        "description": "Error message text"
+      }
+    },
+    "LabelProps": {
+      "htmlFor": {
+        "type": "string",
+        "required": true,
+        "description": "ID of associated input"
+      },
+      "required": {
+        "type": "boolean",
+        "required": false,
+        "default": false,
+        "description": "Shows asterisk if true"
+      },
+      "children": {
+        "type": "string",
+        "required": true,
+        "description": "Label text"
+      }
+    }
+  },
+  "migrationNotes": {
+    "backwardCompatibility": {
+      "DateInput": "100% compatible - all prop names, types, and signatures unchanged",
+      "TimeInput": "100% compatible - all prop names, types, and signatures unchanged. Note: 'format' prop is now advisory only."
+    },
+    "behaviorChanges": {
+      "DateInput": [
+        "Calendar picker UI varies by browser (Chrome, Firefox, Safari have different styles)",
+        "Default value can now be set to today's date via EntryForm (was empty before)"
+      ],
+      "TimeInput": [
+        "Time display format (12h/24h) follows OS locale settings, not 'format' prop",
+        "Value is always returned in 24-hour HH:mm format regardless of display",
+        "Picker UI varies by browser"
+      ]
+    },
+    "testingChanges": {
+      "DateInput": [
+        "Remove tests for day/month/year separate fields",
+        "Add tests for single date input with HTML5 type",
+        "Add tests for max date validation",
+        "Add tests for calendar picker accessibility"
+      ],
+      "TimeInput": [
+        "Remove tests for hour/minute/period dropdowns",
+        "Add tests for single time input with HTML5 type",
+        "Remove tests for format conversion (browser handles this)",
+        "Add tests for time picker accessibility"
+      ]
+    }
+  },
+  "exampleUsage": {
+    "DateInputCreateMode": {
+      "description": "Creating a new entry with today's date as default",
+      "code": "const [date, setDate] = useState(getTodayISO());\n\nreturn (\n  <DateInput\n    id=\"entry-date\"\n    label=\"Date\"\n    value={date}\n    onChange={setDate}\n    error={errors.date}\n    required={true}\n    max={getTodayISO()}\n  />\n);"
+    },
+    "DateInputEditMode": {
+      "description": "Editing an existing entry with pre-filled date",
+      "code": "const [date, setDate] = useState(entry.date); // e.g., '2024-03-15'\n\nreturn (\n  <DateInput\n    id=\"entry-date\"\n    label=\"Date\"\n    value={date}\n    onChange={setDate}\n    error={errors.date}\n    required={true}\n    max={getTodayISO()}\n  />\n);"
+    },
+    "TimeInputFirstMeal": {
+      "description": "First meal time input in entry form",
+      "code": "const [firstMealTime, setFirstMealTime] = useState('');\nconst userTimeFormat = settings?.timeFormat || '24h';\n\nreturn (\n  <TimeInput\n    id=\"first-meal-time\"\n    label=\"First Meal Time\"\n    value={firstMealTime}\n    onChange={setFirstMealTime}\n    error={errors.firstMealTime}\n    required={true}\n    format={userTimeFormat} // Advisory - browser may override\n  />\n);"
+    },
+    "TimeInputLastMeal": {
+      "description": "Last meal time input with validation",
+      "code": "const [lastMealTime, setLastMealTime] = useState('');\n\nconst validateLastMeal = () => {\n  if (lastMealTime && firstMealTime) {\n    const [fh, fm] = firstMealTime.split(':').map(Number);\n    const [lh, lm] = lastMealTime.split(':').map(Number);\n    if (lh * 60 + lm <= fh * 60 + fm) {\n      setErrors({ lastMealTime: 'Must be after first meal' });\n    }\n  }\n};\n\nreturn (\n  <TimeInput\n    id=\"last-meal-time\"\n    label=\"Last Meal Time\"\n    value={lastMealTime}\n    onChange={setLastMealTime}\n    onBlur={validateLastMeal}\n    error={errors.lastMealTime}\n    required={true}\n  />\n);"
+    },
+    "EntryFormIntegration": {
+      "description": "Complete EntryForm with new date/time inputs",
+      "code": "const EntryForm = ({ entry, settings, onSuccess, onCancel }) => {\n  const isEditMode = Boolean(entry);\n  const getTodayISO = () => new Date().toISOString().split('T')[0];\n  \n  const [formData, setFormData] = useState({\n    date: isEditMode ? entry.date : getTodayISO(), // TODAY DEFAULT\n    firstMealTime: entry?.firstMealTime || '',\n    lastMealTime: entry?.lastMealTime || '',\n    // ... other fields\n  });\n  \n  const [errors, setErrors] = useState({});\n  \n  const handleChange = (field) => (value) => {\n    setFormData(prev => ({ ...prev, [field]: value }));\n    if (errors[field]) {\n      setErrors(prev => {\n        const newErrors = { ...prev };\n        delete newErrors[field];\n        return newErrors;\n      });\n    }\n  };\n  \n  return (\n    <form onSubmit={handleSubmit}>\n      <DateInput\n        id=\"date\"\n        label=\"Date\"\n        value={formData.date}\n        onChange={handleChange('date')}\n        error={errors.date}\n        required\n        max={getTodayISO()}\n      />\n      \n      <TimeInput\n        id=\"firstMealTime\"\n        label=\"First Meal Time\"\n        value={formData.firstMealTime}\n        onChange={handleChange('firstMealTime')}\n        error={errors.firstMealTime}\n        required\n        format={settings?.timeFormat}\n      />\n      \n      <TimeInput\n        id=\"lastMealTime\"\n        label=\"Last Meal Time\"\n        value={formData.lastMealTime}\n        onChange={handleChange('lastMealTime')}\n        error={errors.lastMealTime}\n        required\n        format={settings?.timeFormat}\n      />\n      \n      {/* Other form fields */}\n    </form>\n  );\n};"
+    }
+  },
+  "validationRules": {
+    "DateInput": {
+      "required": {
+        "condition": "required === true && value === ''",
+        "error": "Date is required",
+        "enforcedBy": "HTML5 + client validation"
+      },
+      "format": {
+        "condition": "value does not match YYYY-MM-DD",
+        "error": "Invalid date format",
+        "enforcedBy": "HTML5 input type=\"date\""
+      },
+      "maxDate": {
+        "condition": "value > max",
+        "error": "Date cannot be in the future",
+        "enforcedBy": "HTML5 max attribute + client validation"
+      },
+      "validDate": {
+        "condition": "Date does not exist (e.g., Feb 30)",
+        "error": "Invalid date",
+        "enforcedBy": "HTML5 input type=\"date\""
+      }
+    },
+    "TimeInput": {
+      "required": {
+        "condition": "required === true && value === ''",
+        "error": "Time is required",
+        "enforcedBy": "HTML5 + client validation"
+      },
+      "format": {
+        "condition": "value does not match HH:mm",
+        "error": "Invalid time format",
+        "enforcedBy": "HTML5 input type=\"time\""
+      },
+      "validTime": {
+        "condition": "Hours not 00-23 or minutes not 00-59",
+        "error": "Invalid time",
+        "enforcedBy": "HTML5 input type=\"time\""
+      },
+      "lastAfterFirst": {
+        "condition": "lastMealTime <= firstMealTime",
+        "error": "Last meal time must be after first meal time",
+        "enforcedBy": "Client validation in EntryForm"
+      }
+    }
+  },
+  "browserSupport": {
+    "chrome": {
+      "version": "90+",
+      "dateSupport": "Full (native calendar)",
+      "timeSupport": "Full (native clock picker)",
+      "notes": "Excellent UX on desktop and mobile"
+    },
+    "firefox": {
+      "version": "88+",
+      "dateSupport": "Full (native calendar)",
+      "timeSupport": "Full (native clock picker)",
+      "notes": "Good UX, slightly different picker UI"
+    },
+    "safari": {
+      "version": "14+",
+      "dateSupport": "Full (native calendar)",
+      "timeSupport": "Full (native clock picker)",
+      "notes": "Excellent UX, matches iOS design language"
+    },
+    "edge": {
+      "version": "90+",
+      "dateSupport": "Full (native calendar)",
+      "timeSupport": "Full (native clock picker)",
+      "notes": "Same as Chrome (Chromium-based)"
+    },
+    "mobile": {
+      "ios": {
+        "version": "14+",
+        "support": "Excellent native pickers",
+        "notes": "Touch-optimized, familiar iOS UI"
+      },
+      "android": {
+        "version": "Chrome 90+",
+        "support": "Excellent native pickers",
+        "notes": "Material Design pickers, touch-optimized"
+      }
+    }
+  }
+}

@@ -275,3 +275,19 @@ export function getDaysBetween(date1, date2) {
 export function getDateFromDaysAgo(days) {
   return startOfDay(subDays(new Date(), days));
 }
+
+/**
+ * Get today's date in ISO format (yyyy-mm-dd)
+ * 
+ * Utility function for defaulting date inputs to today's date.
+ * Returns a string in ISO 8601 date format suitable for HTML5 date inputs
+ * and API requests.
+ * 
+ * @returns {string} Today's date as ISO string (yyyy-mm-dd)
+ * 
+ * @example
+ * getTodayISO() // '2024-03-15' (if today is March 15, 2024)
+ */
+export function getTodayISO() {
+  return new Date().toISOString().split('T')[0];
+}

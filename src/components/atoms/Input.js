@@ -107,8 +107,8 @@ const Input = ({
     inputProps['aria-invalid'] = 'true';
   }
 
-  // Add min/max/step for number inputs
-  if (type === 'number') {
+  // Add min/max/step for number and date/time inputs
+  if (type === 'number' || type === 'date' || type === 'time' || type === 'datetime-local') {
     if (min !== undefined) inputProps.min = min;
     if (max !== undefined) inputProps.max = max;
     if (step !== undefined) inputProps.step = step;

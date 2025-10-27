@@ -21,6 +21,7 @@ import {
   compareDates,
   getDaysBetween,
   getDateFromDaysAgo,
+  getTodayISO,
 } from '@/lib/utils/dateUtils';
 
 describe('Date Utilities', () => {
@@ -372,6 +373,45 @@ describe('Date Utilities', () => {
       expected.setDate(expected.getDate() + 5);
       
       expect(result.getDate()).toBeGreaterThan(new Date().getDate());
+    });
+  });
+
+  describe('getTodayISO', () => {
+    it('should return today\'s date in ISO format (yyyy-mm-dd)', () => {
+      const result = getTodayISO();
+      
+      // Should match yyyy-mm-dd format
+      expect(result).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    });
+
+    it('should return a string', () => {
+      const result = getTodayISO();
+      expect(typeof result).toBe('string');
+    });
+
+    it('should return today\'s date', () => {
+      const result = getTodayISO();
+      const today = new Date();
+      const expected = today.toISOString().split('T')[0];
+      
+      expect(result).toBe(expected);
+    });
+
+    it('should be suitable for HTML5 date input max attribute', () => {
+      const result = getTodayISO();
+      
+      // Should be parseable as a Date
+      const parsed = new Date(result);
+      expect(parsed).toBeInstanceOf(Date);
+      expect(isNaN(parsed.getTime())).toBe(false);
+    });
+
+    it('should match formatDate with default format', () => {
+      const result = getTodayISO();
+      const today = new Date();
+      const formatted = formatDate(today);
+      
+      expect(result).toBe(formatted);
     });
   });
 });
