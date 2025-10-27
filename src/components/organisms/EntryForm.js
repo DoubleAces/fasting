@@ -6,6 +6,7 @@ import TimeInput from '@/components/molecules/TimeInput';
 import RatingSelector from '@/components/molecules/RatingSelector';
 import Button from '@/components/atoms/Button';
 import ErrorMessage from '@/components/atoms/ErrorMessage';
+import { getTodayISO } from '@/lib/utils/dateUtils';
 
 /**
  * Format an ISO date string to "DD Mon" format (e.g., "22 Oct").
@@ -79,7 +80,7 @@ const EntryForm = ({
 
   // Form state
   const [formData, setFormData] = useState({
-    date: formatDateForInput(entry?.date) || '',
+    date: formatDateForInput(entry?.date) || (!isEditMode ? getTodayISO() : ''),
     firstMealTime: entry?.firstMealTime || '',
     lastMealTime: entry?.lastMealTime || '',
     hoursOfSleep: entry?.hoursOfSleep || '',
@@ -661,7 +662,7 @@ const EntryForm = ({
         onBlur={handleBlur('date')}
         error={errors.date}
         required
-        max={new Date().toISOString().split('T')[0]}
+        max={getTodayISO()}
       />
 
       {/* T023: Extended Fast Confirmation Prompt REMOVED - now shown inline at bottom */}

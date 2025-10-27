@@ -20,7 +20,7 @@
  */
 
 import React from 'react';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import DateInput from '@/components/molecules/DateInput';
 
@@ -36,7 +36,10 @@ describe('DateInput Component', () => {
     jest.clearAllMocks();
   });
 
-  describe('Rendering', () => {
+  // OLD TESTS - Temporarily skipped during HTML5 refactor
+  // These tests were for the old 3-field (day/month/year) implementation
+  // They will be removed or updated after HTML5 implementation is complete
+  describe.skip('Rendering', () => {
     it('should render label with correct text', () => {
       render(<DateInput {...defaultProps} label="Entry Date" />);
       
@@ -81,7 +84,7 @@ describe('DateInput Component', () => {
     });
   });
 
-  describe('ISO Date Parsing', () => {
+  describe.skip('ISO Date Parsing', () => {
     it('should parse ISO date into day/month/year fields', () => {
       render(<DateInput {...defaultProps} value="2024-03-15" />);
       
@@ -119,7 +122,7 @@ describe('DateInput Component', () => {
     });
   });
 
-  describe('User Input - Day Field', () => {
+  describe.skip('User Input - Day Field', () => {
     it('should allow typing in day field', async () => {
       const user = userEvent.setup();
       render(<DateInput {...defaultProps} />);
@@ -174,7 +177,7 @@ describe('DateInput Component', () => {
     });
   });
 
-  describe('User Input - Month Field', () => {
+  describe.skip('User Input - Month Field', () => {
     it('should allow typing in month field', async () => {
       const user = userEvent.setup();
       render(<DateInput {...defaultProps} />);
@@ -218,7 +221,7 @@ describe('DateInput Component', () => {
     });
   });
 
-  describe('User Input - Year Field', () => {
+  describe.skip('User Input - Year Field', () => {
     it('should allow typing in year field', async () => {
       const user = userEvent.setup();
       render(<DateInput {...defaultProps} />);
@@ -278,7 +281,7 @@ describe('DateInput Component', () => {
     });
   });
 
-  describe('Complete Date Entry', () => {
+  describe.skip('Complete Date Entry', () => {
     it('should call onChange with ISO date when all fields are filled', async () => {
       const handleChange = jest.fn();
       const user = userEvent.setup();
@@ -328,7 +331,7 @@ describe('DateInput Component', () => {
     });
   });
 
-  describe('Empty Date Handling', () => {
+  describe.skip('Empty Date Handling', () => {
     it('should call onChange with empty string when all fields are cleared', async () => {
       const handleChange = jest.fn();
       const user = userEvent.setup();
@@ -355,7 +358,7 @@ describe('DateInput Component', () => {
     });
   });
 
-  describe('onBlur Callback', () => {
+  describe.skip('onBlur Callback', () => {
     it('should call onBlur when focus leaves date input group', async () => {
       const handleBlur = jest.fn();
       const user = userEvent.setup();
@@ -409,7 +412,7 @@ describe('DateInput Component', () => {
     });
   });
 
-  describe('Error Display', () => {
+  describe.skip('Error Display', () => {
     it('should display error message when error prop is provided', () => {
       render(<DateInput {...defaultProps} error="Date is required" />);
       
@@ -439,7 +442,7 @@ describe('DateInput Component', () => {
     });
   });
 
-  describe('Accessibility', () => {
+  describe.skip('Accessibility', () => {
     it('should have unique IDs for each input', () => {
       render(<DateInput {...defaultProps} id="entry-date" />);
       
@@ -482,7 +485,7 @@ describe('DateInput Component', () => {
     });
   });
 
-  describe('Value Updates', () => {
+  describe.skip('Value Updates', () => {
     it('should update fields when value prop changes', () => {
       const { rerender } = render(<DateInput {...defaultProps} value="2024-03-15" />);
       
@@ -510,7 +513,7 @@ describe('DateInput Component', () => {
     });
   });
 
-  describe('Edge Cases', () => {
+  describe.skip('Edge Cases', () => {
     it('should handle rapid input changes', async () => {
       const handleChange = jest.fn();
       const user = userEvent.setup();
@@ -549,6 +552,179 @@ describe('DateInput Component', () => {
       expect(dayInput).toHaveValue('');
       expect(screen.getByLabelText(/month/i)).toHaveValue('03');
       expect(screen.getByLabelText(/year/i)).toHaveValue('2024');
+    });
+  });
+
+  // NEW TESTS FOR HTML5 DATE INPUT REFACTOR (User Story 1)
+  // These tests are written FIRST (TDD) and will FAIL until implementation
+  describe('HTML5 Date Input (User Story 1)', () => {
+    describe('T012 - Rendering single input type="date"', () => {
+      it('should render a single input with type="date"', () => {
+        render(<DateInput {...defaultProps} />);
+        
+        const input = screen.getByLabelText(/date/i);
+        expect(input).toBeInTheDocument();
+        expect(input).toHaveAttribute('type', 'date');
+      });
+
+      it('should not render separate day/month/year fields', () => {
+        render(<DateInput {...defaultProps} />);
+        
+        // Old fields should not exist
+        expect(screen.queryByLabelText(/day/i)).not.toBeInTheDocument();
+        expect(screen.queryByLabelText(/month/i)).not.toBeInTheDocument();
+        expect(screen.queryByLabelText(/year/i)).not.toBeInTheDocument();
+      });
+    });
+
+    describe('T013 - Accept and display ISO date value', () => {
+      it('should display ISO date value in the input', () => {
+        render(<DateInput {...defaultProps} value="2024-03-15" />);
+        
+        const input = screen.getByLabelText(/date/i);
+        expect(input).toHaveValue('2024-03-15');
+      });
+
+      it('should handle empty value', () => {
+        render(<DateInput {...defaultProps} value="" />);
+        
+        const input = screen.getByLabelText(/date/i);
+        expect(input).toHaveValue('');
+      });
+    });
+
+    describe('T014 - onChange callback with ISO string', () => {
+      it('should call onChange with ISO string when date selected', async () => {
+        const user = userEvent.setup();
+        const mockOnChange = jest.fn();
+        render(<DateInput {...defaultProps} onChange={mockOnChange} />);
+        
+        const input = screen.getByLabelText(/date/i);
+        await user.type(input, '2024-03-15');
+        
+        expect(mockOnChange).toHaveBeenCalledWith('2024-03-15');
+      });
+
+      it('should call onChange with empty string when cleared', async () => {
+        const user = userEvent.setup();
+        const mockOnChange = jest.fn();
+        render(<DateInput {...defaultProps} value="2024-03-15" onChange={mockOnChange} />);
+        
+        const input = screen.getByLabelText(/date/i);
+        await user.clear(input);
+        
+        expect(mockOnChange).toHaveBeenCalledWith('');
+      });
+    });
+
+    describe('T015 - Error message display', () => {
+      it('should show error message when error prop provided', () => {
+        render(<DateInput {...defaultProps} error="Date is required" />);
+        
+        expect(screen.getByText('Date is required')).toBeInTheDocument();
+      });
+
+      it('should not show error message when error prop is empty', () => {
+        render(<DateInput {...defaultProps} error="" />);
+        
+        expect(screen.queryByText(/error/i)).not.toBeInTheDocument();
+      });
+    });
+
+    describe('T016 - Max date attribute enforcement', () => {
+      it('should set max attribute when max prop provided', () => {
+        render(<DateInput {...defaultProps} max="2024-12-31" />);
+        
+        const input = screen.getByLabelText(/date/i);
+        expect(input).toHaveAttribute('max', '2024-12-31');
+      });
+
+      it('should prevent selection of dates after max', () => {
+        render(<DateInput {...defaultProps} max="2024-12-31" />);
+        
+        const input = screen.getByLabelText(/date/i);
+        // HTML5 validation prevents invalid dates
+        // Browser enforces this, we just verify the attribute is set
+        expect(input).toHaveAttribute('max', '2024-12-31');
+      });
+    });
+
+    describe('T017 - Required indicator', () => {
+      it('should show required indicator when required=true', () => {
+        render(<DateInput {...defaultProps} required />);
+        
+        // Use regex to match label with or without asterisk
+        const input = screen.getByLabelText(/date/i);
+        expect(input).toBeRequired();
+      });
+
+      it('should not show required indicator when required=false', () => {
+        render(<DateInput {...defaultProps} required={false} />);
+        
+        const input = screen.getByLabelText(/date/i);
+        expect(input).not.toBeRequired();
+      });
+    });
+
+    describe('T018 - Accessibility attributes', () => {
+      it('should have aria-invalid when error exists', () => {
+        render(<DateInput {...defaultProps} error="Invalid date" />);
+        
+        const input = screen.getByLabelText(/date/i);
+        expect(input).toHaveAttribute('aria-invalid', 'true');
+      });
+
+      it('should not have aria-invalid when no error', () => {
+        render(<DateInput {...defaultProps} />);
+        
+        const input = screen.getByLabelText(/date/i);
+        expect(input).toHaveAttribute('aria-invalid', 'false');
+      });
+
+      it('should have aria-describedby pointing to error message', () => {
+        render(<DateInput {...defaultProps} id="test-date" error="Invalid date" />);
+        
+        const input = screen.getByLabelText(/date/i);
+        expect(input).toHaveAttribute('aria-describedby', 'test-date-error');
+      });
+    });
+  });
+
+  // ============================================================================
+  // Phase 4: User Story 2 - Edit Mode Support
+  // ============================================================================
+
+  describe('US2: Edit Mode - Pre-filled Date Value', () => {
+    // T030: DateInput renders with pre-filled value
+    describe('T030 - Pre-filled Value Rendering', () => {
+      it('should render with pre-filled date value in edit mode', () => {
+        const prefilledDate = '2024-03-15';
+        render(<DateInput {...defaultProps} value={prefilledDate} />);
+        
+        const input = screen.getByLabelText(/date/i);
+        expect(input).toHaveValue(prefilledDate);
+      });
+
+      it('should display pre-filled date value in correct ISO format', () => {
+        const prefilledDate = '2023-12-31';
+        render(<DateInput {...defaultProps} value={prefilledDate} />);
+        
+        const input = screen.getByLabelText(/date/i);
+        expect(input.value).toBe(prefilledDate);
+      });
+
+      it('should allow changing pre-filled date value', () => {
+        const prefilledDate = '2024-03-15';
+        const newDate = '2024-03-20';
+        const mockOnChange = jest.fn();
+        
+        render(<DateInput {...defaultProps} value={prefilledDate} onChange={mockOnChange} />);
+        
+        const input = screen.getByLabelText(/date/i);
+        fireEvent.change(input, { target: { value: newDate } });
+        
+        expect(mockOnChange).toHaveBeenCalledWith(newDate);
+      });
     });
   });
 });

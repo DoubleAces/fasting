@@ -138,6 +138,16 @@ Features that can be implemented quickly but deliver immediate value:
 - Skip weekends option
 - PWA notification integration
 
+### 📅 Enhanced Date Picker (react-datepicker)
+**Effort**: Low | **Value**: Medium | **Time**: 2-3 hours
+- Replace native HTML5 date/time inputs with react-datepicker library
+- Customizable calendar UI with brand styling
+- Auto-open calendar on focus/click
+- Better cross-browser consistency
+- More flexible date range restrictions
+- Custom date format display
+- **Note**: Currently using native HTML5 inputs (Feature 018), works well but limited styling options
+
 ---
 
 ## 💰 Premium Revenue Features
