@@ -10,10 +10,11 @@ import TimerDisplay from '@/components/molecules/TimerDisplay';
 /**
  * Displays active or completed fasting timer
  * @param {string} lastMealTime - Time in HH:mm format
+ * @param {Date} date - Date of the entry
  * @param {boolean} isActive - Whether the fast is currently active
  */
-export default function FastingTimer({ lastMealTime, isActive }) {
-  const { formattedTime, currentMilestone } = useFastingTimer(lastMealTime, isActive);
+export default function FastingTimer({ lastMealTime, date, isActive }) {
+  const { formattedTime, currentMilestone } = useFastingTimer(lastMealTime, date, isActive);
 
   // Don't render if no data
   if (!formattedTime) return null;

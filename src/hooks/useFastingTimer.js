@@ -9,17 +9,18 @@ import { calculateElapsedTime, formatElapsedTime, detectMilestone } from '@/lib/
 /**
  * Hook for managing fasting timer with automatic updates
  * @param {string} lastMealTime - Time in HH:mm format
+ * @param {Date} date - Date of the entry
  * @param {boolean} isActive - Whether the fast is currently active
  * @returns {Object} Timer state with elapsed time, formatted time, and milestone
  */
-export function useFastingTimer(lastMealTime, isActive) {
+export function useFastingTimer(lastMealTime, date, isActive) {
   const [currentTime, setCurrentTime] = useState(() => new Date());
 
   // Calculate elapsed time
   const elapsedMs = useMemo(() => {
     if (!lastMealTime) return null;
-    return calculateElapsedTime(lastMealTime, currentTime);
-  }, [lastMealTime, currentTime]);
+    return calculateElapsedTime(lastMealTime, currentTime, date);
+  }, [lastMealTime, date, currentTime]);
 
   // Format elapsed time
   const formattedTime = useMemo(() => {
@@ -52,7 +53,7 @@ export function useFastingTimer(lastMealTime, isActive) {
     return () => {
       clearInterval(intervalId);
     };
-  }, [lastMealTime, isActive]);
+  }, [lastMealTime, date, isActive]);
 
   return {
     elapsedMs,

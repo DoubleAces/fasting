@@ -5,21 +5,61 @@
 
 /**
  * Calculates the elapsed time in milliseconds between lastMealTime and now
- * Handles overnight fasts by checking if lastMealTime is in the future (meaning yesterday)
+ * Uses the provided date instead of assuming today
  * 
  * @param {string} lastMealTime - Time in HH:mm format (24-hour)
  * @param {Date} now - Current date/time
+ * @param {Date} entryDate - The date of the entry (optional, defaults to today)
  * @returns {number} Elapsed time in milliseconds
  */
-export function calculateElapsedTime(lastMealTime, now) {
-  const lastMealDate = parseTime(lastMealTime);
+export function calculateElapsedTime(lastMealTime, now, entryDate = null) {
+  const [hours, minutes] = lastMealTime.split(':').map(Number);
   
-  // If parsed time is in the future, it means the meal was yesterday
-  if (lastMealDate > now) {
-    lastMealDate.setDate(lastMealDate.getDate() - 1);
+  let lastMealDate;
+  if (entryDate) {
+    // Parse ISO date string to get YYYY-MM-DD in UTC
+    const isoString = entryDate instanceof Date ? entryDate.toISOString() : entryDate;
+    const dateOnly = isoString.split('T')[0]; // Get "2025-10-24"
+    const [year, month, day] = dateOnly.split('-').map(Number);
+    
+    // Create date in local timezone with the specified date and time
+    lastMealDate = new Date(year, month - 1, day, hours, minutes, 0, 0);
+  } else {
+    lastMealDate = new Date();
+    lastMealDate.setHours(hours, minutes, 0, 0);
   }
   
-  const elapsed = now - lastMealDate;
+  // Calculate elapsed time accounting for wall-clock time (not actual UTC milliseconds)
+  // This gives the "human perception" of elapsed time, ignoring DST changes
+  const startYear = lastMealDate.getFullYear();
+  const startMonth = lastMealDate.getMonth();
+  const startDay = lastMealDate.getDate();
+  const startHour = lastMealDate.getHours();
+  const startMinute = lastMealDate.getMinutes();
+  
+  const endYear = now.getFullYear();
+  const endMonth = now.getMonth();
+  const endDay = now.getDate();
+  const endHour = now.getHours();
+  const endMinute = now.getMinutes();
+  
+  // Calculate total minutes from start
+  const startTotalMinutes = startYear * 525600 + startMonth * 43200 + startDay * 1440 + startHour * 60 + startMinute;
+  const endTotalMinutes = endYear * 525600 + endMonth * 43200 + endDay * 1440 + endHour * 60 + endMinute;
+  
+  const elapsedMinutes = endTotalMinutes - startTotalMinutes;
+  const elapsed = elapsedMinutes * 60 * 1000; // Convert back to milliseconds
+  
+  console.log('⏱️ Timer Calculation:', {
+    lastMealTime,
+    lastMealDateLocal: lastMealDate.toString(),
+    nowLocal: now.toString(),
+    elapsedMinutes,
+    elapsedMs: elapsed,
+    elapsedHours: elapsed / (1000 * 60 * 60),
+    note: 'Using wall-clock calculation to avoid DST issues'
+  });
+  
   return elapsed >= 0 ? elapsed : 0;
 }
 
@@ -116,31 +156,39 @@ export function isFastActive(entry) {
 }
 
 /**
- * Gets the active or completed fast for today from entries array
- * Only returns a fast if there's an entry for today with a lastMealTime
- * Ignores yesterday's incomplete fasts
+ * Gets the active fast from entries array
+ * Simply finds the most recent entry by date and returns its lastMealTime
  * 
  * @param {Array} entries - Array of fasting entry objects with date, lastMealTime, firstMealTime
- * @param {string} today - Today's date in YYYY-MM-DD format
- * @returns {{lastMealTime: string, isActive: boolean}|null} Fast info or null
+ * @param {string} today - Today's date in YYYY-MM-DD format (not used but kept for API compatibility)
+ * @returns {{lastMealTime: string, date: Date, isActive: boolean}|null} Fast info or null
  */
 export function getActiveFast(entries, today) {
-  // Handle null, undefined, or non-array entries
   if (!entries || !Array.isArray(entries) || entries.length === 0) {
     return null;
   }
   
-  // Find today's entry
-  const todayEntry = entries.find(entry => entry.date === today);
+  // Sort entries by date (most recent first)
+  const sortedEntries = [...entries].sort((a, b) => {
+    const dateA = a.date instanceof Date ? a.date : new Date(a.date);
+    const dateB = b.date instanceof Date ? b.date : new Date(b.date);
+    return dateB - dateA;
+  });
   
-  // Return null if no entry for today or no lastMealTime
-  if (!todayEntry || !todayEntry.lastMealTime) {
+  // Get the most recent entry
+  const mostRecentEntry = sortedEntries[0];
+  
+  if (!mostRecentEntry || !mostRecentEntry.lastMealTime) {
     return null;
   }
   
-  // Return fast info with isActive status
+  const entryDate = mostRecentEntry.date instanceof Date 
+    ? mostRecentEntry.date 
+    : new Date(mostRecentEntry.date);
+  
   return {
-    lastMealTime: todayEntry.lastMealTime,
-    isActive: isFastActive(todayEntry)
+    lastMealTime: mostRecentEntry.lastMealTime,
+    date: entryDate,
+    isActive: true
   };
 }

@@ -82,10 +82,21 @@ export default function EntriesPage() {
     }
   };
 
-  // Detect active or completed fast from today's entry
+  // Detect active or completed fast from any entry
   const activeFast = useMemo(() => {
     const today = new Date().toISOString().split('T')[0];
-    return getActiveFast(entries, today);
+    const result = getActiveFast(entries, today);
+    console.log('🔍 Debug Timer:', {
+      today,
+      entriesCount: entries.length,
+      allEntries: entries.map(e => ({
+        date: e.date,
+        lastMealTime: e.lastMealTime,
+        firstMealTime: e.firstMealTime
+      })),
+      result
+    });
+    return result;
   }, [entries]);
 
   const handleEdit = (entry) => {
@@ -211,6 +222,7 @@ export default function EntriesPage() {
         {activeFast && (
           <FastingTimerCard 
             lastMealTime={activeFast.lastMealTime}
+            date={activeFast.date}
             isActive={activeFast.isActive}
           />
         )}
