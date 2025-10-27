@@ -9,11 +9,13 @@
 
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import EntryList from '@/components/organisms/EntryList';
 import EntryForm from '@/components/organisms/EntryForm';
 import Button from '@/components/atoms/Button';
 import DeleteConfirmationModal from '@/components/DeleteConfirmationModal';
+import FastingTimerCard from '@/components/organisms/FastingTimerCard';
+import { getActiveFast } from '@/lib/utils/fastingTimerUtils';
 
 export default function EntriesPage() {
   const { data: session, status } = useSession();
@@ -79,6 +81,12 @@ export default function EntriesPage() {
       console.error('Error fetching settings:', err);
     }
   };
+
+  // Detect active or completed fast from today's entry
+  const activeFast = useMemo(() => {
+    const today = new Date().toISOString().split('T')[0];
+    return getActiveFast(entries, today);
+  }, [entries]);
 
   const handleEdit = (entry) => {
     setEditingEntry(entry);
@@ -198,6 +206,14 @@ export default function EntriesPage() {
             Track your fasting journey and monitor your progress.
           </p>
         </div>
+
+        {/* Live Fasting Timer */}
+        {activeFast && (
+          <FastingTimerCard 
+            lastMealTime={activeFast.lastMealTime}
+            isActive={activeFast.isActive}
+          />
+        )}
 
         {/* Create/Edit Entry Form */}
         {showForm ? (
