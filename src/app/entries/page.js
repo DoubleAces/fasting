@@ -217,17 +217,7 @@ export default function EntriesPage() {
     <FastingGoalProvider>
       <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-purple-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          {/* Header */}
-          <div className="mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">
-            Welcome back, <span className="gradient-text">{session.user.name || 'there'}</span>!
-          </h1>
-          <p className="text-lg text-gray-600">
-            Track your fasting journey and monitor your progress.
-          </p>
-        </div>
-
-        {/* Live Fasting Timer */}
+          {/* Live Fasting Timer */}
         {activeFast && (
           <FastingTimerCard 
             lastMealTime={activeFast.lastMealTime}
