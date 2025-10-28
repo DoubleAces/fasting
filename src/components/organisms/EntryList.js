@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { format, parseISO } from 'date-fns';
 import Button from '@/components/atoms/Button';
 import LoadingSpinner from '@/components/atoms/LoadingSpinner';
@@ -13,6 +13,8 @@ import ErrorMessage from '@/components/atoms/ErrorMessage';
  * Displays a list of fasting entries in table format.
  * Handles loading, error, and empty states.
  * Shows key metrics in columns with edit/delete actions.
+ * 
+ * Performance: Uses Next.js Link with prefetch for instant navigation (Feature 019)
  * 
  * @param {Array} entries - Array of entry objects to display
  * @param {Object} [settings] - User settings for display preferences
@@ -31,20 +33,9 @@ export default function EntryList({
   error = '',
   className = '',
 }) {
-  const router = useRouter();
-
   // Get display preferences from settings
   const weightUnit = settings?.measurementSystem === 'imperial' ? 'lbs' : 'kg';
   const timeFormat = settings?.timeFormat || '24h';
-
-  // Handle row click to navigate to entry details
-  const handleRowClick = (entryId, event) => {
-    // Don't navigate if clicking on action buttons
-    if (event.target.closest('button')) {
-      return;
-    }
-    router.push(`/entries/${entryId}`);
-  };
 
   // Format time based on user settings
   const formatTime = (timeStr) => {
@@ -137,81 +128,113 @@ export default function EntryList({
         <tbody className="divide-y divide-gray-200">
           {entries.map((entry) => (
             <tr 
-              key={entry._id} 
-              onClick={(e) => handleRowClick(entry._id, e)}
-              className="hover:bg-gray-50 transition-colors group cursor-pointer"
+              key={entry._id}
+              className="hover:bg-gray-50 transition-colors group"
               data-testid="entry-row"
             >
-              {/* Date */}
+              {/* Date - wrapped in Link */}
               <td className="px-4 py-3 whitespace-nowrap">
-                <span className="text-sm font-medium text-gray-900">
+                <Link 
+                  href={`/entries/${entry._id}`}
+                  prefetch={true}
+                  className="block text-sm font-medium text-gray-900 hover:text-blue-600"
+                >
                   {format(parseISO(entry.date), 'dd/MM/yyyy')}
-                </span>
+                </Link>
               </td>
 
-              {/* First Meal Time */}
+              {/* First Meal Time - wrapped in Link */}
               <td className="px-4 py-3 whitespace-nowrap">
-                <span className="text-sm text-gray-900">
+                <Link 
+                  href={`/entries/${entry._id}`}
+                  prefetch={true}
+                  className="block text-sm text-gray-900"
+                >
                   {formatTime(entry.firstMealTime)}
-                </span>
+                </Link>
               </td>
 
-              {/* Last Meal Time */}
+              {/* Last Meal Time - wrapped in Link */}
               <td className="px-4 py-3 whitespace-nowrap">
-                <span className="text-sm text-gray-900">
+                <Link 
+                  href={`/entries/${entry._id}`}
+                  prefetch={true}
+                  className="block text-sm text-gray-900"
+                >
                   {formatTime(entry.lastMealTime)}
-                </span>
+                </Link>
               </td>
 
-              {/* Fasting Duration */}
+              {/* Fasting Duration - wrapped in Link */}
               <td className="px-4 py-3 whitespace-nowrap">
-                <span className="text-sm font-semibold text-green-600">
+                <Link 
+                  href={`/entries/${entry._id}`}
+                  prefetch={true}
+                  className="block text-sm font-semibold text-green-600"
+                >
                   {formatFastingDuration(entry.fastingDuration)}
-                </span>
+                </Link>
               </td>
 
-              {/* Morning Weight */}
+              {/* Morning Weight - wrapped in Link */}
               <td className="px-4 py-3 whitespace-nowrap">
-                <span className="text-sm text-gray-900">
+                <Link 
+                  href={`/entries/${entry._id}`}
+                  prefetch={true}
+                  className="block text-sm text-gray-900"
+                >
                   {entry.morningWeight 
                     ? `${entry.morningWeight} ${weightUnit}` 
                     : '-'}
-                </span>
+                </Link>
               </td>
 
-              {/* Hours of Sleep */}
+              {/* Hours of Sleep - wrapped in Link */}
               <td className="px-4 py-3 whitespace-nowrap">
-                <span className="text-sm text-gray-900">
+                <Link 
+                  href={`/entries/${entry._id}`}
+                  prefetch={true}
+                  className="block text-sm text-gray-900"
+                >
                   {entry.hoursOfSleep ? `${entry.hoursOfSleep}h` : '-'}
-                </span>
+                </Link>
               </td>
 
-              {/* Ratings */}
+              {/* Ratings - wrapped in Link */}
               <td className="px-4 py-3">
-                <div className="flex flex-col gap-1 text-xs text-gray-600">
-                  {entry.hungerLevel && (
-                    <span>H: {entry.hungerLevel}</span>
-                  )}
-                  {entry.energyLevel && (
-                    <span>E: {entry.energyLevel}</span>
-                  )}
-                  {entry.wellBeing && (
-                    <span>W: {entry.wellBeing}</span>
-                  )}
-                  {!entry.hungerLevel && !entry.energyLevel && !entry.wellBeing && (
-                    <span>-</span>
-                  )}
-                </div>
+                <Link 
+                  href={`/entries/${entry._id}`}
+                  prefetch={true}
+                  className="block"
+                >
+                  <div className="flex flex-col gap-1 text-xs text-gray-600">
+                    {entry.hungerLevel && (
+                      <span>H: {entry.hungerLevel}</span>
+                    )}
+                    {entry.energyLevel && (
+                      <span>E: {entry.energyLevel}</span>
+                    )}
+                    {entry.wellBeing && (
+                      <span>W: {entry.wellBeing}</span>
+                    )}
+                    {!entry.hungerLevel && !entry.energyLevel && !entry.wellBeing && (
+                      <span>-</span>
+                    )}
+                  </div>
+                </Link>
               </td>
 
-              {/* Actions */}
+              {/* Actions - NOT wrapped in Link to prevent navigation */}
               <td className="px-4 py-3 whitespace-nowrap text-right">
                 <div className="flex gap-2 justify-end">
                   {onEdit && (
                     <Button
                       variant="secondary"
                       size="sm"
-                      onClick={() => onEdit(entry)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onEdit(entry);
+                      }}
                       aria-label={`Edit entry from ${format(parseISO(entry.date), 'MMM d, yyyy')}`}
                     >
                       Edit
@@ -221,7 +244,10 @@ export default function EntryList({
                     <Button
                       variant="danger"
                       size="sm"
-                      onClick={() => onDelete(entry._id)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onDelete(entry._id);
+                      }}
                       aria-label={`Delete entry from ${format(parseISO(entry.date), 'MMM d, yyyy')}`}
                     >
                       Delete

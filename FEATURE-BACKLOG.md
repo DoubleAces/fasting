@@ -98,6 +98,138 @@ Features that deliver significant value and user engagement:
 
 ---
 
+## 📱 Mobile UX Improvements
+
+Features to make the app feel more like a native mobile app rather than a responsive website:
+
+### Phase 1: Quick Fixes (Immediate Impact)
+**Effort**: Low | **Value**: High | **Time**: 2 hours
+
+**Entries Table Mobile Optimization**:
+- Hide non-essential columns on mobile (show only date, fast duration, status)
+- Add "View Details" button/link on each row
+- Reduce horizontal scrolling
+- **Issue**: Currently showing all columns, requires horizontal scroll on mobile
+
+**Spacing & Typography Adjustments** (Inspired by Zero app):
+- Reduce padding/margins on mobile (16px → 12px)
+- Scale down heading sizes responsively (e.g., h1: 24px, h2: 18px, h3: 16px)
+- Tighter line-height for better content density (1.2-1.4 instead of 1.5+)
+- Use system fonts for native feel (-apple-system, BlinkMacSystemFont)
+- Smaller body text (14px instead of 16px) for more content per screen
+- Strategic use of font weights (semibold for emphasis, regular for data)
+- Compact number displays with larger font size for key metrics
+- Generous use of icons to replace text labels (save space)
+- **Key insight from Zero**: They fit 4-5 entries on screen without scrolling by using:
+  - 14px body text
+  - Minimal vertical spacing between items
+  - Icon + number format (⏱ 16h instead of "Duration: 16 hours")
+  - Single-line entries with smart data prioritization
+
+**Form Layout Optimization**:
+- Stack form inputs vertically on mobile
+- Reduce field heights and spacing
+- Bottom-aligned action buttons
+- Single-column layout on mobile, multi-column on desktop
+
+### Phase 2: Card-Based Entry List (Major Redesign)
+**Effort**: Medium | **Value**: High | **Time**: 6 hours
+
+**Replace Table with Mobile Cards**:
+- Vertical card stack instead of table on mobile
+- Each card shows: date, meal times, fast duration, wellness icons
+- Tap anywhere on card to view full details
+- Swipe left for delete, swipe right for edit
+- All info visible without horizontal scrolling
+- Natural mobile scrolling patterns
+
+**Card Component Features** (Zero-inspired compact design):
+```
+┌─────────────────────────┐
+│ Oct 27, 2025     16h 0m │ ← Date + duration (single line, 14px)
+│ 12:00 PM → 8:00 PM  😊  │ ← Times + status (12px, muted)
+├─────────────────────────┤ ← Subtle divider
+│ Oct 26, 2025     18h 15m│
+│ 11:00 AM → 7:15 PM  😊  │
+└─────────────────────────┘
+```
+- **Typography Strategy** (like Zero):
+  - Primary info (date, duration): 14-15px, semibold
+  - Secondary info (times, details): 12px, regular, muted color
+  - Minimal vertical padding: 8-10px per card
+  - Horizontal layout: date/duration on same line
+- **Information Density**: 5-6 entries visible without scrolling
+- **Visual Hierarchy**: Size and weight differentiate importance
+- **Icons as shortcuts**: ⏱ 😊 ⚡ instead of "Duration: " "Mood: " labels
+
+**Alternative: Condensed List View**:
+- More compact than cards
+- See 10-15 entries without scrolling
+- Format: "Oct 27 • 16h fast • 😊"
+- Quick scanning, minimal but informative
+
+### Phase 3: Native App Feel (Polish)
+**Effort**: Medium | **Value**: High | **Time**: 8 hours
+
+**Bottom Tab Navigation**:
+- Move primary navigation to bottom on mobile
+- Large touch targets (44x44px minimum)
+- Fixed position, always accessible
+- Icons: Home 🏠, Add ➕, Profile 👤
+- Keep top nav on desktop
+
+**Mobile Interaction Patterns**:
+- Pull to refresh on entries list
+- Swipe gestures for actions
+- Bottom sheets for forms (instead of modals)
+- Loading skeletons during data fetch
+- Haptic feedback on actions (if supported)
+- Smooth page transitions
+
+**Visual Polish**:
+- Subtle shadows instead of heavy borders
+- Rounded corners (12-16px) for native feel
+- Colored status indicators/badges
+- More icon-heavy, less text-heavy
+- Vibrant accent colors
+- Native-style action sheets
+
+### Phase 4: Timeline/Activity View (Optional)
+**Effort**: High | **Value**: Medium | **Time**: 10 hours
+
+**Timeline Style Entry Display**:
+```
+────────────────────
+TODAY
+  🔴 16h fasting
+  12:00 PM → 8:00 PM
+────────────────────
+YESTERDAY  
+  🟢 18h fasting
+  11:00 AM → 7:00 PM
+────────────────────
+```
+- Grouped by date headers
+- Visual timeline with duration indicators
+- Color-coded by fast type/status
+- Infinite scroll with date separators
+- Like fitness app activity feeds
+
+**Technical Implementation**:
+- Responsive breakpoints: `<EntriesList>` renders different components
+  - Mobile (<768px): `<EntryCard>` or `<EntryTimeline>`
+  - Desktop (≥1024px): `<EntriesTable>`
+- Shared data layer (same API, different UI)
+- Progressive enhancement strategy
+
+**Success Metrics to Monitor**:
+- Mobile engagement time (should increase)
+- Form completion rate on mobile
+- Time to complete entry (should decrease)
+- User feedback/satisfaction
+
+---
+
 ## ⚡ Quick Wins (Weekend Projects)
 
 Features that can be implemented quickly but deliver immediate value:

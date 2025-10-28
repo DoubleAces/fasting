@@ -35,6 +35,8 @@ Auto-generated from all feature plans. Last updated: 2025-10-17
 - MongoDB (existing Entry model - no schema changes required) (017-live-fasting-timer)
 - JavaScript ES6+ (Next.js 14 App Router)<!-- + React 18, Next.js 14, Tailwind CSS 3, date-fns (existing utility library)  ACTION REQUIRED: Replace the content in this section with the technical details (018-improve-form-inputs)
 - MongoDB with Mongoose (existing - dates stored as ISO format, times as HH:mm)  for the project. The structure here is presented in advisory capacity to guide (018-improve-form-inputs)
+- JavaScript (ES6+), Node.js 18+ + Next.js 15+ (App Router), React 18, date-fns, Mongoose ODM (019-fix-entry-click-delay)
+- MongoDB with existing indexes (Feature 016), in-memory cache for settings/insights (019-fix-entry-click-delay)
 
 ## Project Structure
 ```
@@ -50,9 +52,9 @@ npm test; npm run lint
 JavaScript ES6+ with Node.js 18+ (Next.js 14+): Follow standard conventions
 
 ## Recent Changes
+- 019-fix-entry-click-delay: Added JavaScript (ES6+), Node.js 18+ + Next.js 15+ (App Router), React 18, date-fns, Mongoose ODM
 - 018-improve-form-inputs: Added JavaScript ES6+ (Next.js 14 App Router)<!-- + React 18, Next.js 14, Tailwind CSS 3, date-fns (existing utility library)  ACTION REQUIRED: Replace the content in this section with the technical details
 - 017-live-fasting-timer: Added JavaScript ES6+ / Next.js 15+ (App Router) + React 18, Tailwind CSS, date-fns (or existing date utilities)
-- 016-performance-optimization: Added JavaScript (ES6+), Node.js 18+ + Next.js 15+ (App Router), MongoDB 4.0+, Mongoose ODM, Redis 6+, ioredis or node-redis client
 
 <!-- MANUAL ADDITIONS START -->
 <!-- MANUAL ADDITIONS END -->
