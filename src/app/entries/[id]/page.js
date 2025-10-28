@@ -49,8 +49,9 @@ export async function generateStaticParams() {
 }
 
 export default async function EntryDetailsPage({ params }) {
-  // Start performance tracking
+  // Start performance tracking (Feature 016 + Feature 019 enhancement)
   const perfLogger = performanceLogger('Page: Entry Details');
+  const pageStartTime = Date.now();
   let queryCount = 0;
   let cacheHit = false;
   
@@ -74,11 +75,15 @@ export default async function EntryDetailsPage({ params }) {
 
   try {
     // Connect to database
+    const dbStartTime = Date.now();
     await connectDB();
+    const dbConnectTime = Date.now() - dbStartTime;
 
     // Fetch entry
     queryCount++;
+    const entryQueryStart = Date.now();
     const entry = await Entry.findById(entryId).lean();
+    const entryQueryTime = Date.now() - entryQueryStart;
 
     if (!entry) {
       notFound();
@@ -117,13 +122,22 @@ export default async function EntryDetailsPage({ params }) {
       // Continue without insights - non-critical feature
     }
 
-    // Log performance metrics
+    // Calculate total server processing time (Feature 019)
+    const totalServerTime = Date.now() - pageStartTime;
+
+    // Log performance metrics (enhanced with detailed timing - Feature 019)
     perfLogger.end({
       userId,
       entryId,
       queryCount,
       cacheHit,
       hasInsights: insights !== null,
+      // Feature 019: Additional timing metrics
+      dbConnectTime,
+      entryQueryTime,
+      settingsTime,
+      settingsCacheHit,
+      totalServerTime,
     });
 
     // Convert MongoDB documents to plain objects with string IDs

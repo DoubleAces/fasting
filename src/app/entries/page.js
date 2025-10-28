@@ -3,6 +3,8 @@
  * 
  * Main dashboard for logged-in users to view and manage their fasting entries.
  * This is the default landing page after successful authentication.
+ * 
+ * Performance: Includes performance markers for baseline measurement (Feature 019)
  */
 
 'use client';
@@ -16,6 +18,7 @@ import Button from '@/components/atoms/Button';
 import DeleteConfirmationModal from '@/components/DeleteConfirmationModal';
 import FastingTimerCard from '@/components/organisms/FastingTimerCard';
 import { getActiveFast } from '@/lib/utils/fastingTimerUtils';
+import { observeWebVitals } from '@/lib/utils/performanceMeasurement';
 
 export default function EntriesPage() {
   const { data: session, status } = useSession();
@@ -41,6 +44,21 @@ export default function EntriesPage() {
       router.push('/login');
     }
   }, [status, router]);
+
+  // Performance monitoring for entries page (Feature 019)
+  useEffect(() => {
+    if (typeof window !== 'undefined' && session?.user) {
+      // Observe Web Vitals for this page
+      observeWebVitals((vital) => {
+        console.log(`[Entries Page] ${vital.name}: ${vital.value}ms (${vital.rating})`);
+      });
+
+      // Mark entries page load
+      if (performance?.mark) {
+        performance.mark('entries-page-loaded');
+      }
+    }
+  }, [session]);
 
   // Fetch entries and settings when authenticated
   useEffect(() => {
