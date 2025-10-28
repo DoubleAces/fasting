@@ -218,6 +218,63 @@ export const entrySchema = Joi.object({
     .messages({
       'boolean.base': 'Extended fast to next denied must be true or false',
     }),
+
+  /**
+   * Fasting goal in minutes (optional) - Feature 020
+   * Must be between 1 and 10080 minutes (168 hours / 7 days)
+   * When provided, goalStatus must also be provided
+   */
+  fastingGoal: Joi.number()
+    .integer()
+    .min(1)
+    .max(10080) // 168 hours * 60 minutes
+    .allow(null)
+    .optional()
+    .messages({
+      'number.base': 'Fasting goal must be a number',
+      'number.integer': 'Fasting goal must be an integer (minutes)',
+      'number.min': 'Fasting goal must be at least 1 minute',
+      'number.max': 'Fasting goal cannot exceed 10080 minutes (168 hours)',
+    }),
+
+  /**
+   * Goal completion status (optional) - Feature 020
+   * Enum: 'completed', 'not-completed', 'no-goal'
+   * Required when fastingGoal is provided
+   */
+  goalStatus: Joi.string()
+    .valid('completed', 'not-completed', 'no-goal')
+    .allow(null)
+    .optional()
+    .when('fastingGoal', {
+      is: Joi.number().required(),
+      then: Joi.required(),
+      otherwise: Joi.optional(),
+    })
+    .messages({
+      'any.only': 'Goal status must be one of: completed, not-completed, no-goal',
+      'any.required': 'Goal status is required when fasting goal is provided',
+    }),
+}).custom((value, helpers) => {
+  // Business logic validation (T067): Ensure consistency between fastingGoal and goalStatus
+  const { fastingGoal, goalStatus } = value;
+
+  // If goal is provided, status must not be 'no-goal'
+  if (fastingGoal && goalStatus === 'no-goal') {
+    return helpers.message('Cannot have goalStatus "no-goal" when fastingGoal is provided');
+  }
+
+  // If goalStatus is 'completed' or 'not-completed', fastingGoal must be provided
+  if ((goalStatus === 'completed' || goalStatus === 'not-completed') && !fastingGoal) {
+    return helpers.message('fastingGoal is required when goalStatus is "completed" or "not-completed"');
+  }
+
+  // If goalStatus is 'no-goal', fastingGoal should be null
+  if (goalStatus === 'no-goal' && fastingGoal !== null && fastingGoal !== undefined) {
+    return helpers.message('fastingGoal must be null when goalStatus is "no-goal"');
+  }
+
+  return value;
 }).options({
   stripUnknown: true, // Remove unknown fields
   abortEarly: false,  // Return all errors, not just the first one

@@ -7,6 +7,7 @@ import RatingSelector from '@/components/molecules/RatingSelector';
 import Button from '@/components/atoms/Button';
 import ErrorMessage from '@/components/atoms/ErrorMessage';
 import { getTodayISO } from '@/lib/utils/dateUtils';
+import { useFastingGoal } from '@/contexts/FastingGoalContext';
 
 /**
  * Format an ISO date string to "DD Mon" format (e.g., "22 Oct").
@@ -63,6 +64,9 @@ const EntryForm = ({
   onCancel,
 }) => {
   const isEditMode = Boolean(entry);
+  
+  // T072: Extract goal data from FastingGoalContext for persistence
+  const { goalMinutes, clearGoal } = useFastingGoal();
   
   // Get weight unit from settings
   const weightUnit = settings?.measurementSystem === 'imperial' ? 'lbs' : 'kg';
@@ -311,6 +315,48 @@ const EntryForm = ({
   };
 
   /**
+   * T073: Calculate fasting duration and goal status for persistence
+   * 
+   * Computes total fasting time from form data and determines goal completion status
+   * based on comparison with user's goal (if any was set).
+   * 
+   * @function
+   * @returns {Object} Goal persistence data
+   * @returns {number|null} fastingGoal - User's goal in minutes (or null if no goal)
+   * @returns {string} goalStatus - One of: 'completed', 'not-completed', or 'no-goal'
+   */
+  const calculateGoalPersistence = () => {
+    // T075: Handle no-goal scenario
+    if (!goalMinutes) {
+      return {
+        fastingGoal: null,
+        goalStatus: 'no-goal'
+      };
+    }
+
+    // Calculate fasting duration in minutes
+    const [lastHours, lastMinutes] = formData.lastMealTime.split(':').map(Number);
+    const [firstHours, firstMinutes] = formData.firstMealTime.split(':').map(Number);
+    
+    const lastMealMinutes = lastHours * 60 + lastMinutes;
+    const firstMealMinutes = firstHours * 60 + firstMinutes;
+    
+    // If firstMeal is before lastMeal in clock time, it's next day
+    let fastingDuration = firstMealMinutes - lastMealMinutes;
+    if (fastingDuration < 0) {
+      fastingDuration += 24 * 60; // Add 24 hours
+    }
+
+    // T073: Determine goal status based on duration vs goal
+    const goalStatus = fastingDuration >= goalMinutes ? 'completed' : 'not-completed';
+
+    return {
+      fastingGoal: goalMinutes,
+      goalStatus
+    };
+  };
+
+  /**
    * T021/T045: Submit form data to API
    * 
    * Extracted from handleSubmit to enable reuse by confirmation handlers.
@@ -329,6 +375,9 @@ const EntryForm = ({
     setIsSubmitting(true);
 
     try {
+      // T072: Calculate goal persistence data
+      const goalPersistence = calculateGoalPersistence();
+      
       // Prepare data for API
       const payload = {
         date: formData.date,
@@ -337,6 +386,9 @@ const EntryForm = ({
         extendedFastConfirmed: formData.extendedFastFromPreviousConfirmed,
         extendedFastDenied: formData.extendedFastDenied,
         extendedFastToNextDenied: formData.extendedFastToNextDenied,
+        // T072: Include goal fields in payload
+        fastingGoal: goalPersistence.fastingGoal,
+        goalStatus: goalPersistence.goalStatus,
       };
 
       // Add optional fields only if they have values
@@ -385,6 +437,11 @@ const EntryForm = ({
 
       const result = await response.json();
 
+      // T074: Clear goal from localStorage after successful entry creation
+      if (!isEditMode && goalMinutes) {
+        clearGoal();
+      }
+
       // Call success callback if provided
       if (onSuccess) {
         onSuccess(result.data);
@@ -411,6 +468,9 @@ const EntryForm = ({
   const submitFormWithData = async (updatedFormData) => {
     setIsSubmitting(true);
     try {
+      // T072: Calculate goal persistence data
+      const goalPersistence = calculateGoalPersistence();
+      
       // Prepare data for API
       const payload = {
         date: updatedFormData.date,
@@ -419,6 +479,9 @@ const EntryForm = ({
         extendedFastConfirmed: updatedFormData.extendedFastFromPreviousConfirmed,
         extendedFastDenied: updatedFormData.extendedFastDenied,
         extendedFastToNextDenied: updatedFormData.extendedFastToNextDenied,
+        // T072: Include goal fields in payload
+        fastingGoal: goalPersistence.fastingGoal,
+        goalStatus: goalPersistence.goalStatus,
       };
 
       // Add optional fields only if they have values
@@ -469,6 +532,11 @@ const EntryForm = ({
 
       // Success! Now we can hide the prompt
       setShowExtendedFastPrompt(false);
+
+      // T074: Clear goal from localStorage after successful entry creation
+      if (!isEditMode && goalMinutes) {
+        clearGoal();
+      }
 
       // Call success callback if provided
       if (onSuccess) {

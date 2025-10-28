@@ -101,6 +101,30 @@ const entrySchema = new mongoose.Schema(
       maxlength: [2000, 'Food notes cannot exceed 2000 characters'],
     },
 
+    // Fasting goal fields (Feature 020 - Fasting Goal Timer)
+    // Goal duration in MINUTES (not hours) - range: 1 hour to 168 hours (7 days)
+    fastingGoal: {
+      type: Number,
+      min: [1, 'Fasting goal must be at least 1 minute'],
+      max: [10080, 'Fasting goal cannot exceed 168 hours (7 days)'],
+      default: null,
+      // null = no goal was set for this fast
+    },
+
+    // Goal completion status
+    goalStatus: {
+      type: String,
+      enum: {
+        values: ['completed', 'not-completed', 'no-goal'],
+        message: 'Goal status must be completed, not-completed, or no-goal',
+      },
+      default: null,
+      // 'completed' = fasting duration >= goal
+      // 'not-completed' = fasting duration < goal (ended fast early)
+      // 'no-goal' = no goal was set during this fast
+      // null = legacy entry (before Feature 020)
+    },
+
     /**
      * @deprecated This field is no longer used as of October 2025.
      * The "Copy to Today" feature has been removed.
