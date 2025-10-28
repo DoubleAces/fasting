@@ -138,7 +138,7 @@ export function GoalSettingPanel() {
   const errorId = "goal-input-error";
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg p-4 space-y-4">
+    <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 space-y-4">
       {/* Current goal display */}
       {currentGoalHours && (
         <div className="text-sm text-gray-600 dark:text-gray-400 mb-2">
