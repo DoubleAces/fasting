@@ -2,7 +2,7 @@
 
 **Feature Branch**: `007-admin-user-management`  
 **Created**: October 22, 2025  
-**Status**: Draft  
+**Status**: ✅ Complete - Merged to master (October 2025)  
 **Input**: User description: "In the admin section of the project, I want to now add user management. I want to see a list of users in a table format, their name, email, registration date (in format dd.mm.yyyy), last login date and time (in format dd.mm.yyy HH:ii). I want to be able to edit their information (for now, only the 'isAdmin' field - i want to be able to toggle this on/off). Creation of users is not necessary. I also need the ability to delete the user, in which case it would delete all the data from all the collections that belong to that user"
 
 ## Clarifications
