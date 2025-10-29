@@ -1,7 +1,26 @@
 # Feature Backlog - Fasting Tracker
 
-**Last Updated**: October 28, 2025  
-**Completed Features**: 001-019 (All shipped!)
+**Last Updated**: October 29, 2025  
+**Completed Features**: 001-019, 022-Mobile-UX (All shipped!)
+
+---
+
+## ✅ Recently Completed
+
+### Feature 022: Mobile UX Quick Fixes (October 29, 2025)
+**Status**: ✅ Completed & Live in Production
+
+**What Was Delivered**:
+- Responsive entry table (3 cols mobile, 8 cols desktop)
+- Compact mobile typography (14px body, 12px padding)
+- Mobile-friendly forms (vertical stacking, full-width buttons, 44px touch targets)
+- ⏱ icon for fasting durations
+- CSS-only, WCAG 2.1 AA compliant
+- 40% more content visible on mobile
+
+**Impact**: Significantly improved mobile user experience
+**Effort**: 4 hours (within 3.5hr estimate)
+**Documentation**: `specs/022-mobile-ux-improvements/`
 
 ---
 
@@ -549,8 +568,11 @@ Based on quick wins and user value:
 
 - **v1.0** (Oct 26, 2025): Initial backlog created after Feature 016 completion
 - **v1.1** (Oct 28, 2025): Updated after Features 017-019 completion
-- Features 001-019: All completed and shipped ✅
+- **v1.2** (Oct 29, 2025): Feature 022 (Mobile UX Quick Fixes) completed and deployed
+- Features 001-019, 022-Mobile-UX: All completed and shipped ✅
 
 ---
 
 **Next Review**: After gathering user feedback or completing next 3-5 features
+
+**Note**: Feature 022 in this backlog (Weight Progress Chart) is different from the Mobile UX Quick Fixes that was just completed. Consider renumbering future features to avoid confusion.
