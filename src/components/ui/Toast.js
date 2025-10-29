@@ -37,12 +37,18 @@ export default function Toast({
   id,
   type = 'success', 
   message, 
-  action = null,
-  onAction = null,
+  action = null,        // Can be string (Feature 006) or object with {label, onAction} (Feature 021)
+  onAction = null,      // Callback for Feature 006 format
   onDismiss,
   autoDismiss = null 
 }) {
   const [isExiting, setIsExiting] = useState(false);
+  
+  // Support both action formats:
+  // Feature 006: action="Retry", onAction={handler}
+  // Feature 021: action={{label: "Retry", onAction: handler}}
+  const actionLabel = typeof action === 'string' ? action : action?.label;
+  const actionHandler = typeof action === 'string' ? onAction : action?.onAction;
   
   const handleDismiss = useCallback(() => {
     setIsExiting(true);
@@ -67,8 +73,8 @@ export default function Toast({
   }, [autoDismiss, type, handleDismiss]);
   
   const handleActionClick = () => {
-    if (onAction) {
-      onAction();
+    if (actionHandler) {
+      actionHandler();
       handleDismiss();
     }
   };
@@ -79,10 +85,10 @@ export default function Toast({
   // ARIA role: status for success (polite), alert for errors (assertive)
   const ariaRole = type === 'success' ? 'status' : 'alert';
   
-  // Styling based on type
+  // Styling based on type (FR-002: green for success, red for error)
   const bgColor = type === 'success' 
-    ? 'bg-green-600' 
-    : 'bg-red-600';
+    ? 'bg-green-500'  // Feature 021: FR-002
+    : 'bg-red-500';   // Feature 021: FR-002
   
   const iconColor = 'text-white';
   
@@ -95,7 +101,8 @@ export default function Toast({
         flex items-start gap-3 p-4 rounded-lg shadow-lg
         ${bgColor} text-white
         transition-all duration-300 ease-in-out
-        ${isExiting ? 'opacity-0 translate-x-full' : 'opacity-100 translate-x-0'}
+        motion-reduce:transition-none
+        ${isExiting ? 'opacity-0 translate-x-full motion-reduce:translate-x-0' : 'opacity-100 translate-x-0'}
         min-w-[320px] max-w-md
       `}
       data-testid={`toast-${type}`}
@@ -110,18 +117,18 @@ export default function Toast({
         </p>
         
         {/* Action button (FR-039 for retry) */}
-        {action && onAction && (
+        {actionLabel && actionHandler && (
           <button
             onClick={handleActionClick}
             className="
               mt-2 text-sm font-semibold underline
               hover:no-underline focus:outline-none focus:ring-2 
               focus:ring-white focus:ring-offset-2 focus:ring-offset-green-600
-              transition-all
+              transition-all motion-reduce:transition-none
             "
             data-testid="toast-action"
           >
-            {action}
+            {actionLabel}
           </button>
         )}
       </div>
@@ -132,7 +139,7 @@ export default function Toast({
         className="
           flex-shrink-0 p-1 rounded
           hover:bg-white/20 focus:outline-none focus:ring-2 
-          focus:ring-white transition-all
+          focus:ring-white transition-all motion-reduce:transition-none
         "
         aria-label="Dismiss notification"
         data-testid="toast-dismiss"

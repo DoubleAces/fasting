@@ -8,6 +8,7 @@ import Button from '@/components/atoms/Button';
 import ErrorMessage from '@/components/atoms/ErrorMessage';
 import { getTodayISO } from '@/lib/utils/dateUtils';
 import { useFastingGoal } from '@/contexts/FastingGoalContext';
+import { useToast } from '@/contexts/ToastContext';
 
 /**
  * Format an ISO date string to "DD Mon" format (e.g., "22 Oct").
@@ -67,6 +68,9 @@ const EntryForm = ({
   
   // T072: Extract goal data from FastingGoalContext for persistence
   const { goalMinutes, clearGoal } = useFastingGoal();
+  
+  // T021: Toast notifications for success feedback
+  const { showSuccess, showError } = useToast();
   
   // Get weight unit from settings
   const weightUnit = settings?.measurementSystem === 'imperial' ? 'lbs' : 'kg';
@@ -442,12 +446,21 @@ const EntryForm = ({
         clearGoal();
       }
 
+      // T021: Show success toast
+      showSuccess(isEditMode ? 'Entry updated successfully!' : 'Entry saved successfully!');
+
       // Call success callback if provided
       if (onSuccess) {
         onSuccess(result.data);
       }
     } catch (error) {
-      setApiError(error.message || 'Failed to save entry. Please try again.');
+      // T031/T050: Show error toast with retry action
+      showError(error.message || 'Failed to save entry. Please try again.', {
+        action: {
+          label: 'Retry',
+          onAction: () => performSave(entryData, confirmationStatus),
+        },
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -538,13 +551,21 @@ const EntryForm = ({
         clearGoal();
       }
 
+      // T021: Show success toast
+      showSuccess(isEditMode ? 'Entry updated successfully!' : 'Entry saved successfully!');
+
       // Call success callback if provided
       if (onSuccess) {
         onSuccess(result.data);
       }
     } catch (error) {
-      // Keep prompt visible on error so user can try again
-      setApiError(error.message || 'Failed to save entry. Please try again.');
+      // T031/T050: Show error toast with retry action
+      showError(error.message || 'Failed to save entry. Please try again.', {
+        action: {
+          label: 'Retry',
+          onAction: () => performSaveWithExtendedFastConfirmation(updatedFormData, confirmationStatus),
+        },
+      });
     } finally {
       setIsSubmitting(false);
     }

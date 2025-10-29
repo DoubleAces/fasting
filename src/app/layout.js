@@ -3,6 +3,7 @@ import Footer from "@/components/organisms/Footer";
 import SessionProvider from "@/components/providers/SessionProvider";
 import ConditionalLayout from "@/components/ConditionalLayout";
 import { ToastProvider } from "@/contexts/ToastContext";
+import ToastContainer from "@/components/organisms/ToastContainer";
 import PWARegistration from "@/components/pwa/PWARegistration";
 import PeriodicSync from "@/components/pwa/PeriodicSync";
 import OfflineIndicator from "@/components/atoms/OfflineIndicator";
@@ -57,6 +58,7 @@ export default function RootLayout({ children }) {
             <ConditionalLayout>
               {children}
             </ConditionalLayout>
+            <ToastContainer />
           </ToastProvider>
         </SessionProvider>
       </body>

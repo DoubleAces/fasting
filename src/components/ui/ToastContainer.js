@@ -2,15 +2,16 @@
  * ToastContainer Component
  * 
  * Container for displaying multiple toast notifications with Portal rendering.
- * Renders toasts in fixed position at bottom-right of screen.
+ * Renders toasts in fixed position at top-center of screen (FR-001).
  * 
- * Feature: 006-admin-user-management (FR-036)
+ * Feature: 021-toast-notifications (FR-001, FR-004, FR-005)
  * 
  * Features:
- * - Fixed position at bottom-right (desktop) or bottom-center (mobile)
+ * - Fixed position at top-center (all devices)
  * - Stacks multiple toasts vertically with gap
  * - Portal rendering to bypass z-index issues
- * - Responsive positioning
+ * - Responsive max-width (500px desktop, 90vw mobile)
+ * - Zero CLS (uses fixed positioning)
  * 
  * Usage:
  * ```jsx
@@ -44,14 +45,17 @@ export default function ToastContainer({ children }) {
   }
   
   // Render toasts in portal (appended to document.body)
+  // FR-001: top-center positioning
+  // T070: motion-reduce support for reduced motion
   return createPortal(
     <div
       className="
-        fixed bottom-0 right-0 z-[9999]
-        p-4 space-y-3
+        fixed top-4 left-1/2 -translate-x-1/2 z-[9999]
+        w-full max-w-md px-4
+        space-y-3
         pointer-events-none
         max-h-screen overflow-y-auto
-        md:max-w-md
+        motion-reduce:transition-none
       "
       aria-live="polite"
       aria-atomic="false"

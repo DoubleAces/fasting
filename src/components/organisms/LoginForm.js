@@ -4,6 +4,7 @@ import Button from '@/components/atoms/Button';
 import ErrorMessage from '@/components/atoms/ErrorMessage';
 import Link from '@/components/atoms/Link';
 import { loginSchema } from '@/lib/validation/authSchema';
+import { useToast } from '@/contexts/ToastContext';
 
 /**
  * LoginForm Organism Component
@@ -36,6 +37,9 @@ const LoginForm = ({ onSuccess, onError }) => {
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
+  
+  // T055: Toast notifications
+  const { showSuccess, showError } = useToast();
 
   /**
    * Handle input change
@@ -140,11 +144,22 @@ const LoginForm = ({ onSuccess, onError }) => {
         
         setSubmitError(errorMessage);
         
+        // T055: Show error toast with retry action
+        showError(errorMessage, {
+          action: {
+            label: 'Retry',
+            onAction: () => handleSubmit({ preventDefault: () => {} }),
+          },
+        });
+        
         if (onError) {
           onError(new Error(errorMessage));
         }
       } else if (result?.ok) {
         // Login successful
+        // T055: Show success toast
+        showSuccess('Login successful! Welcome back.');
+        
         if (onSuccess) {
           onSuccess();
         }
@@ -153,6 +168,14 @@ const LoginForm = ({ onSuccess, onError }) => {
       console.error('Login error:', error);
       const errorMessage = 'An unexpected error occurred. Please try again.';
       setSubmitError(errorMessage);
+      
+      // T055: Show error toast with retry action
+      showError(errorMessage, {
+        action: {
+          label: 'Retry',
+          onAction: () => handleSubmit({ preventDefault: () => {} }),
+        },
+      });
       
       if (onError) {
         onError(error);

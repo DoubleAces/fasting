@@ -97,7 +97,15 @@ export default function DeleteUserButton({
       }
     } catch (error) {
       console.error('❌ Error deleting user:', error);
-      showError(error.message || 'Failed to delete user. Please try again.');
+      const errorMessage = error.message || 'Failed to delete user. Please try again.';
+      
+      // T062: Show error toast with retry action
+      showError(errorMessage, {
+        action: {
+          label: 'Retry',
+          onAction: handleDelete,
+        },
+      });
     } finally {
       setIsLoading(false);
     }

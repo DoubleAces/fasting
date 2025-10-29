@@ -93,7 +93,15 @@ export default function AdminToggle({
       }
     } catch (error) {
       console.error('Error toggling admin status:', error);
-      showError(error.message || 'Failed to toggle admin status. Please try again.');
+      const errorMessage = error.message || 'Failed to toggle admin status. Please try again.';
+      
+      // T063: Show error toast with retry action
+      showError(errorMessage, {
+        action: {
+          label: 'Retry',
+          onAction: handleToggle,
+        },
+      });
     } finally {
       setIsLoading(false);
     }

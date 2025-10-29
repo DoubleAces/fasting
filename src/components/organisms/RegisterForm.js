@@ -5,6 +5,7 @@ import Button from '@/components/atoms/Button';
 import ErrorMessage from '@/components/atoms/ErrorMessage';
 import Link from '@/components/atoms/Link';
 import { registerSchema } from '@/lib/validation/authSchema';
+import { useToast } from '@/contexts/ToastContext';
 
 /**
  * RegisterForm Organism Component
@@ -40,6 +41,9 @@ const RegisterForm = ({ onSuccess, onError }) => {
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
+  
+  // T056: Toast notifications
+  const { showSuccess, showError } = useToast();
 
   /**
    * Handle input change
@@ -198,9 +202,21 @@ const RegisterForm = ({ onSuccess, onError }) => {
             newErrors[err.field] = err.message;
           });
           setErrors(newErrors);
+          
+          // T056: Show error toast for validation errors
+          showError('Please fix the validation errors and try again.');
         } else {
           // Handle general error
-          setSubmitError(data.message || 'Registration failed. Please try again.');
+          const errorMessage = data.message || 'Registration failed. Please try again.';
+          setSubmitError(errorMessage);
+          
+          // T056: Show error toast with retry action
+          showError(errorMessage, {
+            action: {
+              label: 'Retry',
+              onAction: () => handleSubmit({ preventDefault: () => {} }),
+            },
+          });
         }
         
         if (onError) {
@@ -210,12 +226,24 @@ const RegisterForm = ({ onSuccess, onError }) => {
       }
       
       // Success - call callback
+      // T056: Show success toast
+      showSuccess('Account created successfully! Welcome to Fasting Tracker.');
+      
       if (onSuccess) {
         onSuccess(data, formData.password); // Pass password for auto-login
       }
     } catch (error) {
       console.error('Registration error:', error);
-      setSubmitError('An unexpected error occurred. Please try again later.');
+      const errorMessage = 'An unexpected error occurred. Please try again later.';
+      setSubmitError(errorMessage);
+      
+      // T056: Show error toast with retry action
+      showError(errorMessage, {
+        action: {
+          label: 'Retry',
+          onAction: () => handleSubmit({ preventDefault: () => {} }),
+        },
+      });
       
       if (onError) {
         onError({ message: error.message });

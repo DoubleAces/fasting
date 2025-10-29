@@ -45,6 +45,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useFastingGoal } from "../../contexts/FastingGoalContext.js";
+import { useToast } from "@/contexts/ToastContext";
 
 /**
  * GoalSettingPanel - Molecule component for goal selection
@@ -60,6 +61,10 @@ import { useFastingGoal } from "../../contexts/FastingGoalContext.js";
  */
 export function GoalSettingPanel() {
   const { goalMinutes, setGoal } = useFastingGoal();
+  
+  // T023: Toast notifications for success feedback
+  const { showSuccess } = useToast();
+  
   const [customHours, setCustomHours] = useState("");
   const [error, setError] = useState("");
 
@@ -108,6 +113,9 @@ export function GoalSettingPanel() {
     setGoal(minutes);
     setError(""); // Clear any errors
     setCustomHours(""); // Clear custom input
+    
+    // T023: Show success toast
+    showSuccess(`Fasting goal set to ${hours} hours`);
   };
 
   /**
@@ -120,6 +128,9 @@ export function GoalSettingPanel() {
       setGoal(validation.minutes);
       setError("");
       setCustomHours(""); // Clear input after successful submission
+      
+      // T023: Show success toast
+      showSuccess(`Fasting goal set to ${validation.hours} hours`);
     } else {
       setError(validation.errorMessage);
     }

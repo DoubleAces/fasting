@@ -39,6 +39,8 @@ Auto-generated from all feature plans. Last updated: 2025-10-17
 - MongoDB with existing indexes (Feature 016), in-memory cache for settings/insights (019-fix-entry-click-delay)
 - JavaScript (ES6+) with React 19.1.0, Next.js 15.5.6 (App Router) + Next.js, React, Mongoose 8.19.1, date-fns 4.1.0, Tailwind CSS, lucide-react (020-fasting-goal-timer)
 - MongoDB with Mongoose ODM (extends Entry model with 2 optional fields) (020-fasting-goal-timer)
+- JavaScript (ES6+) with React 19.1.0, Next.js 15.5.6 (App Router) + Next.js, React, Tailwind CSS, lucide-react (icons for close button) (021-toast-notifications)
+- N/A (ephemeral UI state only - no persistence required) (021-toast-notifications)
 
 ## Project Structure
 ```
@@ -54,9 +56,9 @@ npm test; npm run lint
 JavaScript ES6+ with Node.js 18+ (Next.js 14+): Follow standard conventions
 
 ## Recent Changes
+- 021-toast-notifications: Added JavaScript (ES6+) with React 19.1.0, Next.js 15.5.6 (App Router) + Next.js, React, Tailwind CSS, lucide-react (icons for close button)
 - 020-fasting-goal-timer: Added JavaScript (ES6+) with React 19.1.0, Next.js 15.5.6 (App Router) + Next.js, React, Mongoose 8.19.1, date-fns 4.1.0, Tailwind CSS, lucide-react
 - 019-fix-entry-click-delay: Added JavaScript (ES6+), Node.js 18+ + Next.js 15+ (App Router), React 18, date-fns, Mongoose ODM
-- 018-improve-form-inputs: Added JavaScript ES6+ (Next.js 14 App Router)<!-- + React 18, Next.js 14, Tailwind CSS 3, date-fns (existing utility library)  ACTION REQUIRED: Replace the content in this section with the technical details
 
 <!-- MANUAL ADDITIONS START -->
 <!-- MANUAL ADDITIONS END -->

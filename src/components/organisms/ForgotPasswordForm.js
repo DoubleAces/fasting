@@ -25,6 +25,7 @@ import Button from '@/components/atoms/Button';
 import ErrorMessage from '@/components/atoms/ErrorMessage';
 import Link from '@/components/atoms/Link';
 import { forgotPasswordSchema } from '@/lib/validation/authSchema';
+import { useToast } from '@/contexts/ToastContext';
 
 const ForgotPasswordForm = ({ onSuccess, onError }) => {
   // Form state
@@ -34,8 +35,10 @@ const ForgotPasswordForm = ({ onSuccess, onError }) => {
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
-  const [successMessage, setSuccessMessage] = useState('');
   const [devResetUrl, setDevResetUrl] = useState('');
+  
+  // T057: Toast notifications
+  const { showSuccess, showError } = useToast();
 
   /**
    * Handle email input change
@@ -51,11 +54,6 @@ const ForgotPasswordForm = ({ onSuccess, onError }) => {
     // Clear submit error on change
     if (submitError) {
       setSubmitError('');
-    }
-    
-    // Clear success message on change
-    if (successMessage) {
-      setSuccessMessage('');
     }
   };
 
@@ -89,7 +87,6 @@ const ForgotPasswordForm = ({ onSuccess, onError }) => {
     // Reset states
     setErrors({});
     setSubmitError('');
-    setSuccessMessage('');
 
     // Validate form data
     const validation = forgotPasswordSchema.validate(
@@ -125,9 +122,7 @@ const ForgotPasswordForm = ({ onSuccess, onError }) => {
       }
 
       // Success
-      setSuccessMessage(
-        data.message || 'If an account with that email exists, a password reset link has been sent.'
-      );
+      // T057: Toast notification shown above
       
       // In development, show the reset URL
       if (data.devResetUrl) {
@@ -142,7 +137,16 @@ const ForgotPasswordForm = ({ onSuccess, onError }) => {
       }
     } catch (error) {
       console.error('Forgot password error:', error);
-      setSubmitError(error.message || 'An error occurred. Please try again.');
+      const errorMessage = error.message || 'An error occurred. Please try again.';
+      setSubmitError(errorMessage);
+      
+      // T057: Show error toast with retry action
+      showError(errorMessage, {
+        action: {
+          label: 'Retry',
+          onAction: () => handleSubmit({ preventDefault: () => {} }),
+        },
+      });
 
       // Call error callback
       if (onError) {
@@ -155,23 +159,20 @@ const ForgotPasswordForm = ({ onSuccess, onError }) => {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6" noValidate>
-      {/* Success Message */}
-      {successMessage && (
-        <div className="p-4 bg-green-50 border border-green-200 rounded-md">
-          <p className="text-sm text-green-800">{successMessage}</p>
-          {devResetUrl && (
-            <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded">
-              <p className="text-xs font-semibold text-yellow-800 mb-2">
-                🔧 DEVELOPMENT MODE - Reset Link:
-              </p>
-              <a
-                href={devResetUrl}
-                className="text-xs text-primary-600 hover:text-primary-700 underline break-all"
-              >
-                {devResetUrl}
-              </a>
-            </div>
-          )}
+      {/* Development Reset URL (shown after success) */}
+      {devResetUrl && (
+        <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-md">
+          <p className="text-xs font-semibold text-yellow-800 mb-2">
+            🔧 DEVELOPMENT MODE - Reset Link:
+          </p>
+          <a
+            href={devResetUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-xs text-primary-600 hover:text-primary-700 underline break-all"
+          >
+            {devResetUrl}
+          </a>
         </div>
       )}
 

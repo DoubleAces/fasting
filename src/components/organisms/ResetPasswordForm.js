@@ -28,6 +28,7 @@ import Button from '@/components/atoms/Button';
 import ErrorMessage from '@/components/atoms/ErrorMessage';
 import Link from '@/components/atoms/Link';
 import { resetPasswordSchema } from '@/lib/validation/authSchema';
+import { useToast } from '@/contexts/ToastContext';
 
 const ResetPasswordForm = ({ token, onSuccess, onError }) => {
   // Form state
@@ -40,7 +41,9 @@ const ResetPasswordForm = ({ token, onSuccess, onError }) => {
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
-  const [successMessage, setSuccessMessage] = useState('');
+  
+  // T058: Toast notifications
+  const { showSuccess, showError } = useToast();
 
   /**
    * Handle input change
@@ -63,11 +66,6 @@ const ResetPasswordForm = ({ token, onSuccess, onError }) => {
     // Clear submit error on change
     if (submitError) {
       setSubmitError('');
-    }
-
-    // Clear success message on change
-    if (successMessage) {
-      setSuccessMessage('');
     }
   };
 
@@ -154,11 +152,11 @@ const ResetPasswordForm = ({ token, onSuccess, onError }) => {
         throw new Error(data.error || 'Failed to reset password');
       }
 
-      // Success
-      setSuccessMessage(
-        data.message || 'Password successfully reset. You can now log in with your new password.'
-      );
-      setFormData({ password: '', confirmPassword: '' }); // Clear form
+      // Success - clear form
+      setFormData({ password: '', confirmPassword: '' });
+      
+      // T058: Show success toast
+      showSuccess('Password reset successfully! You can now log in.');
 
       // Call success callback
       if (onSuccess) {
@@ -166,7 +164,16 @@ const ResetPasswordForm = ({ token, onSuccess, onError }) => {
       }
     } catch (error) {
       console.error('Reset password error:', error);
-      setSubmitError(error.message || 'An error occurred. Please try again.');
+      const errorMessage = error.message || 'An error occurred. Please try again.';
+      setSubmitError(errorMessage);
+      
+      // T058: Show error toast with retry action
+      showError(errorMessage, {
+        action: {
+          label: 'Retry',
+          onAction: () => handleSubmit({ preventDefault: () => {} }),
+        },
+      });
 
       // Call error callback
       if (onError) {
@@ -179,27 +186,11 @@ const ResetPasswordForm = ({ token, onSuccess, onError }) => {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6" noValidate>
-      {/* Success Message */}
-      {successMessage && (
-        <div className="p-4 bg-green-50 border border-green-200 rounded-md">
-          <p className="text-sm text-green-800">{successMessage}</p>
-          <div className="mt-2">
-            <Link
-              href="/login"
-              className="text-sm font-medium text-green-600 hover:text-green-700"
-            >
-              Go to login →
-            </Link>
-          </div>
-        </div>
-      )}
-
       {/* Submit Error */}
       {submitError && <ErrorMessage message={submitError} />}
 
       {/* Password Requirements */}
-      {!successMessage && (
-        <div className="text-sm text-gray-600 bg-gray-50 p-3 rounded-md">
+      <div className="text-sm text-gray-600 bg-gray-50 p-3 rounded-md">
           <p className="font-medium text-gray-700 mb-1">
             Password requirements:
           </p>
@@ -210,63 +201,54 @@ const ResetPasswordForm = ({ token, onSuccess, onError }) => {
             <li>At least one number</li>
           </ul>
         </div>
-      )}
 
       {/* Password Field */}
-      {!successMessage && (
-        <FormField
-          id="password"
-          label="New Password"
-          type="password"
-          value={formData.password}
-          onChange={handleChange}
-          onBlur={() => handleBlur('password')}
-          error={errors.password}
-          required
-          autoComplete="new-password"
-          placeholder="Enter your new password"
-          disabled={isSubmitting}
-        />
-      )}
+      <FormField
+        id="password"
+        label="New Password"
+        type="password"
+        value={formData.password}
+        onChange={handleChange}
+        onBlur={() => handleBlur('password')}
+        error={errors.password}
+        required
+        autoComplete="new-password"
+        placeholder="Enter your new password"
+        disabled={isSubmitting}
+      />
 
       {/* Confirm Password Field */}
-      {!successMessage && (
-        <FormField
-          id="confirmPassword"
-          label="Confirm New Password"
-          type="password"
-          value={formData.confirmPassword}
-          onChange={handleChange}
-          onBlur={() => handleBlur('confirmPassword')}
-          error={errors.confirmPassword}
-          required
-          autoComplete="new-password"
-          placeholder="Confirm your new password"
-          disabled={isSubmitting}
-        />
-      )}
+      <FormField
+        id="confirmPassword"
+        label="Confirm New Password"
+        type="password"
+        value={formData.confirmPassword}
+        onChange={handleChange}
+        onBlur={() => handleBlur('confirmPassword')}
+        error={errors.confirmPassword}
+        required
+        autoComplete="new-password"
+        placeholder="Confirm your new password"
+        disabled={isSubmitting}
+      />
 
       {/* Submit Button */}
-      {!successMessage && (
-        <Button
-          type="submit"
-          variant="primary"
-          fullWidth
-          disabled={isSubmitting}
-          loading={isSubmitting}
-        >
-          {isSubmitting ? 'Resetting...' : 'Reset Password'}
-        </Button>
-      )}
+      <Button
+        type="submit"
+        variant="primary"
+        fullWidth
+        disabled={isSubmitting}
+        loading={isSubmitting}
+      >
+        {isSubmitting ? 'Resetting...' : 'Reset Password'}
+      </Button>
 
-      {/* Back to Login Link (shown when not successful yet) */}
-      {!successMessage && (
-        <div className="text-center text-sm">
-          <Link href="/login" className="text-primary-600 hover:text-primary-700 font-medium">
-            Back to login
-          </Link>
-        </div>
-      )}
+      {/* Back to Login Link */}
+      <div className="text-center text-sm">
+        <Link href="/login" className="text-primary-600 hover:text-primary-700 font-medium">
+          Back to login
+        </Link>
+      </div>
     </form>
   );
 };

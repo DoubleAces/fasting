@@ -3,6 +3,7 @@ import { flushSync } from 'react-dom';
 import FormField from '@/components/molecules/FormField';
 import Button from '@/components/atoms/Button';
 import ErrorMessage from '@/components/atoms/ErrorMessage';
+import { useToast } from '@/contexts/ToastContext';
 
 /**
  * SettingsForm Component
@@ -16,6 +17,9 @@ import ErrorMessage from '@/components/atoms/ErrorMessage';
  * @param {Function} [onCancel] - Optional callback when cancel button clicked
  */
 export default function SettingsForm({ settings, onSuccess, onCancel }) {
+  // T022: Toast notifications for success feedback
+  const { showSuccess, showError } = useToast();
+  
   // Helper to convert measurementSystem to weightUnit for display
   const getWeightUnit = (measurementSystem) => {
     if (measurementSystem === 'imperial') return 'lbs';
@@ -150,8 +154,17 @@ export default function SettingsForm({ settings, onSuccess, onCancel }) {
         // API returns settings directly, not wrapped
         onSuccess(data);
       }
+
+      // T022: Show success toast
+      showSuccess('Settings saved successfully!');
     } catch (error) {
-      setApiError(error.message || 'Failed to save settings');
+      // T032/T051: Show error toast with retry action
+      showError(error.message || 'Failed to save settings', {
+        action: {
+          label: 'Retry',
+          onAction: handleSubmit,
+        },
+      });
     } finally {
       setIsSubmitting(false);
     }
