@@ -233,13 +233,15 @@ export default function SettingsForm({ settings, onSuccess, onCancel }) {
       />
 
       {/* Form Actions */}
-      <div className="flex gap-3 justify-end">
+      {/* T054: Mobile-first layout - full-width buttons on mobile, auto-width on desktop */}
+      <div className="flex flex-col md:flex-row gap-3 md:justify-end">
         {onCancel && (
           <Button
             type="button"
             variant="outline"
             onClick={handleCancel}
             disabled={isSubmitting}
+            className="w-full md:w-auto"
           >
             Cancel
           </Button>
@@ -249,6 +251,7 @@ export default function SettingsForm({ settings, onSuccess, onCancel }) {
           variant="primary"
           disabled={isSubmitting}
           loading={isSubmitting}
+          className="w-full md:w-auto"
         >
           {isSubmitting ? 'Saving...' : 'Save Settings'}
         </Button>

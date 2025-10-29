@@ -32,10 +32,13 @@ const Select = ({
   ...props
 }) => {
   // Base styles - always applied
+  // T051: Responsive text sizing + 44px touch targets for mobile UX
   const baseStyles = [
     'px-3',
     'py-2',
-    'text-base',
+    'min-h-[44px]',
+    'text-sm',
+    'md:text-base',
     'text-gray-900',
     'rounded-lg',
     'transition-colors',

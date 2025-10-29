@@ -82,11 +82,11 @@ const Button = ({
     ],
   };
 
-  // Size styles
+  // Size styles (Feature 022: Mobile UX - Responsive text sizing)
   const sizeStyles = {
-    sm: ['text-sm', 'px-3', 'py-1.5'],
-    md: ['text-base', 'px-4', 'py-2'],
-    lg: ['text-lg', 'px-6', 'py-3'],
+    sm: ['text-xs', 'md:text-sm', 'px-3', 'py-1.5'],
+    md: ['text-sm', 'md:text-base', 'px-4', 'py-2'],
+    lg: ['text-base', 'md:text-lg', 'px-6', 'py-3'],
   };
 
   // State styles

@@ -65,6 +65,15 @@ export default defineConfig({
       name: 'Mobile Safari',
       use: { ...devices['iPhone 12'] },
     },
+    
+    /* Feature 022: Mobile UX - Test smallest mobile viewport */
+    {
+      name: 'iPhone SE',
+      use: {
+        ...devices['iPhone 13 Pro'],
+        viewport: { width: 375, height: 667 },
+      },
+    },
   ],
 
   /* Run production build before starting the tests to enable service workers */

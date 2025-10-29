@@ -52,11 +52,13 @@ export default function EntryList({
   };
 
   // Calculate fasting hours from minutes
+  // T058: Add ⏱ icon for better visual recognition of fasting duration
   const formatFastingDuration = (minutes) => {
     if (!minutes) return 'N/A';
     const hours = Math.floor(minutes / 60);
     const mins = Math.round(minutes % 60);
-    return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
+    const duration = mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
+    return `⏱ ${duration}`;
   };
 
   // Loading state
@@ -99,28 +101,36 @@ export default function EntryList({
       <table className="min-w-full bg-white border border-gray-200 rounded-lg">
         <thead className="bg-gray-50 border-b border-gray-200">
           <tr>
-            <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+            {/* Always visible: Date */}
+            <th className="px-2 md:px-4 py-2 md:py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
               Date
             </th>
-            <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+            {/* Hidden on mobile: First Meal */}
+            <th className="hidden md:table-cell px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
               First Meal
             </th>
-            <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+            {/* Hidden on mobile: Last Meal */}
+            <th className="hidden md:table-cell px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
               Last Meal
             </th>
-            <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+            {/* Always visible: Fasting */}
+            <th className="px-2 md:px-4 py-2 md:py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
               Fasting
             </th>
-            <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+            {/* Hidden on mobile: Weight */}
+            <th className="hidden md:table-cell px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
               Weight
             </th>
-            <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+            {/* Hidden on mobile: Sleep */}
+            <th className="hidden md:table-cell px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
               Sleep
             </th>
-            <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+            {/* Hidden on mobile: Ratings */}
+            <th className="hidden md:table-cell px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
               Ratings
             </th>
-            <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">
+            {/* Always visible: Actions */}
+            <th className="px-2 md:px-4 py-2 md:py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">
               Actions
             </th>
           </tr>
@@ -132,19 +142,19 @@ export default function EntryList({
               className="hover:bg-gray-50 transition-colors group"
               data-testid="entry-row"
             >
-              {/* Date - wrapped in Link */}
-              <td className="px-4 py-3 whitespace-nowrap">
+              {/* Date - wrapped in Link - Always visible */}
+              <td className="px-2 md:px-4 py-2 md:py-3 whitespace-nowrap">
                 <Link 
                   href={`/entries/${entry._id}`}
                   prefetch={true}
-                  className="block text-sm font-medium text-gray-900 hover:text-blue-600"
+                  className="block text-sm md:text-base font-medium text-gray-900 hover:text-blue-600 min-h-[44px] flex items-center"
                 >
                   {format(parseISO(entry.date), 'dd/MM/yyyy')}
                 </Link>
               </td>
 
-              {/* First Meal Time - wrapped in Link */}
-              <td className="px-4 py-3 whitespace-nowrap">
+              {/* First Meal Time - wrapped in Link - Hidden on mobile */}
+              <td className="hidden md:table-cell px-4 py-3 whitespace-nowrap">
                 <Link 
                   href={`/entries/${entry._id}`}
                   prefetch={true}
@@ -154,8 +164,8 @@ export default function EntryList({
                 </Link>
               </td>
 
-              {/* Last Meal Time - wrapped in Link */}
-              <td className="px-4 py-3 whitespace-nowrap">
+              {/* Last Meal Time - wrapped in Link - Hidden on mobile */}
+              <td className="hidden md:table-cell px-4 py-3 whitespace-nowrap">
                 <Link 
                   href={`/entries/${entry._id}`}
                   prefetch={true}
@@ -165,19 +175,19 @@ export default function EntryList({
                 </Link>
               </td>
 
-              {/* Fasting Duration - wrapped in Link */}
-              <td className="px-4 py-3 whitespace-nowrap">
+              {/* Fasting Duration - wrapped in Link - Always visible */}
+              <td className="px-2 md:px-4 py-2 md:py-3 whitespace-nowrap">
                 <Link 
                   href={`/entries/${entry._id}`}
                   prefetch={true}
-                  className="block text-sm font-semibold text-green-600"
+                  className="block text-sm md:text-base font-semibold text-green-600 min-h-[44px] flex items-center"
                 >
                   {formatFastingDuration(entry.fastingDuration)}
                 </Link>
               </td>
 
-              {/* Morning Weight - wrapped in Link */}
-              <td className="px-4 py-3 whitespace-nowrap">
+              {/* Morning Weight - wrapped in Link - Hidden on mobile */}
+              <td className="hidden md:table-cell px-4 py-3 whitespace-nowrap">
                 <Link 
                   href={`/entries/${entry._id}`}
                   prefetch={true}
@@ -189,8 +199,8 @@ export default function EntryList({
                 </Link>
               </td>
 
-              {/* Hours of Sleep - wrapped in Link */}
-              <td className="px-4 py-3 whitespace-nowrap">
+              {/* Hours of Sleep - wrapped in Link - Hidden on mobile */}
+              <td className="hidden md:table-cell px-4 py-3 whitespace-nowrap">
                 <Link 
                   href={`/entries/${entry._id}`}
                   prefetch={true}
@@ -200,8 +210,8 @@ export default function EntryList({
                 </Link>
               </td>
 
-              {/* Ratings - wrapped in Link */}
-              <td className="px-4 py-3">
+              {/* Ratings - wrapped in Link - Hidden on mobile */}
+              <td className="hidden md:table-cell px-4 py-3">
                 <Link 
                   href={`/entries/${entry._id}`}
                   prefetch={true}
@@ -224,8 +234,8 @@ export default function EntryList({
                 </Link>
               </td>
 
-              {/* Actions - NOT wrapped in Link to prevent navigation */}
-              <td className="px-4 py-3 whitespace-nowrap text-right">
+              {/* Actions - NOT wrapped in Link to prevent navigation - Always visible */}
+              <td className="px-2 md:px-4 py-2 md:py-3 whitespace-nowrap text-right">
                 <div className="flex gap-2 justify-end">
                   {onEdit && (
                     <Button
@@ -236,6 +246,7 @@ export default function EntryList({
                         onEdit(entry);
                       }}
                       aria-label={`Edit entry from ${format(parseISO(entry.date), 'MMM d, yyyy')}`}
+                      className="min-h-[44px]"
                     >
                       Edit
                     </Button>
@@ -249,6 +260,7 @@ export default function EntryList({
                         onDelete(entry._id);
                       }}
                       aria-label={`Delete entry from ${format(parseISO(entry.date), 'MMM d, yyyy')}`}
+                      className="min-h-[44px]"
                     >
                       Delete
                     </Button>
