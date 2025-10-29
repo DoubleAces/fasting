@@ -18,7 +18,13 @@ A daily fasting and health metrics tracking application built with Next.js 14+, 
   - Daily streak tracking
   - "Best Day" badges for exceptional performance
 - ⚙️ Configurable measurement units (metric/imperial) and time formats (12h/24h)
-- 📱 Mobile-first responsive design
+- 📱 **Mobile-Optimized UX**:
+  - Responsive 3-column table on mobile (Date, Duration, Actions)
+  - Full 8-column table on desktop
+  - Compact typography (14px body text on mobile, 16px on desktop)
+  - Mobile-friendly forms with vertical stacking and full-width buttons
+  - 44px minimum touch targets (WCAG AA compliant)
+  - Responsive breakpoint: 768px (mobile < 768px, desktop ≥ 768px)
 - ♿ WCAG 2.1 Level AA accessible
 
 ## Tech Stack
@@ -31,6 +37,34 @@ A daily fasting and health metrics tracking application built with Next.js 14+, 
 - **Validation**: Joi
 - **Testing**: Jest + React Testing Library + Playwright
 - **Development**: Test-Driven Development (TDD) with 80% coverage minimum
+
+## Responsive Design
+
+This application uses a **mobile-first approach** with Tailwind CSS responsive utilities:
+
+- **Breakpoint**: 768px
+  - Mobile: < 768px (base classes apply)
+  - Desktop: ≥ 768px (md: prefix classes apply)
+
+**Mobile Optimizations (< 768px)**:
+- Compact typography scale (14px body, 24px h1, 18px h2)
+- 12px padding (p-3) for tighter layouts
+- 3-column entry table (Date, Duration, Actions)
+- Vertical form layouts with full-width buttons
+- 44px minimum touch targets for accessibility
+
+**Desktop Experience (≥ 768px)**:
+- Standard typography scale (16px body, 32px h1, 24px h2)
+- 16px padding (p-4) for comfortable spacing
+- 8-column entry table (full data visibility)
+- Horizontal form layouts with auto-width buttons
+- Optimized for mouse/trackpad interaction
+
+**Key Implementation Details**:
+- Pure CSS/Tailwind only (zero JavaScript media queries)
+- Zero performance impact (no runtime calculations)
+- WCAG 2.1 AA compliant touch targets (≥44px)
+- Consistent 4.5:1 color contrast ratios
 
 ## Getting Started
 
@@ -120,6 +154,7 @@ See [tasks.md](./specs/001-daily-fasting-tracker/tasks.md) for detailed implemen
 
 ## Documentation
 
+### Core Features
 - [Feature Specification](./specs/001-daily-fasting-tracker/spec.md)
 - [Implementation Plan](./specs/001-daily-fasting-tracker/plan.md)
 - [Technical Research](./specs/001-daily-fasting-tracker/research.md)
@@ -127,6 +162,11 @@ See [tasks.md](./specs/001-daily-fasting-tracker/tasks.md) for detailed implemen
 - [API Specification](./specs/001-daily-fasting-tracker/contracts/api-spec.json)
 - [Development Tasks](./specs/001-daily-fasting-tracker/tasks.md)
 - [Quickstart Guide](./specs/001-daily-fasting-tracker/quickstart.md)
+
+### Mobile UX Improvements (Feature 022)
+- [Mobile UX Specification](./specs/022-mobile-ux-improvements/spec.md)
+- [Mobile UX Tasks](./specs/022-mobile-ux-improvements/tasks.md)
+- Includes: Responsive table, compact typography, mobile-friendly forms
 
 ## Contributing
 

@@ -872,6 +872,7 @@ const EntryForm = ({
 
       {/* Form Actions */}
       {/* T029: aria-live announces button changes to screen readers */}
+      {/* T049: Mobile-first form layout - buttons stack vertically on mobile, horizontal on desktop */}
       <div 
         className="flex flex-col gap-3 pt-4 border-t border-gray-200"
         aria-live="polite"
@@ -911,13 +912,15 @@ const EntryForm = ({
             </div>
             
             {/* All buttons in one row: Cancel + Confirmation Buttons - T029: aria-live, T030: mobile responsive */}
-            <div className="flex flex-col sm:flex-row gap-2 sm:justify-end">
+            {/* T049: Full-width buttons on mobile (flex-col), auto-width on desktop (md:flex-row) */}
+            <div className="flex flex-col md:flex-row gap-2 md:justify-end">
               {onCancel && (
                 <Button
                   type="button"
                   variant="outline"
                   onClick={onCancel}
                   disabled={isSubmitting}
+                  className="w-full md:w-auto"
                 >
                   Cancel
                 </Button>
@@ -929,6 +932,7 @@ const EntryForm = ({
                 onClick={handleExtendedFastConfirmAndSave}
                 disabled={isSubmitting}
                 loading={isSubmitting}
+                className="w-full md:w-auto"
               >
                 {isSubmitting ? 'Saving...' : 'Yes, confirm extended fast'}
               </Button>
@@ -939,6 +943,7 @@ const EntryForm = ({
                 onClick={handleExtendedFastDenyAndSave}
                 disabled={isSubmitting}
                 loading={isSubmitting}
+                className="w-full md:w-auto"
               >
                 {isSubmitting ? 'Saving...' : "No, I ate but didn't log"}
               </Button>
@@ -946,13 +951,16 @@ const EntryForm = ({
           </>
         ) : (
           // Normal submit button (when no extended fast confirmation needed)
-          <div className="flex gap-4 justify-end">
+          // T049: Full-width buttons on mobile (flex-col), auto-width on desktop (md:flex-row)
+          <>
+          <div className="flex flex-col md:flex-row gap-4 md:justify-end">
             {onCancel && (
               <Button
                 type="button"
                 variant="outline"
                 onClick={onCancel}
                 disabled={isSubmitting}
+                className="w-full md:w-auto"
               >
                 Cancel
               </Button>
@@ -962,10 +970,12 @@ const EntryForm = ({
               variant="primary"
               disabled={isSubmitting}
               loading={isSubmitting}
+              className="w-full md:w-auto"
             >
               {isSubmitting ? 'Saving...' : isEditMode ? 'Update Entry' : 'Save Entry'}
             </Button>
           </div>
+          </>
         )}
       </div>
     </form>

@@ -341,4 +341,91 @@ describe('EntryList Component', () => {
       expect(screen.getAllByRole('button', { name: /delete/i })).toHaveLength(3);
     });
   });
+
+  // Feature 022: Mobile UX - Responsive Tests
+  describe('Mobile Responsive Behavior (Feature 022)', () => {
+    // Helper to mock viewport
+    const mockViewport = (width) => {
+      Object.defineProperty(window, 'innerWidth', {
+        writable: true,
+        configurable: true,
+        value: width,
+      });
+      window.dispatchEvent(new Event('resize'));
+    };
+
+    afterEach(() => {
+      // Reset viewport
+      delete window.innerWidth;
+    });
+
+    describe('T008-T009: Column visibility on mobile', () => {
+      it('should hide non-essential columns on mobile (<768px)', () => {
+        mockViewport(375); // iPhone SE
+        render(<EntryList entries={mockEntries} />);
+        
+        const headers = screen.getAllByRole('columnheader');
+        const headerTexts = headers.map(h => h.textContent);
+        
+        // Essential columns visible
+        expect(headerTexts).toContain('Date');
+        expect(headerTexts).toContain('Fasting');
+        expect(headerTexts).toContain('Actions');
+        
+        // Non-essential columns hidden (should only have 3 headers on mobile)
+        expect(headers.length).toBeLessThanOrEqual(3);
+      });
+
+      it('should show all columns on desktop (≥768px)', () => {
+        mockViewport(1280); // Desktop
+        render(<EntryList entries={mockEntries} />);
+        
+        const headers = screen.getAllByRole('columnheader');
+        
+        // All columns visible on desktop
+        expect(screen.getByText('Date')).toBeInTheDocument();
+        expect(screen.getByText('First Meal')).toBeInTheDocument();
+        expect(screen.getByText('Last Meal')).toBeInTheDocument();
+        expect(screen.getByText('Fasting')).toBeInTheDocument();
+        expect(screen.getByText('Weight')).toBeInTheDocument();
+        expect(screen.getByText('Sleep')).toBeInTheDocument();
+        expect(screen.getByText('Ratings')).toBeInTheDocument();
+        expect(screen.getByText('Actions')).toBeInTheDocument();
+      });
+    });
+
+    describe('T011-T012: Touch targets and spacing', () => {
+      it('should have 44px minimum touch targets for buttons', () => {
+        mockViewport(375);
+        render(
+          <EntryList 
+            entries={mockEntries}
+            onEdit={() => {}}
+            onDelete={() => {}}
+          />
+        );
+        
+        const buttons = screen.getAllByRole('button');
+        buttons.forEach(button => {
+          const styles = window.getComputedStyle(button);
+          const minHeight = styles.minHeight;
+          
+          // Should have min-height of 44px (2.75rem)
+          expect(minHeight).toMatch(/44px|2\.75rem/);
+        });
+      });
+
+      it('should use compact padding on mobile', () => {
+        mockViewport(375);
+        const { container } = render(<EntryList entries={mockEntries} />);
+        
+        const cell = container.querySelector('td');
+        const styles = window.getComputedStyle(cell);
+        
+        // Mobile padding should be p-2 (8px) or less
+        const paddingPx = parseInt(styles.paddingLeft);
+        expect(paddingPx).toBeLessThanOrEqual(12);
+      });
+    });
+  });
 });

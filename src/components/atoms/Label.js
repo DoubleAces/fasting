@@ -21,7 +21,8 @@ const Label = ({
   children,
   ...props
 }) => {
-  const baseClasses = 'block text-sm font-medium text-gray-700';
+  // Feature 022: Mobile UX - Responsive text sizing and spacing
+  const baseClasses = 'block text-xs md:text-sm font-medium text-gray-700 mb-1 md:mb-2';
   const errorClasses = error ? 'text-red-600' : '';
   
   const combinedClasses = `${baseClasses} ${errorClasses} ${className}`.trim();

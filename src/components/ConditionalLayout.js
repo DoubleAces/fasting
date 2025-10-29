@@ -17,18 +17,20 @@ export default function ConditionalLayout({ children }) {
 
   if (isAdminRoute) {
     // Admin routes - no navbar/footer, full height
+    // Feature 022: Mobile UX - Compact padding on mobile
     return (
-      <main style={{ minHeight: '100vh' }}>
+      <main className="p-3 md:p-4" style={{ minHeight: '100vh' }}>
         {children}
       </main>
     );
   }
 
   // Public routes - with navbar/footer
+  // Feature 022: Mobile UX - Compact padding on mobile
   return (
     <>
       <Navbar />
-      <main style={{ minHeight: 'calc(100vh - 200px)' }}>
+      <main className="p-3 md:p-4" style={{ minHeight: 'calc(100vh - 200px)' }}>
         {children}
       </main>
       <Footer />

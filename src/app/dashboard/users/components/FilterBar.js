@@ -117,7 +117,7 @@ export default function FilterBar({ onFilterChange, initialFilters = {} }) {
             value={nameInput}
             onChange={(e) => setNameInput(e.target.value)}
             placeholder="Search by name..."
-            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 placeholder-gray-400"
+            className="w-full px-3 py-2 min-h-[44px] text-sm md:text-base border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 placeholder-gray-400"
             aria-label="Filter users by name"
           />
         </div>
@@ -136,7 +136,7 @@ export default function FilterBar({ onFilterChange, initialFilters = {} }) {
             value={emailInput}
             onChange={(e) => setEmailInput(e.target.value)}
             placeholder="Search by email..."
-            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 placeholder-gray-400"
+            className="w-full px-3 py-2 min-h-[44px] text-sm md:text-base border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 placeholder-gray-400"
             aria-label="Filter users by email"
           />
         </div>
@@ -153,7 +153,7 @@ export default function FilterBar({ onFilterChange, initialFilters = {} }) {
             id="filter-admin"
             value={adminFilter}
             onChange={(e) => setAdminFilter(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white"
+            className="w-full px-3 py-2 min-h-[44px] text-sm md:text-base border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 bg-white"
             aria-label="Filter users by admin status"
           >
             <option value="all">All Users</option>
