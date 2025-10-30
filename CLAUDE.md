@@ -43,6 +43,8 @@ Auto-generated from all feature plans. Last updated: 2025-10-17
 - N/A (ephemeral UI state only - no persistence required) (021-toast-notifications)
 - JavaScript (ES6+) with Next.js 15.5.6, React 19.1.0 + Tailwind CSS 4.0 (responsive utilities), Next.js App Router, React (022-mobile-ux-improvements)
 - N/A (no backend/database changes) (022-mobile-ux-improvements)
+- JavaScript (ES6+) / React 18 / Next.js 14+ (App Router) + React 18, Next.js 14, Tailwind CSS 3.x, NextAuth.js (023-homepage-redesign)
+- N/A (presentational feature, no new data storage) (023-homepage-redesign)
 
 ## Project Structure
 ```
@@ -58,9 +60,9 @@ npm test; npm run lint
 JavaScript ES6+ with Node.js 18+ (Next.js 14+): Follow standard conventions
 
 ## Recent Changes
+- 023-homepage-redesign: Added JavaScript (ES6+) / React 18 / Next.js 14+ (App Router) + React 18, Next.js 14, Tailwind CSS 3.x, NextAuth.js
 - 022-mobile-ux-improvements: Added JavaScript (ES6+) with Next.js 15.5.6, React 19.1.0 + Tailwind CSS 4.0 (responsive utilities), Next.js App Router, React
 - 021-toast-notifications: Added JavaScript (ES6+) with React 19.1.0, Next.js 15.5.6 (App Router) + Next.js, React, Tailwind CSS, lucide-react (icons for close button)
-- 020-fasting-goal-timer: Added JavaScript (ES6+) with React 19.1.0, Next.js 15.5.6 (App Router) + Next.js, React, Mongoose 8.19.1, date-fns 4.1.0, Tailwind CSS, lucide-react
 
 <!-- MANUAL ADDITIONS START -->
 <!-- MANUAL ADDITIONS END -->

@@ -40,7 +40,7 @@ export default function FAQItem({
       <button
         onClick={handleToggle}
         onKeyDown={handleKeyDown}
-        className="w-full text-left flex items-center justify-between py-4 text-lg font-semibold text-gray-900 hover:text-primary-600 transition-colors duration-200 focus:outline-none focus:text-primary-600"
+        className="w-full text-left flex items-center justify-between py-4 text-lg font-semibold text-gray-900 hover:text-primary-600 transition-colors duration-200 focus:outline-none focus:text-primary-600 cursor-pointer"
         aria-expanded={isOpen}
         aria-controls={`faq-answer-${question.substring(0, 20)}`}
       >

@@ -28,6 +28,44 @@
 
 Features that deliver significant value and user engagement:
 
+### 📊 User Dashboard (Feature 024 Candidate)
+**Priority**: High | **Effort**: Medium | **Value**: High
+
+**Problem**: Currently logged-in users see the marketing homepage or go directly to /entries. No centralized place to see their fasting status, progress, and quick actions.
+
+**Solution**: Create a proper user dashboard that serves as the main hub for logged-in users.
+
+**Core Features**:
+- **Current Fast Status**: Active fast timer with countdown/countup
+- **Quick Actions**: Start Fast / End Fast buttons prominently displayed
+- **Streak Counter**: Current streak with visual indicator (🔥)
+- **Recent Fasts**: Last 5-7 fasts with durations
+- **Weekly Stats**: Average fast duration, total fasts this week
+- **Progress Overview**: Visual progress toward goals
+- **Weight Tracking**: Latest weight entry + trend chart
+- **Motivational Elements**: Achievements, milestones, encouraging messages
+
+**Technical Approach**:
+- Server component for initial data load
+- Client component for real-time timer updates
+- Reuse existing components (GradientButton, GlassmorphicCard)
+- Mobile-first responsive design
+- Fast initial render (< 1s)
+
+**User Flow**:
+- Logged-in users navigate to `/` → automatically redirect to `/dashboard`
+- Dashboard becomes the home page for authenticated users
+- Homepage marketing content only shown to unauthenticated visitors
+
+**Benefits**:
+- Single source of truth for user's fasting status
+- Reduces friction (no need to navigate to /entries to start/end fast)
+- Increases engagement and motivation
+- More "app-like" experience vs website feel
+- Foundation for future features (goals, notifications, achievements)
+
+---
+
 ### ⏱️ Timer Enhancements (Future Consideration)
 - **Smart Progress Bar**: Visual progress indicator for active fasts with intelligent goal calculation
   - **Challenge**: Need better algorithm than median (could suggest unambitious 8-hour goals)
