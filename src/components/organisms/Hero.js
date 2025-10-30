@@ -1,99 +1,120 @@
+'use client';
+
+import React from 'react';
+import Image from 'next/image';
+import GradientButton from '@/components/atoms/GradientButton';
+import TrustBadge from '@/components/molecules/TrustBadge';
+import trustIndicators from '@/lib/data/trustIndicators';
+import ctaConfig from '@/lib/data/ctaConfig';
+
 /**
- * Hero Component (Organism)
+ * Hero Component
  * 
- * Apple-inspired hero section for the homepage.
- * Features gradient text, smooth animations, and modern CTAs.
+ * The hero section that communicates the app's value proposition,
+ * displays trust indicators, and provides primary CTAs.
+ * 
+ * @param {boolean} isAuthenticated - Whether the user is authenticated
+ * @param {string} [className] - Additional CSS classes
  */
+const Hero = ({ isAuthenticated, className = '' }) => {
+  // Get appropriate CTA text based on auth status
+  const primaryCTA = isAuthenticated 
+    ? ctaConfig.primary.authenticated 
+    : ctaConfig.primary.unauthenticated;
 
-import Link from 'next/link';
+  // Handle primary CTA click
+  const handlePrimaryCTA = () => {
+    window.location.href = primaryCTA.href;
+  };
 
-export default function Hero() {
+  // Handle secondary CTA click (scroll to section)
+  const handleSecondaryCTA = () => {
+    const targetElement = document.getElementById(ctaConfig.secondary.target.replace('#', ''));
+    if (targetElement) {
+      targetElement.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
+  // Don't show hero section for authenticated users - they should see their dashboard
+  if (isAuthenticated) {
+    return null;
+  }
+
   return (
-    <section 
-      className="relative min-h-[85vh] flex items-center justify-center px-4 sm:px-6 lg:px-8 overflow-hidden bg-gradient-to-br from-gray-50 via-white to-purple-50"
-      aria-labelledby="hero-heading"
-    >
-      {/* Background decoration - Floating gradient orbs */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        {/* Purple orb (top-right) */}
-        <div className="absolute -top-20 -right-20 w-[500px] h-[500px] bg-gradient-to-br from-purple-400 to-purple-600 rounded-full mix-blend-multiply filter blur-3xl opacity-40 animate-pulse-slow"></div>
-        
-        {/* Indigo orb (bottom-left) */}
-        <div className="absolute -bottom-20 -left-20 w-[500px] h-[500px] bg-gradient-to-tr from-indigo-400 to-indigo-600 rounded-full mix-blend-multiply filter blur-3xl opacity-40 animate-pulse-slow" style={{animationDelay: '1s'}}></div>
-        
-        {/* Pink accent orb (middle-right) */}
-        <div className="absolute top-1/3 -right-32 w-[400px] h-[400px] bg-gradient-to-l from-pink-300 to-purple-400 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-pulse-slow" style={{animationDelay: '2s'}}></div>
-      </div>
+    <section className={`py-20 px-4 md:px-8 ${className}`}>
+      <div className="max-w-7xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+          {/* Left Column - Content */}
+          <div className="space-y-8">
+            {/* Headline with gradient */}
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight">
+              <span className="bg-gradient-to-r from-purple-600 to-pink-500 bg-clip-text text-transparent">
+                The Simplest Way to Track Intermittent Fasting
+              </span>
+            </h1>
 
-      <div className="relative max-w-5xl mx-auto text-center">
-        {/* Badge */}
-        <div className="inline-flex items-center gap-2 px-4 py-2 mb-8 bg-white/80 backdrop-blur-sm rounded-full shadow-soft border border-gray-200 animate-fade-in">
-          <span className="text-2xl">⏱️</span>
-          <span className="text-sm font-medium text-gray-700">Track Your Intermittent Fasting</span>
-        </div>
+            {/* Subheading */}
+            <p className="text-lg md:text-xl text-gray-600 leading-relaxed">
+              Join 10,000+ people who are transforming their health with effortless fasting tracking. 
+              No complicated features—just simple, effective progress monitoring.
+            </p>
 
-        {/* Main Headline */}
-        <h1 
-          id="hero-heading" 
-          className="text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight mb-6 animate-slide-up"
-          style={{animationDelay: '0.1s'}}
-        >
-          Take Control of Your{' '}
-          <span className="gradient-text">
-            Fasting Journey
-          </span>
-        </h1>
+            {/* Trust Indicators */}
+            <div className="flex flex-wrap gap-6 items-center">
+              <TrustBadge 
+                indicator={trustIndicators.rating} 
+                variant="inline"
+                size="md"
+              />
+              <TrustBadge 
+                indicator={trustIndicators.userCount} 
+                variant="inline"
+                size="md"
+              />
+            </div>
 
-        {/* Subheadline */}
-        <p 
-          className="text-xl sm:text-2xl text-gray-600 max-w-3xl mx-auto mb-12 leading-relaxed animate-slide-up"
-          style={{animationDelay: '0.2s'}}
-        >
-          Track your fasting windows, monitor your progress, and achieve your health goals 
-          with our intuitive fasting tracker. Start your transformation today.
-        </p>
+            {/* CTAs */}
+            <div className="flex flex-col sm:flex-row gap-4">
+              <GradientButton
+                onClick={handlePrimaryCTA}
+                variant="primary"
+                size="lg"
+                ariaLabel={primaryCTA.ariaLabel}
+              >
+                {primaryCTA.text}
+              </GradientButton>
 
-        {/* CTA Buttons */}
-        <div 
-          className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-16 animate-slide-up"
-          style={{animationDelay: '0.3s'}}
-        >
-          <Link 
-            href="/register" 
-            className="btn btn-primary text-lg px-8 py-4 w-full sm:w-auto"
-          >
-            Get Started Free →
-          </Link>
-          <Link 
-            href="/features" 
-            className="btn btn-secondary text-lg px-8 py-4 w-full sm:w-auto"
-          >
-            Learn More
-          </Link>
-        </div>
-
-        {/* Feature Highlights */}
-        <div 
-          className="grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-3xl mx-auto animate-fade-in"
-          style={{animationDelay: '0.4s'}}
-        >
-          <div className="flex flex-col items-center gap-3 p-6 bg-white/50 backdrop-blur-sm rounded-2xl shadow-soft hover:shadow-soft-lg transition-all hover:-translate-y-1">
-            <span className="text-4xl">⏱️</span>
-            <span className="text-sm font-semibold text-gray-700">Easy Tracking</span>
-            <span className="text-xs text-gray-500">Log fasts in seconds</span>
+              <GradientButton
+                onClick={handleSecondaryCTA}
+                variant="secondary"
+                size="lg"
+                ariaLabel={ctaConfig.secondary.ariaLabel}
+              >
+                {ctaConfig.secondary.text}
+              </GradientButton>
+            </div>
           </div>
-          <div className="flex flex-col items-center gap-3 p-6 bg-white/50 backdrop-blur-sm rounded-2xl shadow-soft hover:shadow-soft-lg transition-all hover:-translate-y-1">
-            <span className="text-4xl">📊</span>
-            <span className="text-sm font-semibold text-gray-700">Progress Insights</span>
-            <span className="text-xs text-gray-500">See your streaks</span>
-          </div>
-          <div className="flex flex-col items-center gap-3 p-6 bg-white/50 backdrop-blur-sm rounded-2xl shadow-soft hover:shadow-soft-lg transition-all hover:-translate-y-1">
-            <span className="text-4xl">🎯</span>
-            <span className="text-sm font-semibold text-gray-700">Goal Setting</span>
-            <span className="text-xs text-gray-500">Achieve your targets</span>
+
+          {/* Right Column - Hero Image */}
+          <div className="relative">
+            <div className="relative aspect-[4/3] w-full rounded-2xl overflow-hidden shadow-2xl bg-gradient-to-br from-purple-500 via-pink-500 to-indigo-500">
+              {/* Placeholder content */}
+              <div className="absolute inset-0 flex flex-col items-center justify-center text-white p-8 text-center">
+                <div className="text-6xl mb-4">⏱️</div>
+                <div className="text-2xl font-bold mb-2">Fasting Timer</div>
+                <div className="text-lg opacity-90">Track your progress with ease</div>
+              </div>
+              {/* Decorative elements */}
+              <div className="absolute top-8 right-8 w-24 h-24 rounded-full bg-white/20 backdrop-blur-sm" />
+              <div className="absolute bottom-8 left-8 w-32 h-32 rounded-2xl bg-white/20 backdrop-blur-sm" />
+            </div>
+            {/* Decorative gradient blur */}
+            <div className="absolute -z-10 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[120%] bg-gradient-to-br from-purple-400/20 to-pink-400/20 blur-3xl rounded-full" />
           </div>
         </div>
       </div>
     </section>
   );
-}
+};
+
+export default Hero;

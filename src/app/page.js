@@ -1,5 +1,10 @@
-﻿import Hero from '@/components/organisms/Hero';
+﻿import { auth } from '@/lib/auth';
+import Hero from '@/components/organisms/Hero';
+import SocialProofSection from '@/components/organisms/SocialProofSection';
+import ProblemSolutionSection from '@/components/organisms/ProblemSolutionSection';
 import FeaturesList from '@/components/organisms/FeaturesList';
+import HowItWorksSection from '@/components/organisms/HowItWorksSection';
+import FinalCTASection from '@/components/organisms/FinalCTASection';
 
 /**
  * HomePage - Public Marketing Page
@@ -62,7 +67,11 @@ export const metadata = {
   },
 };
 
-export default function Home() {
+export default async function Home() {
+  // Get authentication status
+  const session = await auth();
+  const isAuthenticated = !!session;
+
   // Structured data (JSON-LD) for search engines
   const structuredData = {
     '@context': 'https://schema.org',
@@ -124,8 +133,23 @@ export default function Home() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
       />
       
-      <Hero />
+      {/* Hero Section - Primary value proposition with auth-aware CTAs */}
+      <Hero isAuthenticated={isAuthenticated} />
+      
+      {/* Social Proof Section - Build trust with testimonials and ratings */}
+      <SocialProofSection />
+      
+      {/* Problem/Solution Section - Address pain points and show solutions */}
+      <ProblemSolutionSection />
+      
+      {/* Features Showcase - Specific measurable benefits */}
       <FeaturesList />
+      
+      {/* How It Works - 3-step simple process */}
+      <HowItWorksSection />
+      
+      {/* Final CTA - Conversion optimization with compelling copy */}
+      <FinalCTASection />
     </>
   );
 }
