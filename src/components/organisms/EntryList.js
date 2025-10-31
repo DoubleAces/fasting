@@ -97,101 +97,103 @@ export default function EntryList({
 
   // Table view
   return (
-    <div className={`overflow-x-auto ${className}`}>
-      <table className="min-w-full bg-white border border-gray-200 rounded-lg">
-        <thead className="bg-gray-50 border-b border-gray-200">
-          <tr>
+    <div className={`overflow-x-auto -mx-6 ${className}`}>
+      <table className="min-w-full">
+        <thead>
+          <tr className="border-b-2 border-gray-200 bg-gray-50/50">
             {/* Always visible: Date */}
-            <th className="px-2 md:px-4 py-2 md:py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+            <th className="px-4 md:px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
               Date
             </th>
             {/* Hidden on mobile: First Meal */}
-            <th className="hidden md:table-cell px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+            <th className="hidden md:table-cell px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
               First Meal
             </th>
             {/* Hidden on mobile: Last Meal */}
-            <th className="hidden md:table-cell px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+            <th className="hidden md:table-cell px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
               Last Meal
             </th>
             {/* Always visible: Fasting */}
-            <th className="px-2 md:px-4 py-2 md:py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+            <th className="px-4 md:px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
               Fasting
             </th>
             {/* Hidden on mobile: Weight */}
-            <th className="hidden md:table-cell px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+            <th className="hidden md:table-cell px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
               Weight
             </th>
             {/* Hidden on mobile: Sleep */}
-            <th className="hidden md:table-cell px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+            <th className="hidden md:table-cell px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
               Sleep
             </th>
             {/* Hidden on mobile: Ratings */}
-            <th className="hidden md:table-cell px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+            <th className="hidden md:table-cell px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
               Ratings
             </th>
             {/* Always visible: Actions */}
-            <th className="px-2 md:px-4 py-2 md:py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">
+            <th className="px-4 md:px-6 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">
               Actions
             </th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-gray-200">
+        <tbody>
           {entries.map((entry) => (
             <tr 
               key={entry._id}
-              className="hover:bg-gray-50 transition-colors group"
+              className="border-b border-gray-200 hover:bg-gradient-to-r hover:from-purple-100/50 hover:to-pink-100/50 transition-all group"
               data-testid="entry-row"
             >
               {/* Date - wrapped in Link - Always visible */}
-              <td className="px-2 md:px-4 py-2 md:py-3 whitespace-nowrap">
+              <td className="px-4 md:px-6 py-4 whitespace-nowrap">
                 <Link 
                   href={`/entries/${entry._id}`}
                   prefetch={true}
-                  className="block text-sm md:text-base font-medium text-gray-900 hover:text-blue-600 min-h-[44px] flex items-center"
+                  className="block text-sm md:text-base font-medium text-gray-900 hover:text-purple-600 transition-colors min-h-[44px] flex items-center"
                 >
                   {format(parseISO(entry.date), 'dd/MM/yyyy')}
                 </Link>
               </td>
 
               {/* First Meal Time - wrapped in Link - Hidden on mobile */}
-              <td className="hidden md:table-cell px-4 py-3 whitespace-nowrap">
+              <td className="hidden md:table-cell px-6 py-4 whitespace-nowrap">
                 <Link 
                   href={`/entries/${entry._id}`}
                   prefetch={true}
-                  className="block text-sm text-gray-900"
+                  className="block text-sm text-gray-600 hover:text-purple-600 transition-colors"
                 >
                   {formatTime(entry.firstMealTime)}
                 </Link>
               </td>
 
               {/* Last Meal Time - wrapped in Link - Hidden on mobile */}
-              <td className="hidden md:table-cell px-4 py-3 whitespace-nowrap">
+              <td className="hidden md:table-cell px-6 py-4 whitespace-nowrap">
                 <Link 
                   href={`/entries/${entry._id}`}
                   prefetch={true}
-                  className="block text-sm text-gray-900"
+                  className="block text-sm text-gray-600 hover:text-purple-600 transition-colors"
                 >
                   {formatTime(entry.lastMealTime)}
                 </Link>
               </td>
 
               {/* Fasting Duration - wrapped in Link - Always visible */}
-              <td className="px-2 md:px-4 py-2 md:py-3 whitespace-nowrap">
+              <td className="px-4 md:px-6 py-4 whitespace-nowrap">
                 <Link 
                   href={`/entries/${entry._id}`}
                   prefetch={true}
-                  className="block text-sm md:text-base font-semibold text-green-600 min-h-[44px] flex items-center"
+                  className="block min-h-[44px] flex items-center"
                 >
-                  {formatFastingDuration(entry.fastingDuration)}
+                  <span className="text-sm md:text-base font-semibold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
+                    {formatFastingDuration(entry.fastingDuration)}
+                  </span>
                 </Link>
               </td>
 
               {/* Morning Weight - wrapped in Link - Hidden on mobile */}
-              <td className="hidden md:table-cell px-4 py-3 whitespace-nowrap">
+              <td className="hidden md:table-cell px-6 py-4 whitespace-nowrap">
                 <Link 
                   href={`/entries/${entry._id}`}
                   prefetch={true}
-                  className="block text-sm text-gray-900"
+                  className="block text-sm text-gray-600 hover:text-purple-600 transition-colors"
                 >
                   {entry.morningWeight 
                     ? `${entry.morningWeight} ${weightUnit}` 
@@ -200,24 +202,24 @@ export default function EntryList({
               </td>
 
               {/* Hours of Sleep - wrapped in Link - Hidden on mobile */}
-              <td className="hidden md:table-cell px-4 py-3 whitespace-nowrap">
+              <td className="hidden md:table-cell px-6 py-4 whitespace-nowrap">
                 <Link 
                   href={`/entries/${entry._id}`}
                   prefetch={true}
-                  className="block text-sm text-gray-900"
+                  className="block text-sm text-gray-600 hover:text-purple-600 transition-colors"
                 >
                   {entry.hoursOfSleep ? `${entry.hoursOfSleep}h` : '-'}
                 </Link>
               </td>
 
               {/* Ratings - wrapped in Link - Hidden on mobile */}
-              <td className="hidden md:table-cell px-4 py-3">
+              <td className="hidden md:table-cell px-6 py-4">
                 <Link 
                   href={`/entries/${entry._id}`}
                   prefetch={true}
                   className="block"
                 >
-                  <div className="flex flex-col gap-1 text-xs text-gray-600">
+                  <div className="flex flex-col gap-1 text-xs text-gray-500">
                     {entry.hungerLevel && (
                       <span>H: {entry.hungerLevel}</span>
                     )}
@@ -235,35 +237,31 @@ export default function EntryList({
               </td>
 
               {/* Actions - NOT wrapped in Link to prevent navigation - Always visible */}
-              <td className="px-2 md:px-4 py-2 md:py-3 whitespace-nowrap text-right">
+              <td className="px-4 md:px-6 py-4 whitespace-nowrap text-right">
                 <div className="flex gap-2 justify-end">
                   {onEdit && (
-                    <Button
-                      variant="secondary"
-                      size="sm"
+                    <button
                       onClick={(e) => {
                         e.stopPropagation();
                         onEdit(entry);
                       }}
                       aria-label={`Edit entry from ${format(parseISO(entry.date), 'MMM d, yyyy')}`}
-                      className="min-h-[44px]"
+                      className="px-4 py-2 text-sm font-medium text-gray-700 bg-white/50 hover:bg-white border border-gray-200 rounded-lg transition-all hover:shadow-md min-h-[44px]"
                     >
                       Edit
-                    </Button>
+                    </button>
                   )}
                   {onDelete && (
-                    <Button
-                      variant="danger"
-                      size="sm"
+                    <button
                       onClick={(e) => {
                         e.stopPropagation();
                         onDelete(entry._id);
                       }}
                       aria-label={`Delete entry from ${format(parseISO(entry.date), 'MMM d, yyyy')}`}
-                      className="min-h-[44px]"
+                      className="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 rounded-lg transition-all hover:shadow-md min-h-[44px]"
                     >
                       Delete
-                    </Button>
+                    </button>
                   )}
                 </div>
               </td>

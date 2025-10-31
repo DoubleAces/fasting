@@ -215,67 +215,75 @@ export default function EntriesPage() {
 
   return (
     <FastingGoalProvider>
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-purple-50">
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-indigo-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {/* Live Fasting Timer */}
-        {activeFast && (
-          <FastingTimerCard 
-            lastMealTime={activeFast.lastMealTime}
-            date={activeFast.date}
-            isActive={activeFast.isActive}
-          />
-        )}
+          {activeFast && (
+            <div className="mb-8">
+              <FastingTimerCard 
+                lastMealTime={activeFast.lastMealTime}
+                date={activeFast.date}
+                isActive={activeFast.isActive}
+              />
+            </div>
+          )}
 
-        {/* Create/Edit Entry Form */}
-        {showForm ? (
-          <div className="bg-white rounded-2xl shadow-soft p-6 mb-8">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">
-              {editingEntry ? 'Edit Entry' : 'Create New Entry'}
-            </h2>
-            <EntryForm
-              entry={editingEntry}
-              onSuccess={handleFormSuccess}
-              onCancel={handleFormCancel}
-            />
-          </div>
-        ) : (
-          <div className="mb-8">
-            <Button
-              variant="primary"
-              onClick={() => setShowForm(true)}
-              className="inline-flex items-center gap-2"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-              </svg>
-              Create New Entry
-            </Button>
-          </div>
-        )}
+          {/* Create/Edit Entry Form */}
+          {showForm ? (
+            <div className="backdrop-blur-md bg-white/70 rounded-2xl shadow-xl border border-white/20 p-6 mb-8">
+              <h2 className="text-2xl font-bold bg-gradient-to-r from-purple-600 via-pink-600 to-indigo-600 bg-clip-text text-transparent mb-6">
+                {editingEntry ? 'Edit Entry' : 'Create New Entry'}
+              </h2>
+              <EntryForm
+                key={editingEntry?._id || 'new'}
+                entry={editingEntry}
+                onSuccess={handleFormSuccess}
+                onCancel={handleFormCancel}
+              />
+            </div>
+          ) : (
+            <div className="mb-6">
+              <button
+                onClick={() => setShowForm(true)}
+                className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold rounded-xl transition-all transform hover:scale-105 shadow-lg"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+                Create New Entry
+              </button>
+            </div>
+          )}
 
-        {/* Entries List */}
-        <div className="bg-white rounded-2xl shadow-soft p-6">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">Your Fasting Entries</h2>
-          <EntryList
-            entries={entries}
-            settings={settings}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-            loading={loading}
-            error={error}
-          />
+          {/* Entries List */}
+          <div className="backdrop-blur-md bg-white/70 rounded-2xl shadow-xl border border-white/20 overflow-hidden">
+            <div className="p-6 border-b border-gray-100">
+              <h2 className="text-2xl font-bold bg-gradient-to-r from-purple-600 via-pink-600 to-indigo-600 bg-clip-text text-transparent">
+                Your Fasting Entries
+              </h2>
+            </div>
+            <div className="p-6">
+              <EntryList
+                entries={entries}
+                settings={settings}
+                onEdit={handleEdit}
+                onDelete={handleDelete}
+                loading={loading}
+                error={error}
+              />
+            </div>
+          </div>
         </div>
-      </div>
 
-      {/* Delete Confirmation Modal */}
-      <DeleteConfirmationModal
-        isOpen={deleteModal.isOpen}
-        onClose={handleCloseDeleteModal}
-        onConfirm={handleConfirmDelete}
-        extendedFastInfo={deleteModal.extendedFastInfo}
-        isDeleting={deleteModal.isDeleting}
-      />
-    </div>
+        {/* Delete Confirmation Modal */}
+        <DeleteConfirmationModal
+          isOpen={deleteModal.isOpen}
+          onClose={handleCloseDeleteModal}
+          onConfirm={handleConfirmDelete}
+          extendedFastInfo={deleteModal.extendedFastInfo}
+          isDeleting={deleteModal.isDeleting}
+        />
+      </div>
     </FastingGoalProvider>
   );
 }

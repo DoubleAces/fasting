@@ -737,31 +737,35 @@ const EntryForm = ({
     <form onSubmit={handleSubmit} className="space-y-6">
       {/* API Error Display */}
       {apiError && (
-        <ErrorMessage id="api-error" showIcon>
-          {apiError}
-        </ErrorMessage>
+        <div className="p-4 bg-red-50 border border-red-200 rounded-xl">
+          <ErrorMessage id="api-error" showIcon>
+            {apiError}
+          </ErrorMessage>
+        </div>
       )}
 
       {/* Date Field */}
-      <DateInput
-        id="entry-date"
-        label="Date"
-        value={formData.date}
-        onChange={handleChange('date')}
-        onBlur={handleBlur('date')}
-        error={errors.date}
-        required
-        max={getTodayISO()}
-      />
+      <div className="space-y-2">
+        <DateInput
+          id="entry-date"
+          label="Date"
+          value={formData.date}
+          onChange={handleChange('date')}
+          onBlur={handleBlur('date')}
+          error={errors.date}
+          required
+          max={getTodayISO()}
+        />
+      </div>
 
       {/* T023: Extended Fast Confirmation Prompt REMOVED - now shown inline at bottom */}
 
       {/* Show confirmation when extended fast from previous is confirmed */}
       {formData.extendedFastFromPreviousConfirmed && gapInfo?.fromPreviousFasting && !showExtendedFastPrompt && gapInfo.previousEntry && (
-        <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
-          <div className="flex items-center gap-2">
-            <span className="text-lg" role="img" aria-label="Check">✅</span>
-            <p className="text-sm text-green-800">
+        <div className="p-4 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl shadow-sm">
+          <div className="flex items-center gap-3">
+            <span className="text-2xl" role="img" aria-label="Check">✅</span>
+            <p className="text-sm text-green-800 font-medium">
               Extended fast confirmed ({gapInfo.fromPreviousFasting.formatted}) - fasting duration will be calculated from{' '}
               {new Date(gapInfo.previousEntry.date).toLocaleDateString('en-GB', {
                 day: '2-digit',
@@ -775,7 +779,7 @@ const EntryForm = ({
       )}
 
       {/* Meal Times */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <TimeInput
           id="first-meal-time"
           label="First Meal Time"
@@ -800,7 +804,7 @@ const EntryForm = ({
       </div>
 
       {/* Health Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <FormField
           id="hours-of-sleep"
           label="Hours of Sleep"
@@ -874,7 +878,7 @@ const EntryForm = ({
       {/* T029: aria-live announces button changes to screen readers */}
       {/* T049: Mobile-first form layout - buttons stack vertically on mobile, horizontal on desktop */}
       <div 
-        className="flex flex-col gap-3 pt-4 border-t border-gray-200"
+        className="flex flex-col gap-4 pt-6 border-t-2 border-gray-200"
         aria-live="polite"
         aria-atomic="true"
       >
@@ -891,91 +895,81 @@ const EntryForm = ({
         */}
         {showExtendedFastPrompt && gapInfo && currentPromptType ? (
           // Extended fast detected: Show question text and all buttons below
-          <>
+          <div className="space-y-4">
             {/* Extended Fast Question Text */}
-            <div className="text-sm text-gray-700 flex items-start gap-2">
-              <span className="text-lg flex-shrink-0" role="img" aria-label="Question">🤔</span>
-              <span className="font-medium">
-                {currentPromptType === 'from-previous' && gapInfo.fromPreviousFasting && (
-                  <>
-                    Extended fast detected ({gapInfo.fromPreviousFasting.formatted}):<br />
-                    {formatDateToDayMonth(gapInfo.previousEntry.date)} at {formatTimeByPreference(gapInfo.previousEntry.lastMealTime, timeFormat)} → {formatDateToDayMonth(formData.date)} at {formatTimeByPreference(formData.firstMealTime, timeFormat)}. Did you fast continuously?
-                  </>
-                )}
-                {currentPromptType === 'to-next' && gapInfo.toNextFasting && gapInfo.nextEntry && (
-                  <>
-                    Extended fast detected ({gapInfo.toNextFasting.formatted}):<br />
-                    {formatDateToDayMonth(formData.date)} at {formatTimeByPreference(formData.lastMealTime, timeFormat)} → {formatDateToDayMonth(gapInfo.nextEntry.date)} at {formatTimeByPreference(gapInfo.nextEntry.firstMealTime, timeFormat)}. Did you fast continuously?
-                  </>
-                )}
-              </span>
+            <div className="p-4 bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200 rounded-xl">
+              <div className="text-sm text-gray-700 flex items-start gap-3">
+                <span className="text-2xl flex-shrink-0" role="img" aria-label="Question">🤔</span>
+                <span className="font-medium">
+                  {currentPromptType === 'from-previous' && gapInfo.fromPreviousFasting && (
+                    <>
+                      Extended fast detected ({gapInfo.fromPreviousFasting.formatted}):<br />
+                      {formatDateToDayMonth(gapInfo.previousEntry.date)} at {formatTimeByPreference(gapInfo.previousEntry.lastMealTime, timeFormat)} → {formatDateToDayMonth(formData.date)} at {formatTimeByPreference(formData.firstMealTime, timeFormat)}. Did you fast continuously?
+                    </>
+                  )}
+                  {currentPromptType === 'to-next' && gapInfo.toNextFasting && gapInfo.nextEntry && (
+                    <>
+                      Extended fast detected ({gapInfo.toNextFasting.formatted}):<br />
+                      {formatDateToDayMonth(formData.date)} at {formatTimeByPreference(formData.lastMealTime, timeFormat)} → {formatDateToDayMonth(gapInfo.nextEntry.date)} at {formatTimeByPreference(gapInfo.nextEntry.firstMealTime, timeFormat)}. Did you fast continuously?
+                    </>
+                  )}
+                </span>
+              </div>
             </div>
             
             {/* All buttons in one row: Cancel + Confirmation Buttons - T029: aria-live, T030: mobile responsive */}
             {/* T049: Full-width buttons on mobile (flex-col), auto-width on desktop (md:flex-row) */}
-            <div className="flex flex-col md:flex-row gap-2 md:justify-end">
+            <div className="flex flex-col md:flex-row gap-3 md:justify-end">
               {onCancel && (
-                <Button
+                <button
                   type="button"
-                  variant="outline"
                   onClick={onCancel}
                   disabled={isSubmitting}
-                  className="w-full md:w-auto"
+                  className="w-full md:w-auto px-6 py-3 text-sm font-medium text-gray-700 bg-white border-2 border-gray-300 rounded-xl hover:bg-gray-50 transition-all disabled:opacity-50"
                 >
                   Cancel
-                </Button>
+                </button>
               )}
-              <Button
+              <button
                 type="button"
-                variant="primary"
-                size="sm"
                 onClick={handleExtendedFastConfirmAndSave}
                 disabled={isSubmitting}
-                loading={isSubmitting}
-                className="w-full md:w-auto"
+                className="w-full md:w-auto px-6 py-3 text-sm font-semibold text-white bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 rounded-xl transition-all transform hover:scale-105 shadow-lg disabled:opacity-50"
               >
                 {isSubmitting ? 'Saving...' : 'Yes, confirm extended fast'}
-              </Button>
-              <Button
+              </button>
+              <button
                 type="button"
-                variant="secondary"
-                size="sm"
                 onClick={handleExtendedFastDenyAndSave}
                 disabled={isSubmitting}
-                loading={isSubmitting}
-                className="w-full md:w-auto"
+                className="w-full md:w-auto px-6 py-3 text-sm font-semibold text-gray-700 bg-white border-2 border-gray-300 rounded-xl hover:bg-gray-50 transition-all disabled:opacity-50"
               >
                 {isSubmitting ? 'Saving...' : "No, I ate but didn't log"}
-              </Button>
+              </button>
             </div>
-          </>
+          </div>
         ) : (
           // Normal submit button (when no extended fast confirmation needed)
           // T049: Full-width buttons on mobile (flex-col), auto-width on desktop (md:flex-row)
-          <>
-          <div className="flex flex-col md:flex-row gap-4 md:justify-end">
+          <div className="flex flex-col md:flex-row gap-3 md:justify-end">
             {onCancel && (
-              <Button
+              <button
                 type="button"
-                variant="outline"
                 onClick={onCancel}
                 disabled={isSubmitting}
-                className="w-full md:w-auto"
+                className="w-full md:w-auto px-6 py-3 text-sm font-medium text-gray-700 bg-white border-2 border-gray-300 rounded-xl hover:bg-gray-50 transition-all disabled:opacity-50"
               >
                 Cancel
-              </Button>
+              </button>
             )}
-            <Button
+            <button
               type="submit"
-              variant="primary"
               disabled={isSubmitting}
-              loading={isSubmitting}
-              className="w-full md:w-auto"
+              className="w-full md:w-auto px-6 py-3 text-sm font-semibold text-white bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 rounded-xl transition-all transform hover:scale-105 shadow-lg disabled:opacity-50"
             >
               {isSubmitting ? 'Saving...' : isEditMode ? 'Update Entry' : 'Save Entry'}
-            </Button>
+            </button>
           </div>
-          </>
         )}
       </div>
     </form>
