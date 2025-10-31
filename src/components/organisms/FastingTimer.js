@@ -1,6 +1,9 @@
+'use client';
+
 /**
  * FastingTimer Component
  * Main container that integrates the timer hook and display
+ * Redesigned for dashboard with glassmorphic theme
  */
 
 import React from 'react';
@@ -24,39 +27,44 @@ export default function FastingTimer({ lastMealTime, date, isActive }) {
   if (!formattedTime) return null;
 
   return (
-    <div className="flex flex-col items-center text-center">
-      <h2 className="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-4">
-        {isActive ? 'Fasting for' : 'Fast Completed'}
-      </h2>
-      
-      <TimerDisplay 
-        formattedTime={formattedTime} 
-        milestone={currentMilestone}
-      />
-      
-      {!isActive && (
-        <p className="mt-4 text-sm text-gray-500 dark:text-gray-400">
-          Great job! Your fast has ended.
+    <div className="space-y-6">
+      {/* Timer Display Section */}
+      <div className="text-center">
+        <p className="text-gray-500 text-sm mb-3">
+          {isActive ? 'Fasting for' : 'Fast Completed'}
         </p>
-      )}
-
-      {/* Show GoalProgressDisplay if actively fasting and goal is set (T042, T043, T044, T058) */}
-      {isActive && goalMinutes && (
-        <GoalProgressDisplay 
-          elapsedMs={elapsedMs}
-          lastMealTime={lastMealTime}
-          date={date}
+        
+        <TimerDisplay 
+          formattedTime={formattedTime} 
+          milestone={currentMilestone}
         />
+        
+        {!isActive && (
+          <p className="mt-4 text-sm text-gray-500">
+            Great job! Your fast has ended.
+          </p>
+        )}
+      </div>
+
+      {/* Goal Progress Section */}
+      {isActive && goalMinutes && (
+        <div className="pt-4 border-t border-gray-100">
+          <GoalProgressDisplay 
+            elapsedMs={elapsedMs}
+            lastMealTime={lastMealTime}
+            date={date}
+          />
+        </div>
       )}
 
-      {/* Always show GoalSettingPanel when actively fasting to allow goal changes (T024, T025, T080) */}
+      {/* Goal Setting Section */}
       {isActive && (
-        <div className="mt-6 w-full max-w-md">
-          <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
-            {goalMinutes 
-              ? `Current goal: ${(goalMinutes / 60).toFixed(1)} hours. Change your goal below:` 
-              : 'Set a goal to track your progress'}
-          </p>
+        <div className="pt-4 border-t border-gray-100">
+          {!goalMinutes && (
+            <p className="text-center text-sm text-gray-600 mb-4">
+              Set a goal to track your progress
+            </p>
+          )}
           <GoalSettingPanel />
         </div>
       )}

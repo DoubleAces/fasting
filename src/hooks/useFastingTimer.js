@@ -1,3 +1,5 @@
+'use client';
+
 /**
  * Custom hook for managing fasting timer state
  * Updates every 60 seconds when active

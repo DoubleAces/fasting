@@ -26,7 +26,7 @@ export default function AdminNotFound() {
       {/* Actions */}
       <div className="flex gap-4">
         <Link
-          href="/dashboard"
+          href="/admin"
           className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
         >
           Back to Dashboard

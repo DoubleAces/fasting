@@ -4,8 +4,8 @@
  * Admin dashboard page for monitoring application performance.
  * Displays cache statistics, API performance metrics, and system health.
  * 
- * Route: /dashboard/performance
- * Access: Admin only (enforced by dashboard layout)
+ * Route: /admin/performance
+ * Access: Admin only (enforced by admin layout)
  */
 
 import PerformanceMetrics from '@/components/admin/PerformanceMetrics';

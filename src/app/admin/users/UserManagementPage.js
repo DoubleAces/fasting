@@ -113,7 +113,7 @@ export default function UserManagementPage({ initialData, currentUserId }) {
    */
   const updateURL = useCallback(() => {
     const queryString = buildQueryString();
-    router.push(`/dashboard/users?${queryString}`, { scroll: false });
+    router.push(`/admin/users?${queryString}`, { scroll: false });
   }, [buildQueryString, router]);
 
   // ========================================================================

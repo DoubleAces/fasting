@@ -27,7 +27,7 @@ export default function TimerDisplay({ formattedTime, milestone }) {
   const readableTime = `${days > 0 ? `${days} ${pluralize(days, 'day')}, ` : ''}${hours} ${pluralize(hours, 'hour')}, ${minutes} ${pluralize(minutes, 'minute')}`;
 
   return (
-    <div className="flex flex-col items-center gap-2">
+    <div className="flex flex-col items-center gap-4">
       {/* ARIA live region for timer updates (polite = non-disruptive) */}
       <div 
         aria-live="polite" 
@@ -37,37 +37,45 @@ export default function TimerDisplay({ formattedTime, milestone }) {
         Fasting duration: {readableTime}
       </div>
 
+      {/* Timer Display */}
       <time 
         dateTime={datetimeValue}
         role="timer"
         aria-label={`Fasting duration: ${readableTime}`}
-        className="flex items-baseline gap-2 text-3xl font-bold text-gray-900 dark:text-gray-100"
+        className="flex flex-wrap items-center justify-center gap-3 text-5xl md:text-6xl font-bold bg-gradient-to-r from-purple-600 via-pink-600 to-indigo-600 bg-clip-text text-transparent"
       >
         {days > 0 && (
           <>
-            <span className="tabular-nums">{days}</span>
-            <span className="text-lg font-medium text-gray-600 dark:text-gray-400">
-              {pluralize(days, 'day')}
-            </span>
+            <div className="flex items-baseline gap-2">
+              <span className="tabular-nums">{days}</span>
+              <span className="text-xl md:text-2xl font-medium text-gray-500">
+                {pluralize(days, 'day')}
+              </span>
+            </div>
           </>
         )}
-        <span className="tabular-nums">{hours}</span>
-        <span className="text-lg font-medium text-gray-600 dark:text-gray-400">
-          {pluralize(hours, 'hour')}
-        </span>
-        <span className="tabular-nums">{minutes}</span>
-        <span className="text-lg font-medium text-gray-600 dark:text-gray-400">
-          {pluralize(minutes, 'minute')}
-        </span>
+        <div className="flex items-baseline gap-2">
+          <span className="tabular-nums">{hours}</span>
+          <span className="text-xl md:text-2xl font-medium text-gray-500">
+            {pluralize(hours, 'hour')}
+          </span>
+        </div>
+        <div className="flex items-baseline gap-2">
+          <span className="tabular-nums">{minutes}</span>
+          <span className="text-xl md:text-2xl font-medium text-gray-500">
+            {pluralize(minutes, 'minute')}
+          </span>
+        </div>
       </time>
 
+      {/* Milestone Badge */}
       {milestone && (
         <span 
-          className="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-sm"
+          className="inline-flex items-center px-4 py-2 rounded-full text-sm font-semibold bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-lg"
           role="status"
           aria-label={`Milestone achieved: ${milestone}`}
         >
-          <span aria-hidden="true">🎉 </span>
+          <span aria-hidden="true" className="text-base mr-2">🎉</span>
           {milestone}
         </span>
       )}

@@ -7,15 +7,16 @@
  * 3. Redirects authenticated users away from auth pages
  * 
  * Protected Routes:
+ * - /dashboard - User dashboard (requires authentication)
  * - /entries - Requires authentication
  * - /settings - Requires authentication
  * 
  * Auth Routes (redirect if already authenticated):
- * - /login - Redirect to /entries if authenticated
- * - /register - Redirect to /entries if authenticated
+ * - /login - Redirect to /dashboard if authenticated
+ * - /register - Redirect to /dashboard if authenticated
  * 
  * Public Routes (no authentication required):
- * - / - Homepage
+ * - / - Homepage (redirects to /dashboard if authenticated)
  * - /faq - FAQ page
  * - /reset-password - Password reset page
  * - /api/auth/* - NextAuth endpoints
@@ -31,15 +32,15 @@ import { logSecurityEvent, getClientIP } from '@/lib/utils/securityLogger';
 /**
  * Define protected routes that require authentication
  */
-const protectedRoutes = ['/entries', '/settings'];
+const protectedRoutes = ['/dashboard', '/entries', '/settings'];
 
 /**
  * Define admin routes that require admin privileges
  */
-const adminRoutes = ['/dashboard'];
+const adminRoutes = ['/admin'];
 
 /**
- * Define auth routes that should redirect to /entries if already authenticated
+ * Define auth routes that should redirect to /dashboard if already authenticated
  */
 const authRoutes = ['/login', '/register'];
 
@@ -169,13 +170,20 @@ export default async function middleware(request) {
   }
 
   // CASE 3: Auth route with authentication
-  // Redirect to /entries (user is already logged in)
+  // Redirect to /dashboard (user is already logged in)
   if (isAuthRoute && isAuthenticated) {
-    console.log('🟢 Redirecting to /entries - auth route with authentication');
-    return NextResponse.redirect(new URL('/entries', request.url));
+    console.log('🟢 Redirecting to /dashboard - auth route with authentication');
+    return NextResponse.redirect(new URL('/dashboard', request.url));
   }
 
-  // CASE 4: Public route or allowed route
+  // CASE 4: Homepage with authentication
+  // Redirect authenticated users to /dashboard
+  if (pathname === '/' && isAuthenticated) {
+    console.log('🟢 Redirecting to /dashboard - authenticated user on homepage');
+    return NextResponse.redirect(new URL('/dashboard', request.url));
+  }
+
+  // CASE 5: Public route or allowed route
   // Continue to the requested page
   return NextResponse.next();
 }

@@ -138,21 +138,19 @@ export function GoalProgressDisplay({ elapsedMs, lastMealTime, date }) {
     progressData;
 
   return (
-    <div className="w-full max-w-md mt-6">
+    <div className="w-full space-y-4">
       {/* Progress text with percentage (T035, T037) */}
-      <div className="flex items-center justify-between mb-2">
-        <div className="text-sm font-medium text-gray-700 dark:text-gray-300">
+      <div className="flex items-center justify-between">
+        <div className="text-sm font-medium text-gray-600">
           {elapsedDisplay} / {goalDisplay}
         </div>
-        <div
-          className={`text-sm font-semibold ${exceeded ? "text-green-600 dark:text-green-400" : "text-blue-600 dark:text-blue-400"}`}
-        >
+        <div className={`text-sm font-bold ${exceeded ? "text-green-600" : "bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent"}`}>
           {percentage}%
         </div>
       </div>
 
       {/* Progress bar container (T036) */}
-      <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3 overflow-hidden">
+      <div className="w-full bg-gray-100 rounded-full h-4 overflow-hidden shadow-inner">
         {/* Progress bar fill with ARIA attributes (T040) */}
         <div
           role="progressbar"
@@ -162,8 +160,8 @@ export function GoalProgressDisplay({ elapsedMs, lastMealTime, date }) {
           aria-label={`Fasting progress: ${percentage}% complete`}
           className={`h-full rounded-full transition-all duration-1000 ease-out ${
             exceeded
-              ? "bg-green-500 dark:bg-green-600"
-              : "bg-blue-500 dark:bg-blue-600"
+              ? "bg-gradient-to-r from-green-500 to-emerald-500"
+              : "bg-gradient-to-r from-purple-500 via-pink-500 to-indigo-500"
           }`}
           style={{ width: `${barWidth}%` }}
         />
@@ -171,18 +169,18 @@ export function GoalProgressDisplay({ elapsedMs, lastMealTime, date }) {
 
       {/* Goal exceeded message with icon (T038, T039) */}
       {exceeded && (
-        <div className="flex items-center justify-center mt-3 text-green-600 dark:text-green-400">
-          <CheckCircle className="w-5 h-5 mr-2" />
+        <div className="flex items-center justify-center gap-2 text-green-600 bg-green-50 px-4 py-2 rounded-lg">
+          <CheckCircle className="w-5 h-5" />
           <span className="text-sm font-semibold">Goal Exceeded!</span>
         </div>
       )}
 
       {/* Completion time display (T054, T055, T056) */}
-      {completionTime && (
-        <div className="mt-3 text-center">
-          <p className="text-sm text-gray-600 dark:text-gray-400">
+      {completionTime && !exceeded && (
+        <div className="text-center">
+          <p className="text-xs text-gray-500">
             Goal reached at:{" "}
-            <span className="font-semibold text-gray-800 dark:text-gray-200">
+            <span className="font-semibold text-gray-700">
               {completionTime}
             </span>
           </p>

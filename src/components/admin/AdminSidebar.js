@@ -20,28 +20,28 @@ export default function AdminSidebar({ user }) {
   const navItems = [
     {
       name: 'Dashboard',
-      href: '/dashboard',
+      href: '/admin',
       icon: LayoutDashboard,
     },
     {
       name: 'Users',
-      href: '/dashboard/users',
+      href: '/admin/users',
       icon: Users,
     },
     {
       name: 'Performance',
-      href: '/dashboard/performance',
+      href: '/admin/performance',
       icon: Activity,
     },
     {
       name: 'Content',
-      href: '/dashboard/content',
+      href: '/admin/content',
       icon: FileText,
       comingSoon: true,
     },
     {
       name: 'Settings',
-      href: '/dashboard/settings',
+      href: '/admin/settings',
       icon: Settings,
       comingSoon: true,
     },

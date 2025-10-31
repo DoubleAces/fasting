@@ -23,11 +23,15 @@ const entrySchema = new mongoose.Schema(
     },
 
     // Meal timing (stored in 24-hour HH:mm format)
+    // firstMealTime is optional to support active fasts (lastMealTime set, firstMealTime null)
     firstMealTime: {
       type: String,
-      required: [true, 'First meal time is required'],
+      required: false,
+      default: null,
       validate: {
         validator: function (v) {
+          // Allow null for active fasts
+          if (v === null || v === undefined) return true;
           return /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/.test(v);
         },
         message: 'First meal time must be in HH:mm format (e.g., 12:00 or 09:30)',

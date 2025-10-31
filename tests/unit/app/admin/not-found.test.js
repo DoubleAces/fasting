@@ -5,7 +5,7 @@
  */
 
 import { render, screen } from '@testing-library/react';
-import AdminNotFound from '@/app/dashboard/not-found';
+import AdminNotFound from '@/app/admin/not-found';
 
 describe('Admin Dashboard Not Found Page', () => {
   it('should render 404 heading', () => {
@@ -27,7 +27,7 @@ describe('Admin Dashboard Not Found Page', () => {
     
     const dashboardLink = screen.getByRole('link', { name: /back to dashboard/i });
     expect(dashboardLink).toBeInTheDocument();
-    expect(dashboardLink).toHaveAttribute('href', '/dashboard');
+    expect(dashboardLink).toHaveAttribute('href', '/admin');
   });
 
   it('should include link to homepage', () => {

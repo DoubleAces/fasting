@@ -2,7 +2,7 @@
  * ConditionalLayout Component
  * 
  * Conditionally renders Navbar/Footer based on the current route.
- * Hides them for admin routes (/dashboard).
+ * Hides them for admin routes (/admin).
  */
 
 'use client';
@@ -13,7 +13,7 @@ import Footer from './organisms/Footer';
 
 export default function ConditionalLayout({ children }) {
   const pathname = usePathname();
-  const isAdminRoute = pathname?.startsWith('/dashboard');
+  const isAdminRoute = pathname?.startsWith('/admin');
 
   if (isAdminRoute) {
     // Admin routes - no navbar/footer, full height

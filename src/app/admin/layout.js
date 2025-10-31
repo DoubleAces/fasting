@@ -1,7 +1,7 @@
 /**
  * Admin Dashboard Layout
  * 
- * Root layout for /dashboard routes.
+ * Root layout for /admin routes.
  * Wraps all admin pages with AdminLayout component.
  * This is a completely separate layout from the public site.
  */

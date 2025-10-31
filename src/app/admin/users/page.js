@@ -41,11 +41,11 @@ export default async function AdminUsersPage({ searchParams }) {
 
   // Redirect if not authenticated or not admin
   if (!session || !session.user) {
-    redirect('/login?redirect=/dashboard/users');
+    redirect('/login?redirect=/admin/users');
   }
 
   if (!session.user.isAdmin) {
-    redirect('/dashboard'); // Regular users go to dashboard
+    redirect('/'); // Regular users go to homepage
   }
 
   // ========================================================================

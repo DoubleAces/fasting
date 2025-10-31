@@ -45,6 +45,8 @@ Auto-generated from all feature plans. Last updated: 2025-10-17
 - N/A (no backend/database changes) (022-mobile-ux-improvements)
 - JavaScript (ES6+) / React 18 / Next.js 14+ (App Router) + React 18, Next.js 14, Tailwind CSS 3.x, NextAuth.js (023-homepage-redesign)
 - N/A (presentational feature, no new data storage) (023-homepage-redesign)
+- JavaScript (ES6+) with Next.js 15.5.6 and React 18 + Next.js (App Router), NextAuth v5, Mongoose (MongoDB ODM), Recharts 2.12.7, Tailwind CSS, date-fns (024-user-dashboard)
+- MongoDB (existing Entry collection, no schema changes required) (024-user-dashboard)
 
 ## Project Structure
 ```
@@ -60,9 +62,9 @@ npm test; npm run lint
 JavaScript ES6+ with Node.js 18+ (Next.js 14+): Follow standard conventions
 
 ## Recent Changes
+- 024-user-dashboard: Added JavaScript (ES6+) with Next.js 15.5.6 and React 18 + Next.js (App Router), NextAuth v5, Mongoose (MongoDB ODM), Recharts 2.12.7, Tailwind CSS, date-fns
 - 023-homepage-redesign: Added JavaScript (ES6+) / React 18 / Next.js 14+ (App Router) + React 18, Next.js 14, Tailwind CSS 3.x, NextAuth.js
 - 022-mobile-ux-improvements: Added JavaScript (ES6+) with Next.js 15.5.6, React 19.1.0 + Tailwind CSS 4.0 (responsive utilities), Next.js App Router, React
-- 021-toast-notifications: Added JavaScript (ES6+) with React 19.1.0, Next.js 15.5.6 (App Router) + Next.js, React, Tailwind CSS, lucide-react (icons for close button)
 
 <!-- MANUAL ADDITIONS START -->
 <!-- MANUAL ADDITIONS END -->

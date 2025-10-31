@@ -15,6 +15,7 @@
  * - Real-time validation (1-168 hours range)
  * - Mobile-optimized: 44px minimum touch targets, inputMode="decimal"
  * - Accessible: ARIA labels, error associations, keyboard navigation
+ * - Collapsible when goal is active (show/hide with "Change Goal" button)
  *
  * **Validation Rules:**
  * - Minimum: 1 hour
@@ -56,6 +57,7 @@ import { useToast } from "@/contexts/ToastContext";
  * - Input validation (1-168 hours range)
  * - Mobile-first: 44px+ touch targets, inputMode="decimal"
  * - Error display with ARIA associations
+ * - Collapsible interface when goal is active
  *
  * @returns {JSX.Element}
  */
@@ -67,9 +69,17 @@ export function GoalSettingPanel() {
   
   const [customHours, setCustomHours] = useState("");
   const [error, setError] = useState("");
+  const [manuallyExpanded, setManuallyExpanded] = useState(false);
+  const [manuallyCollapsed, setManuallyCollapsed] = useState(false);
 
   // Calculate current goal in hours for display
   const currentGoalHours = goalMinutes ? (goalMinutes / 60).toFixed(1) : null;
+
+  // Determine if panel should be expanded
+  // - Always expanded if no goal exists
+  // - Collapsed if goal exists, unless user manually expanded it
+  // - Respect manual collapse/expand actions
+  const isExpanded = manuallyExpanded || (!goalMinutes && !manuallyCollapsed);
 
   /**
    * Validate goal hours input
@@ -113,6 +123,8 @@ export function GoalSettingPanel() {
     setGoal(minutes);
     setError(""); // Clear any errors
     setCustomHours(""); // Clear custom input
+    setManuallyExpanded(false); // Collapse after setting goal
+    setManuallyCollapsed(false);
     
     // T023: Show success toast
     showSuccess(`Fasting goal set to ${hours} hours`);
@@ -128,9 +140,12 @@ export function GoalSettingPanel() {
       setGoal(validation.minutes);
       setError("");
       setCustomHours(""); // Clear input after successful submission
+      setManuallyExpanded(false); // Collapse after setting goal
+      setManuallyCollapsed(false);
       
       // T023: Show success toast
-      showSuccess(`Fasting goal set to ${validation.hours} hours`);
+      const hours = (validation.minutes / 60).toFixed(1);
+      showSuccess(`Fasting goal set to ${hours} hours`);
     } else {
       setError(validation.errorMessage);
     }
@@ -149,97 +164,126 @@ export function GoalSettingPanel() {
   const errorId = "goal-input-error";
 
   return (
-    <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 space-y-4">
-      {/* Current goal display */}
-      {currentGoalHours && (
-        <div className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-          Current goal: {currentGoalHours} hours
+    <div className="space-y-4">
+      {/* Show "Change Goal" button when goal is active and collapsed */}
+      {goalMinutes && !isExpanded && (
+        <div className="text-center">
+          <button
+            type="button"
+            onClick={() => {
+              setManuallyExpanded(true);
+              setManuallyCollapsed(false);
+            }}
+            className="px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold rounded-lg transition-all transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 shadow-md"
+          >
+            Change Goal
+          </button>
         </div>
       )}
 
-      {/* Preset buttons in 2x2 grid */}
-      <div className="grid grid-cols-2 gap-3">
-        <button
-          type="button"
-          onClick={() => handlePresetClick(12)}
-          className="h-12 min-h-[44px] px-4 bg-blue-500 hover:bg-blue-600 active:bg-blue-700 text-white font-semibold rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2"
-          aria-label="Set 12 hour goal"
-        >
-          12h
-        </button>
+      {/* Show goal setting options when expanded or no goal set */}
+      {isExpanded && (
+        <>
+          {/* Preset buttons in 2x2 grid */}
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              type="button"
+              onClick={() => handlePresetClick(12)}
+              className="h-12 min-h-[44px] px-4 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold rounded-lg transition-all transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 shadow-md"
+              aria-label="Set 12 hour goal"
+            >
+              12h
+            </button>
 
-        <button
-          type="button"
-          onClick={() => handlePresetClick(16)}
-          className="h-12 min-h-[44px] px-4 bg-blue-500 hover:bg-blue-600 active:bg-blue-700 text-white font-semibold rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2"
-          aria-label="Set 16 hour goal"
-        >
-          16h
-        </button>
+            <button
+              type="button"
+              onClick={() => handlePresetClick(16)}
+              className="h-12 min-h-[44px] px-4 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold rounded-lg transition-all transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 shadow-md"
+              aria-label="Set 16 hour goal"
+            >
+              16h
+            </button>
 
-        <button
-          type="button"
-          onClick={() => handlePresetClick(18)}
-          className="h-12 min-h-[44px] px-4 bg-blue-500 hover:bg-blue-600 active:bg-blue-700 text-white font-semibold rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2"
-          aria-label="Set 18 hour goal"
-        >
-          18h
-        </button>
+            <button
+              type="button"
+              onClick={() => handlePresetClick(18)}
+              className="h-12 min-h-[44px] px-4 bg-gradient-to-r from-pink-500 to-indigo-500 hover:from-pink-600 hover:to-indigo-600 text-white font-semibold rounded-lg transition-all transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-pink-400 focus:ring-offset-2 shadow-md"
+              aria-label="Set 18 hour goal"
+            >
+              18h
+            </button>
 
-        <button
-          type="button"
-          onClick={() => handlePresetClick(24)}
-          className="h-12 min-h-[44px] px-4 bg-blue-500 hover:bg-blue-600 active:bg-blue-700 text-white font-semibold rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2"
-          aria-label="Set 24 hour goal"
-        >
-          24h
-        </button>
-      </div>
-
-      {/* Custom input section */}
-      <div className="space-y-2">
-        <div className="flex gap-2">
-          <input
-            type="text"
-            inputMode="decimal"
-            placeholder="Custom hours"
-            value={customHours}
-            onChange={(e) => {
-              setCustomHours(e.target.value);
-              if (error) setError(""); // Clear error on change
-            }}
-            onKeyDown={handleKeyDown}
-            className="flex-1 h-12 min-h-[44px] px-4 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 dark:bg-gray-700 dark:text-white"
-            aria-describedby={error ? errorId : undefined}
-            aria-invalid={error ? "true" : "false"}
-          />
-
-          <button
-            type="button"
-            onClick={handleCustomGoalSubmit}
-            className="h-12 min-h-[44px] px-6 bg-green-500 hover:bg-green-600 active:bg-green-700 text-white font-semibold rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-green-400 focus:ring-offset-2"
-          >
-            Set Goal
-          </button>
-        </div>
-
-        {/* Error message */}
-        {error && (
-          <div
-            id={errorId}
-            className="text-sm text-red-600 dark:text-red-400"
-            role="alert"
-          >
-            {error}
+            <button
+              type="button"
+              onClick={() => handlePresetClick(24)}
+              className="h-12 min-h-[44px] px-4 bg-gradient-to-r from-pink-500 to-indigo-500 hover:from-pink-600 hover:to-indigo-600 text-white font-semibold rounded-lg transition-all transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-pink-400 focus:ring-offset-2 shadow-md"
+              aria-label="Set 24 hour goal"
+            >
+              24h
+            </button>
           </div>
-        )}
-      </div>
 
-      {/* Help text */}
-      <p className="text-xs text-gray-500 dark:text-gray-400">
-        Set a fasting goal between 1 and 168 hours (7 days). You can change your
-        goal anytime during your fast.
-      </p>
+          {/* Custom input section */}
+          <div className="space-y-2">
+            <div className="flex gap-2">
+              <input
+                type="text"
+                inputMode="decimal"
+                placeholder="Custom hours"
+                value={customHours}
+                onChange={(e) => {
+                  setCustomHours(e.target.value);
+                  if (error) setError(""); // Clear error on change
+                }}
+                onKeyDown={handleKeyDown}
+                className="flex-1 h-12 min-h-[44px] px-4 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent bg-white placeholder-gray-400 transition-all"
+                aria-describedby={error ? errorId : undefined}
+                aria-invalid={error ? "true" : "false"}
+              />
+
+              <button
+                type="button"
+                onClick={handleCustomGoalSubmit}
+                className="h-12 min-h-[44px] px-6 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white font-semibold rounded-lg transition-all transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-green-400 focus:ring-offset-2 shadow-md"
+              >
+                Set Goal
+              </button>
+            </div>
+
+            {/* Error message */}
+            {error && (
+              <div
+                id={errorId}
+                className="text-sm text-red-600 bg-red-50 px-3 py-2 rounded-lg"
+                role="alert"
+              >
+                {error}
+              </div>
+            )}
+          </div>
+
+          {/* Help text */}
+          <p className="text-xs text-gray-500 text-center">
+            Set a fasting goal between 1 and 168 hours (7 days)
+          </p>
+
+          {/* Cancel button when goal is active */}
+          {goalMinutes && (
+            <div className="text-center">
+              <button
+                type="button"
+                onClick={() => {
+                  setManuallyExpanded(false);
+                  setManuallyCollapsed(false);
+                }}
+                className="text-sm text-gray-500 hover:text-gray-700 underline"
+              >
+                Cancel
+              </button>
+            </div>
+          )}
+        </>
+      )}
     </div>
   );
 }

@@ -20,7 +20,7 @@
  * @param {string} requestedUrl - URL user is trying to access (for callback)
  * @returns {Object} { allowed: boolean, redirect: string|null }
  */
-export function checkAdminAccess(session, requestedUrl = '/dashboard') {
+export function checkAdminAccess(session, requestedUrl = '/admin') {
   // No session = unauthenticated -> redirect to login
   if (!session || !session.user) {
     const encodedCallback = encodeURIComponent(requestedUrl);
