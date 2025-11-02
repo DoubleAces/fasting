@@ -6,17 +6,32 @@ A daily fasting and health metrics tracking application built with Next.js 14+, 
 
 - 📊 Track daily fasting windows with automatic duration calculation
 - 🏋️ Monitor health metrics (weight, sleep, energy, hunger, well-being)
-- 📝 Record food intake notes
+- 📝 Record food intake notes with expandable display (auto-truncates >300 characters)
 - 📈 View historical data and trends
-- 🔍 **Entry Details with Personal Insights**:
+- 🎨 **Beautiful Entry Details Page (Feature 025)**:
+  - Glassmorphic design with gradient backgrounds and soft blur effects
   - Comprehensive view of all entry data with visual timeline
+  - Share button with Web Share API (native sharing on mobile/desktop)
+  - Edit/Delete action buttons with proper confirmation flows
+  - Entry navigation with prev/next arrows and keyboard shortcuts (← →)
+  - Responsive performance: <300ms cached page loads, ISR with 5-min revalidate
+  - Smart date display for midnight-crossing fasts (shows dates when needed)
+- 🔍 **Personal Insights & Comparisons**:
   - Personalized insights comparing each entry to your history
   - Historical ranking (e.g., "Your #3 longest fast")
   - Monthly achievements (longest fast this month)
-  - Average duration comparisons
+  - Average duration comparisons (overall, last 30 days, same day-of-week)
   - Typical breakfast time patterns
-  - Daily streak tracking
+  - Daily streak tracking with current/longest streaks
   - "Best Day" badges for exceptional performance
+  - Automatic unlock at 5+ entries (shows empty state before threshold)
+- 🚀 **Performance & Caching**:
+  - ISR (Incremental Static Regeneration) with 5-minute page revalidation
+  - 30-minute insights cache with automatic invalidation
+  - 1-hour settings cache for user preferences
+  - Server-side performance logging with detailed metrics
+  - Aggressive cache revalidation on mutations (entries, dashboard, insights)
+  - Target: <500ms page load (200-300ms with cache hits)
 - ⚙️ Configurable measurement units (metric/imperial) and time formats (12h/24h)
 - 📱 **Mobile-Optimized UX**:
   - Responsive 3-column table on mobile (Date, Duration, Actions)
@@ -25,6 +40,7 @@ A daily fasting and health metrics tracking application built with Next.js 14+, 
   - Mobile-friendly forms with vertical stacking and full-width buttons
   - 44px minimum touch targets (WCAG AA compliant)
   - Responsive breakpoint: 768px (mobile < 768px, desktop ≥ 768px)
+  - Native share sheet on mobile devices via Web Share API
 - ♿ WCAG 2.1 Level AA accessible
 
 ## Tech Stack
