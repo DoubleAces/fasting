@@ -58,9 +58,7 @@ function generateShareText(entry) {
     durationMs = new Date(entry.endTime).getTime() - new Date(entry.startTime).getTime();
   }
   
-  const isLongFast = durationMs && durationMs > (24 * 60 * 60 * 1000); // > 24 hours
-  
-  // Meal Times - show full date-time for fasts > 24h, otherwise just times
+  // Meal Times - show full date-time if fast crosses midnight or is > 24h
   // The fasting window is BETWEEN two entries:
   // - Start of fast: previousEntry.lastMealTime (from previousEntryLastMealTime field)
   // - End of fast: currentEntry.firstMealTime
@@ -94,16 +92,21 @@ function generateShareText(entry) {
         fastStartDate.setHours(parseInt(lastHour), parseInt(lastMin), 0, 0);
       }
       
-      if (isLongFast && fastStartDate) {
-        // Show full date-time for long fasts
-        const startStr = format(fastStartDate, 'MMM d, h:mm a');
-        const endStr = format(fastEndDate, 'MMM d, h:mm a');
-        lines.push(`🕐 ${startStr} - ${endStr}`);
-      } else if (fastStartDate) {
-        // Show just times for short fasts
-        const startTime = format(fastStartDate, 'HH:mm');
-        const endTime = format(fastEndDate, 'HH:mm');
-        lines.push(`🕐 ${startTime} - ${endTime}`);
+      if (fastStartDate) {
+        // Check if fast crosses midnight (different dates)
+        const crossesMidnight = fastStartDate.toDateString() !== fastEndDate.toDateString();
+        
+        if (crossesMidnight) {
+          // Show full date-time when crossing midnight
+          const startStr = format(fastStartDate, 'MMM d, h:mm a');
+          const endStr = format(fastEndDate, 'MMM d, h:mm a');
+          lines.push(`🕐 ${startStr} - ${endStr}`);
+        } else {
+          // Show just times for same-day fasts
+          const startTime = format(fastStartDate, 'HH:mm');
+          const endTime = format(fastEndDate, 'HH:mm');
+          lines.push(`🕐 ${startTime} - ${endTime}`);
+        }
       }
     } catch (e) {
       // Fallback to simple times
@@ -117,7 +120,10 @@ function generateShareText(entry) {
       const startDate = new Date(entry.startTime);
       const endDate = new Date(entry.endTime);
       
-      if (isLongFast) {
+      // Check if fast crosses midnight
+      const crossesMidnight = startDate.toDateString() !== endDate.toDateString();
+      
+      if (crossesMidnight) {
         const startStr = format(startDate, 'MMM d, h:mm a');
         const endStr = format(endDate, 'MMM d, h:mm a');
         lines.push(`🕐 ${startStr} - ${endStr}`);
