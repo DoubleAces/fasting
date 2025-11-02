@@ -7,7 +7,7 @@
 
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import Badge from '@/components/atoms/Badge';
 import TimeDisplay from '@/components/atoms/TimeDisplay';
 import FastingTimeline from '@/components/molecules/FastingTimeline';
@@ -15,6 +15,54 @@ import EntryMetadata from '@/components/molecules/EntryMetadata';
 import EntryActions from '@/components/organisms/EntryActions';
 import InsightsSection from '@/components/organisms/InsightsSection';
 import ComparisonSection from '@/components/organisms/ComparisonSection';
+
+/**
+ * FoodNotesExpandable Component
+ * Shows truncated notes with "Read more" button for long content (>300 chars)
+ */
+const FoodNotesExpandable = ({ notes }) => {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const CHAR_LIMIT = 300;
+  
+  if (!notes || notes.length <= CHAR_LIMIT) {
+    return (
+      <p className="text-gray-700 whitespace-pre-wrap leading-relaxed">
+        {notes}
+      </p>
+    );
+  }
+  
+  const truncatedNotes = notes.substring(0, CHAR_LIMIT) + '...';
+  
+  return (
+    <div>
+      <p className="text-gray-700 whitespace-pre-wrap leading-relaxed">
+        {isExpanded ? notes : truncatedNotes}
+      </p>
+      <button
+        onClick={() => setIsExpanded(!isExpanded)}
+        className="mt-3 text-purple-600 hover:text-purple-700 font-medium text-sm transition-colors flex items-center gap-1"
+        aria-expanded={isExpanded}
+      >
+        {isExpanded ? (
+          <>
+            <span>Show less</span>
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+            </svg>
+          </>
+        ) : (
+          <>
+            <span>Read more</span>
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </>
+        )}
+      </button>
+    </div>
+  );
+};
 
 const EntryDetailsView = ({ entry, settings, insights, comparisons }) => {
   if (!entry) return null;
@@ -287,7 +335,7 @@ const EntryDetailsView = ({ entry, settings, insights, comparisons }) => {
         </div>
       </section>
 
-      {/* Food notes with glassmorphic styling */}
+      {/* Food notes with glassmorphic styling and expandable content */}
       <section>
         <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
           <span>📝</span>
@@ -295,9 +343,7 @@ const EntryDetailsView = ({ entry, settings, insights, comparisons }) => {
         </h2>
         <div className="bg-gradient-to-br from-gray-50/80 to-slate-50/80 backdrop-blur-sm rounded-xl p-5 border border-gray-100/50 shadow-soft">
           {entry.foodNotes ? (
-            <p className="text-gray-700 whitespace-pre-wrap leading-relaxed">
-              {entry.foodNotes}
-            </p>
+            <FoodNotesExpandable notes={entry.foodNotes} />
           ) : (
             <p className="text-gray-400 italic">
               No food notes logged for this entry
