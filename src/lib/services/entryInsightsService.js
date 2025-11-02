@@ -307,9 +307,9 @@ async function calculateInsightsOptimized(entry, userId) {
   // Extract data from facets
   const facets = result[0];
   
-  // Check if we have sufficient data (5+ entries for development, 10+ for production)
+  // Check if we have sufficient data (5+ entries required)
   const totalEntriesCount = facets.rankData[0]?.totalCount || 0;
-  const minEntries = process.env.NODE_ENV === 'production' ? 10 : 5;
+  const minEntries = 5;
   if (totalEntriesCount < minEntries) {
     console.log(`[Insights] Insufficient data: ${totalEntriesCount} entries (need ${minEntries})`);
     return null; // Insufficient data for meaningful insights
