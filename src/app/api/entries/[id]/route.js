@@ -238,9 +238,10 @@ export const PUT = withErrorHandler(async (request, { params }) => {
     // Invalidate insights caches for all affected entries
     await invalidateInsightsForEntries(session.user.id, affectedIds);
     
-    // Revalidate Next.js cache for entry pages
-    revalidatePath('/entries');
-    revalidatePath(`/entries/${id}`);
+    // Revalidate Next.js cache for entry pages and dashboard
+    revalidatePath('/entries', 'layout');
+    revalidatePath(`/entries/${id}`, 'page');
+    revalidatePath('/dashboard', 'page');
     
     console.log('✅ Caches invalidated for updated entry');
   } catch (cacheError) {
@@ -404,9 +405,10 @@ export const DELETE = withErrorHandler(async (request, { params }) => {
       await invalidateInsightsForEntry(session.user.id, nextEntry._id);
     }
     
-    // Revalidate Next.js cache for entry pages
-    revalidatePath('/entries');
-    revalidatePath(`/entries/${id}`);
+    // Revalidate Next.js cache for entry pages and dashboard
+    revalidatePath('/entries', 'layout');
+    revalidatePath(`/entries/${id}`, 'page');
+    revalidatePath('/dashboard', 'page');
     
     console.log('✅ Caches invalidated for deleted entry');
   } catch (cacheError) {

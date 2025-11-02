@@ -314,9 +314,10 @@ export const POST = withErrorHandler(async (request) => {
       await invalidateInsightsForEntry(session.user.id, nextEntry._id);
     }
     
-    // Revalidate Next.js cache for entry list and detail pages
-    revalidatePath('/entries');
-    revalidatePath(`/entries/${entry._id}`);
+    // Revalidate Next.js cache for entry list, detail pages, and dashboard
+    revalidatePath('/entries', 'layout');
+    revalidatePath(`/entries/${entry._id}`, 'page');
+    revalidatePath('/dashboard', 'page');
     
     console.log('✅ Caches invalidated for new entry');
   } catch (cacheError) {
