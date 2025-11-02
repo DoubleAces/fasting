@@ -164,7 +164,10 @@ export default async function DashboardPage() {
           <RecentFastsList entries={serializedRecentEntries} />
         </section>
 
-        {/* Timer removed - chart section replaced */}
+        {/* Progress Chart Section */}
+        <section aria-label="30-day progress chart" className="mb-8">
+          <DashboardChart entries={serializedChartEntries} />
+        </section>
 
         {/* Quick Actions Section */}
         <section aria-label="Quick action buttons">

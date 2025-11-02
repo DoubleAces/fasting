@@ -220,6 +220,85 @@ async function calculateInsightsOptimized(entry, userId) {
           {
             $limit: 1
           }
+        ],
+        
+        // Facet 6: Weekend vs Weekday Pattern (last 30 days)
+        weekendVsWeekday: [
+          {
+            $match: {
+              date: { $gte: thirtyDaysAgo, $lte: now },
+              fastingDuration: { $ne: null },
+            }
+          },
+          {
+            $project: {
+              fastingDuration: 1,
+              // Calculate day of week (0=Sunday, 6=Saturday)
+              dayOfWeek: { $dayOfWeek: '$date' }
+            }
+          },
+          {
+            $group: {
+              _id: null,
+              weekendDurations: {
+                $push: {
+                  $cond: [
+                    { $in: ['$dayOfWeek', [1, 7]] }, // Sunday or Saturday
+                    '$fastingDuration',
+                    '$$REMOVE'
+                  ]
+                }
+              },
+              weekdayDurations: {
+                $push: {
+                  $cond: [
+                    { $in: ['$dayOfWeek', [2, 3, 4, 5, 6]] }, // Monday-Friday
+                    '$fastingDuration',
+                    '$$REMOVE'
+                  ]
+                }
+              },
+              count: { $sum: 1 }
+            }
+          }
+        ],
+        
+        // Facet 7: Typical duration for deviation calculation (last 30 days)
+        typicalDuration: [
+          {
+            $match: {
+              date: { $gte: thirtyDaysAgo, $lte: now },
+              fastingDuration: { $ne: null },
+            }
+          },
+          {
+            $group: {
+              _id: null,
+              durations: { $push: '$fastingDuration' },
+              count: { $sum: 1 }
+            }
+          }
+        ],
+        
+        // Facet 8: Current streak calculation (consecutive days)
+        streakData: [
+          {
+            $match: {
+              date: { $lte: entry.date },
+            }
+          },
+          {
+            $sort: { date: -1 }
+          },
+          {
+            $limit: 60 // Check last 60 days for streak
+          },
+          {
+            $project: {
+              date: 1,
+              fastingDuration: 1
+            }
+          }
         ]
       }
     }
@@ -227,6 +306,16 @@ async function calculateInsightsOptimized(entry, userId) {
 
   // Extract data from facets
   const facets = result[0];
+  
+  // Check if we have sufficient data (5+ entries for development, 10+ for production)
+  const totalEntriesCount = facets.rankData[0]?.totalCount || 0;
+  const minEntries = process.env.NODE_ENV === 'production' ? 10 : 5;
+  if (totalEntriesCount < minEntries) {
+    console.log(`[Insights] Insufficient data: ${totalEntriesCount} entries (need ${minEntries})`);
+    return null; // Insufficient data for meaningful insights
+  }
+  
+  console.log(`[Insights] Calculating insights for entry with ${totalEntriesCount} total entries`);
   
   // Process longest this month
   const longestData = facets.longestThisMonth[0];
@@ -271,8 +360,89 @@ async function calculateInsightsOptimized(entry, userId) {
 
   // Calculate best day
   const isBestDayResult = isBestDay(entry, averageDuration);
+  
+  // ===== NEW: Process weekend vs weekday pattern =====
+  let weekendVsWeekdayPattern = null;
+  const weekendWeekdayData = facets.weekendVsWeekday[0];
+  if (weekendWeekdayData && weekendWeekdayData.count >= 10) {
+    const weekendDurations = weekendWeekdayData.weekendDurations || [];
+    const weekdayDurations = weekendWeekdayData.weekdayDurations || [];
+    
+    if (weekendDurations.length > 0 && weekdayDurations.length > 0) {
+      const weekendAvg = weekendDurations.reduce((a, b) => a + b, 0) / weekendDurations.length;
+      const weekdayAvg = weekdayDurations.reduce((a, b) => a + b, 0) / weekdayDurations.length;
+      
+      weekendVsWeekdayPattern = {
+        weekendAvg: Math.round(weekendAvg),
+        weekdayAvg: Math.round(weekdayAvg),
+        difference: Math.round(weekendAvg - weekdayAvg)
+      };
+    }
+  }
+  
+  // ===== NEW: Process deviation from typical duration =====
+  let deviationFromTypical = null;
+  const typicalData = facets.typicalDuration[0];
+  if (typicalData && typicalData.count >= 10) {
+    const durations = typicalData.durations;
+    // Calculate median for typical duration (more robust than mean)
+    const sortedDurations = [...durations].sort((a, b) => a - b);
+    const middleIndex = Math.floor(sortedDurations.length / 2);
+    const typicalDuration = sortedDurations.length % 2 === 0
+      ? Math.round((sortedDurations[middleIndex - 1] + sortedDurations[middleIndex]) / 2)
+      : sortedDurations[middleIndex];
+    
+    const deviation = entry.fastingDuration - typicalDuration;
+    
+    deviationFromTypical = {
+      typicalDuration,
+      deviation,
+      percentDeviation: Math.round((deviation / typicalDuration) * 100)
+    };
+  }
+  
+  // ===== NEW: Process streak contribution =====
+  let streakContribution = null;
+  const streakEntries = facets.streakData || [];
+  if (streakEntries.length > 0) {
+    // Calculate current streak by checking consecutive days
+    let currentStreak = 0;
+    let lastDate = null;
+    
+    for (const streakEntry of streakEntries) {
+      if (!lastDate) {
+        currentStreak = 1;
+        lastDate = new Date(streakEntry.date);
+      } else {
+        const daysDiff = Math.round((lastDate - new Date(streakEntry.date)) / (1000 * 60 * 60 * 24));
+        if (daysDiff === 1) {
+          currentStreak++;
+          lastDate = new Date(streakEntry.date);
+        } else {
+          break; // Streak broken
+        }
+      }
+    }
+    
+    streakContribution = {
+      currentStreak,
+      continuesStreak: contributesToStreak
+    };
+  }
+  
+  // ===== NEW: Calculate historical ranking percentile =====
+  const percentile = totalEntries > 0 
+    ? Math.round((1 - (rank - 1) / totalEntries) * 100)
+    : 100;
+  
+  const historicalRanking = {
+    rank,
+    totalEntries,
+    percentile
+  };
 
   return {
+    // Legacy properties (kept for backward compatibility)
     isLongestThisMonth,
     rank,
     totalEntries,
@@ -281,7 +451,104 @@ async function calculateInsightsOptimized(entry, userId) {
     typicalBreakfastTime,
     contributesToStreak,
     isBestDay: isBestDayResult,
+    
+    // NEW: Enhanced insights for User Story 2
+    historicalRanking,
+    weekendVsWeekdayPattern,
+    deviationFromTypical,
+    streakContribution,
   };
+}
+
+/**
+ * ============================================================================
+ * COMPARISON STATISTICS (USER STORY 3)
+ * ============================================================================
+ */
+
+/**
+ * Calculate comparison statistics for an entry against period averages
+ * @param {Object} entry - The entry to compare
+ * @param {string} userId - The user ID
+ * @returns {Promise<Object>} Comparison stats for This Month, Last Month, All Time
+ */
+export async function calculateComparisons(entry, userId) {
+  if (!entry.fastingDuration) {
+    return null;
+  }
+
+  try {
+    const currentDate = new Date(entry.date);
+    
+    // Define time periods
+    const thisMonthStart = startOfMonth(currentDate);
+    const thisMonthEnd = endOfMonth(currentDate);
+    
+    const lastMonthStart = startOfMonth(subDays(currentDate, 30));
+    const lastMonthEnd = endOfMonth(subDays(currentDate, 30));
+
+    // Fetch entries for each period (excluding current entry)
+    const [thisMonthEntries, lastMonthEntries, allTimeEntries] = await Promise.all([
+      // This month
+      Entry.find({
+        userId,
+        date: { $gte: thisMonthStart, $lte: thisMonthEnd },
+        _id: { $ne: entry._id },
+        fastingDuration: { $ne: null }
+      }).select('fastingDuration').lean(),
+      
+      // Last month
+      Entry.find({
+        userId,
+        date: { $gte: lastMonthStart, $lte: lastMonthEnd },
+        fastingDuration: { $ne: null }
+      }).select('fastingDuration').lean(),
+      
+      // All time
+      Entry.find({
+        userId,
+        _id: { $ne: entry._id },
+        fastingDuration: { $ne: null }
+      }).select('fastingDuration').lean()
+    ]);
+
+    // Helper function to calculate period stats
+    const calculatePeriodStats = (entries, periodName) => {
+      if (entries.length === 0) {
+        return {
+          period: periodName,
+          average: null,
+          current: entry.fastingDuration,
+          difference: null,
+          percentDifference: null,
+          count: 0
+        };
+      }
+
+      const sum = entries.reduce((acc, e) => acc + e.fastingDuration, 0);
+      const average = Math.round(sum / entries.length);
+      const difference = entry.fastingDuration - average;
+      const percentDifference = (difference / average) * 100;
+
+      return {
+        period: periodName,
+        average,
+        current: entry.fastingDuration,
+        difference,
+        percentDifference,
+        count: entries.length
+      };
+    };
+
+    return {
+      thisMonth: calculatePeriodStats(thisMonthEntries, 'This Month'),
+      lastMonth: calculatePeriodStats(lastMonthEntries, 'Last Month'),
+      allTime: calculatePeriodStats(allTimeEntries, 'All Time')
+    };
+  } catch (error) {
+    console.error('Error calculating comparisons:', error);
+    return null;
+  }
 }
 
 /**

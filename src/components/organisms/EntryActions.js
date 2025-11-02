@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import DeleteConfirmationModal from '@/components/DeleteConfirmationModal';
+import ShareEntryButton from '@/components/molecules/ShareEntryButton';
 
 /**
  * Entry Actions Component
@@ -147,6 +148,9 @@ export default function EntryActions({
             'Edit'
           )}
         </button>
+
+        {/* Share Button */}
+        {isValid && <ShareEntryButton entry={entry} />}
 
         {/* Delete Button */}
         <button

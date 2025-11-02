@@ -16,6 +16,7 @@ import { auth } from '@/lib/auth';
 import { connectDB } from '@/lib/db';
 import Entry from '@/lib/models/Entry';
 import EntryDetailsView from '@/components/organisms/EntryDetailsView';
+import EntryNavigationBar from '@/components/molecules/EntryNavigationBar';
 import { calculateInsights } from '@/lib/services/entryInsightsService';
 import { settingsService } from '@/lib/services/settingsService';
 import { performanceLogger } from '@/lib/utils/performanceLogger';
@@ -105,6 +106,7 @@ export default async function EntryDetailsPage({ params }) {
 
     // Calculate insights for this entry (cached for 30 minutes)
     let insights = null;
+    let comparisons = null;
     try {
       const insightsStartTime = Date.now();
       insights = await calculateInsights(entry, userId);
@@ -120,6 +122,54 @@ export default async function EntryDetailsPage({ params }) {
     } catch (error) {
       console.error('Error calculating insights:', error);
       // Continue without insights - non-critical feature
+    }
+
+    // Calculate comparison statistics (User Story 3)
+    try {
+      const { calculateComparisons } = await import('@/lib/services/entryInsightsService');
+      comparisons = await calculateComparisons(entry, userId);
+    } catch (error) {
+      console.error('Error calculating comparisons:', error);
+      // Continue without comparisons - non-critical feature
+    }
+
+    // Calculate navigation data (User Story 4) - Previous/Next entries
+    let navigation = null;
+    let previousEntryData = null;
+    try {
+      // Get all user entries sorted by date (descending - newest first)
+      const allEntries = await Entry.find({ userId })
+        .select('_id date')
+        .sort({ date: -1 })
+        .lean();
+
+      // Find current entry position
+      const currentIndex = allEntries.findIndex(e => e._id.toString() === entryId);
+      
+      if (currentIndex !== -1) {
+        navigation = {
+          currentPosition: currentIndex + 1,
+          totalEntries: allEntries.length,
+          previousEntry: currentIndex < allEntries.length - 1 
+            ? { id: allEntries[currentIndex + 1]._id.toString(), date: allEntries[currentIndex + 1].date }
+            : null,
+          nextEntry: currentIndex > 0
+            ? { id: allEntries[currentIndex - 1]._id.toString(), date: allEntries[currentIndex - 1].date }
+            : null,
+          currentDate: entry.date
+        };
+        
+        // Fetch full previous entry data for share functionality
+        // Previous entry is the one BEFORE the current entry (chronologically earlier)
+        if (navigation.previousEntry) {
+          previousEntryData = await Entry.findById(navigation.previousEntry.id)
+            .select('lastMealTime')
+            .lean();
+        }
+      }
+    } catch (error) {
+      console.error('Error calculating navigation:', error);
+      // Continue without navigation - non-critical feature
     }
 
     // Calculate total server processing time (Feature 019)
@@ -148,6 +198,8 @@ export default async function EntryDetailsPage({ params }) {
       templateSource: entry.templateSource ? entry.templateSource.toString() : null,
       createdAt: entry.createdAt?.toISOString(),
       updatedAt: entry.updatedAt?.toISOString(),
+      // Include previous entry's last meal time for accurate fast start time in share
+      previousEntryLastMealTime: previousEntryData?.lastMealTime || null,
     };
 
     const serializedSettings = settings ? {
@@ -159,12 +211,15 @@ export default async function EntryDetailsPage({ params }) {
     };
 
     return (
-      <div className="min-h-screen bg-gray-50 py-8 px-4">
-        <div className="max-w-4xl mx-auto">
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-indigo-50">
+        <div className="max-w-4xl mx-auto px-4 py-8">
+          {/* Navigation Bar (User Story 4) */}
+          {navigation && <EntryNavigationBar navigation={navigation} />}
+          
           {/* Back navigation */}
           <Link
             href="/entries"
-            className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 mb-6 transition-colors"
+            className="inline-flex items-center gap-2 text-purple-600 hover:text-purple-700 mb-6 transition-colors font-medium"
           >
             <svg
               className="w-5 h-5"
@@ -187,6 +242,7 @@ export default async function EntryDetailsPage({ params }) {
             entry={serializedEntry}
             settings={serializedSettings}
             insights={insights}
+            comparisons={comparisons}
           />
         </div>
       </div>
