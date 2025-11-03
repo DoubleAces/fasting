@@ -17,38 +17,22 @@ export function calculateElapsedTime(lastMealTime, now, entryDate = null) {
   
   let lastMealDate;
   if (entryDate) {
-    // Parse ISO date string to get YYYY-MM-DD in UTC
-    const isoString = entryDate instanceof Date ? entryDate.toISOString() : entryDate;
-    const dateOnly = isoString.split('T')[0]; // Get "2025-10-24"
-    const [year, month, day] = dateOnly.split('-').map(Number);
+    // Use the date components from entryDate (preserves local timezone)
+    const dateObj = entryDate instanceof Date ? entryDate : new Date(entryDate);
+    const year = dateObj.getFullYear();
+    const month = dateObj.getMonth();
+    const day = dateObj.getDate();
     
     // Create date in local timezone with the specified date and time
-    lastMealDate = new Date(year, month - 1, day, hours, minutes, 0, 0);
+    lastMealDate = new Date(year, month, day, hours, minutes, 0, 0);
   } else {
     lastMealDate = new Date();
     lastMealDate.setHours(hours, minutes, 0, 0);
   }
   
-  // Calculate elapsed time accounting for wall-clock time (not actual UTC milliseconds)
-  // This gives the "human perception" of elapsed time, ignoring DST changes
-  const startYear = lastMealDate.getFullYear();
-  const startMonth = lastMealDate.getMonth();
-  const startDay = lastMealDate.getDate();
-  const startHour = lastMealDate.getHours();
-  const startMinute = lastMealDate.getMinutes();
-  
-  const endYear = now.getFullYear();
-  const endMonth = now.getMonth();
-  const endDay = now.getDate();
-  const endHour = now.getHours();
-  const endMinute = now.getMinutes();
-  
-  // Calculate total minutes from start
-  const startTotalMinutes = startYear * 525600 + startMonth * 43200 + startDay * 1440 + startHour * 60 + startMinute;
-  const endTotalMinutes = endYear * 525600 + endMonth * 43200 + endDay * 1440 + endHour * 60 + endMinute;
-  
-  const elapsedMinutes = endTotalMinutes - startTotalMinutes;
-  const elapsed = elapsedMinutes * 60 * 1000; // Convert back to milliseconds
+  // Calculate elapsed time using native Date API
+  // This automatically handles all calendar complexity (month lengths, leap years, etc.)
+  const elapsed = now.getTime() - lastMealDate.getTime();
   
   return elapsed >= 0 ? elapsed : 0;
 }
