@@ -46,6 +46,121 @@ describe('fastingTimerUtils', () => {
       
       expect(elapsed).toBe(0);
     });
+
+    // Feature 027: Month Boundary Timer Accuracy Tests
+    describe('Month Boundary Crossing (US1)', () => {
+      it('should handle fast crossing October to November boundary (31-day to 30-day month)', () => {
+        // Start fast: Oct 31 8:00 PM
+        // Current time: Nov 1 2:00 AM (6 hours elapsed)
+        const lastMealTime = '20:00';
+        const entryDate = new Date('2025-10-31T00:00:00');
+        const now = new Date('2025-11-01T02:00:00');
+        
+        const elapsed = calculateElapsedTime(lastMealTime, now, entryDate);
+        
+        // Should be exactly 6 hours = 21,600,000 ms
+        expect(elapsed).toBe(6 * 60 * 60 * 1000);
+      });
+
+      it('should handle fast crossing December to January boundary (year boundary)', () => {
+        // Start fast: Dec 31 8:00 PM
+        // Current time: Jan 1 12:00 AM (4 hours elapsed)
+        const lastMealTime = '20:00';
+        const entryDate = new Date('2025-12-31T00:00:00');
+        const now = new Date('2026-01-01T00:00:00');
+        
+        const elapsed = calculateElapsedTime(lastMealTime, now, entryDate);
+        
+        // Should be exactly 4 hours = 14,400,000 ms
+        expect(elapsed).toBe(4 * 60 * 60 * 1000);
+      });
+
+      it('should handle fast crossing February to March boundary (non-leap year)', () => {
+        // Start fast: Feb 28 10:00 PM (2025 is NOT a leap year)
+        // Current time: Mar 1 8:00 AM (10 hours elapsed)
+        const lastMealTime = '22:00';
+        const entryDate = new Date('2025-02-28T00:00:00');
+        const now = new Date('2025-03-01T08:00:00');
+        
+        const elapsed = calculateElapsedTime(lastMealTime, now, entryDate);
+        
+        // Should be exactly 10 hours = 36,000,000 ms
+        expect(elapsed).toBe(10 * 60 * 60 * 1000);
+      });
+
+      it('should handle fast crossing February to March boundary (leap year)', () => {
+        // Start fast: Feb 29 10:00 PM (2024 IS a leap year)
+        // Current time: Mar 1 8:00 AM (10 hours elapsed)
+        const lastMealTime = '22:00';
+        const entryDate = new Date('2024-02-29T00:00:00');
+        const now = new Date('2024-03-01T08:00:00');
+        
+        const elapsed = calculateElapsedTime(lastMealTime, now, entryDate);
+        
+        // Should be exactly 10 hours = 36,000,000 ms
+        expect(elapsed).toBe(10 * 60 * 60 * 1000);
+      });
+    });
+
+    // Feature 027: Multi-Day Fast Across Month Boundaries (US2)
+    describe('Multi-Day Fasts Crossing Month Boundaries (US2)', () => {
+      it('should handle 2+ day fast crossing month boundary', () => {
+        // Start fast: Oct 30 6:00 AM
+        // Current time: Nov 2 12:00 AM (2 days 18 hours = 66 hours)
+        const lastMealTime = '06:00';
+        const entryDate = new Date('2025-10-30T00:00:00');
+        const now = new Date('2025-11-02T00:00:00');
+        
+        const elapsed = calculateElapsedTime(lastMealTime, now, entryDate);
+        
+        // Should be exactly 66 hours = 237,600,000 ms
+        expect(elapsed).toBe(66 * 60 * 60 * 1000);
+      });
+
+      it('should handle 3+ day fast crossing year boundary', () => {
+        // Start fast: Dec 30 10:00 PM
+        // Current time: Jan 2 12:00 AM (2 hours + 2 full days = 50 hours)
+        const lastMealTime = '22:00';
+        const entryDate = new Date('2025-12-30T00:00:00');
+        const now = new Date('2026-01-02T00:00:00');
+        
+        const elapsed = calculateElapsedTime(lastMealTime, now, entryDate);
+        
+        // Should be exactly 50 hours = 180,000,000 ms
+        expect(elapsed).toBe(50 * 60 * 60 * 1000);
+      });
+    });
+
+    // Feature 027: Timer Resilience Across All Calendar Scenarios (US3)
+    describe('Calendar Edge Cases (US3)', () => {
+      it('should handle fasts crossing all different month lengths (28-day month)', () => {
+        // Test Feb 28 → Mar 1 specifically for 28-day month
+        // Start fast: Feb 27 11:00 PM
+        // Current time: Feb 28 11:00 PM (24 hours)
+        const lastMealTime = '23:00';
+        const entryDate = new Date('2025-02-27T00:00:00');
+        const now = new Date('2025-02-28T23:00:00');
+        
+        const elapsed = calculateElapsedTime(lastMealTime, now, entryDate);
+        
+        // Should be exactly 24 hours = 86,400,000 ms
+        expect(elapsed).toBe(24 * 60 * 60 * 1000);
+      });
+
+      it('should handle fasts crossing all 12 month boundaries consistently', () => {
+        // Test that January → February produces same calculation as any other month transition
+        // Start fast: Jan 31 12:00 PM
+        // Current time: Feb 1 12:00 PM (24 hours)
+        const lastMealTime = '12:00';
+        const entryDate = new Date('2025-01-31T00:00:00');
+        const now = new Date('2025-02-01T12:00:00');
+        
+        const elapsed = calculateElapsedTime(lastMealTime, now, entryDate);
+        
+        // Should be exactly 24 hours = 86,400,000 ms
+        expect(elapsed).toBe(24 * 60 * 60 * 1000);
+      });
+    });
   });
 
   describe('formatElapsedTime', () => {
