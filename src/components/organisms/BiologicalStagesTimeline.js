@@ -66,6 +66,7 @@ export default function BiologicalStagesTimeline({ elapsedMs }) {
       <div className="space-y-1">
         {FASTING_STAGES.map((stage) => {
           const isCurrent = stage.id === timelineState.currentStageIndex;
+          const isCompleted = stage.id < timelineState.currentStageIndex;
           
           return (
             <div
@@ -75,6 +76,7 @@ export default function BiologicalStagesTimeline({ elapsedMs }) {
               <StageCard
                 stage={stage}
                 isCurrent={isCurrent}
+                isCompleted={isCompleted}
                 progress={isCurrent ? timelineState.progressWithinStage : null}
                 hoursIntoStage={isCurrent ? timelineState.hoursIntoStage : null}
               />

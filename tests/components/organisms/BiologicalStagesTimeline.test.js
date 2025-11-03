@@ -12,35 +12,71 @@ jest.mock('@/hooks/useStageCalculation', () => ({
   useStageCalculation: jest.fn(),
 }));
 
-// Mock the FASTING_STAGES constant
+// Mock the FASTING_STAGES constant (7 stages)
 jest.mock('@/lib/constants/fastingStages', () => ({
   FASTING_STAGES: [
     {
       id: 0,
       hourRangeStart: 0,
       hourRangeEnd: 4,
-      title: 'Fed State',
-      description: 'Body processes nutrients',
-      biologicalProcesses: ['Insulin elevated'],
-      scientificSources: ['Berg'],
+      title: '',
+      description: 'Body processing your last meal',
+      biologicalProcesses: [],
+      scientificSources: [],
     },
     {
       id: 1,
       hourRangeStart: 4,
       hourRangeEnd: 8,
-      title: 'Early Fasting',
-      description: 'Glycogen depleting',
-      biologicalProcesses: ['Insulin drops'],
-      scientificSources: ['Kerndt 1982'],
+      title: '',
+      description: 'Insulin dropping, using stored glucose',
+      biologicalProcesses: [],
+      scientificSources: [],
     },
     {
       id: 2,
       hourRangeStart: 8,
-      hourRangeEnd: 12,
-      title: 'Glycogen Depletion',
-      description: 'Transition to fat',
-      biologicalProcesses: ['Fat oxidation'],
-      scientificSources: ['Rothman 1995'],
+      hourRangeEnd: 16,
+      title: '',
+      description: 'Glycogen stores depleting, switching to fat',
+      biologicalProcesses: [],
+      scientificSources: [],
+    },
+    {
+      id: 3,
+      hourRangeStart: 16,
+      hourRangeEnd: 24,
+      title: '',
+      description: 'Early ketone production beginning',
+      biologicalProcesses: [],
+      scientificSources: [],
+    },
+    {
+      id: 4,
+      hourRangeStart: 24,
+      hourRangeEnd: 48,
+      title: '',
+      description: 'Running on ketones, fat burning optimized',
+      biologicalProcesses: [],
+      scientificSources: [],
+    },
+    {
+      id: 5,
+      hourRangeStart: 48,
+      hourRangeEnd: 72,
+      title: '',
+      description: 'Extended fat burning, cellular cleanup active',
+      biologicalProcesses: [],
+      scientificSources: [],
+    },
+    {
+      id: 6,
+      hourRangeStart: 72,
+      hourRangeEnd: null,
+      title: '',
+      description: 'Prolonged fasting state',
+      biologicalProcesses: [],
+      scientificSources: [],
     },
   ],
 }));
@@ -56,32 +92,39 @@ describe('BiologicalStagesTimeline', () => {
     Element.prototype.scrollIntoView = jest.fn();
   });
 
-  test('should render all 8 stages', () => {
-    // Mock timeline state for 14-hour fast (Early Ketosis)
+  test('should render all 7 stages', () => {
+    // Mock timeline state for 14-hour fast (stage 2: 8-16hrs)
     useStageCalculation.mockReturnValue({
-      currentStageIndex: 1,
-      elapsedHours: 6,
+      currentStageIndex: 2,
+      elapsedHours: 12,
       progressWithinStage: 0.5,
-      hoursIntoStage: 2,
-      stagesCompleted: [FASTING_STAGES[0]],
-      stagesUpcoming: [FASTING_STAGES[2]],
-      currentStage: FASTING_STAGES[1],
+      hoursIntoStage: 4,
+      stagesCompleted: [FASTING_STAGES[0], FASTING_STAGES[1]],
+      stagesUpcoming: [FASTING_STAGES[3], FASTING_STAGES[4], FASTING_STAGES[5], FASTING_STAGES[6]],
+      currentStage: FASTING_STAGES[2],
     });
 
-    render(<BiologicalStagesTimeline elapsedMs={6 * 60 * 60 * 1000} />);
+    render(<BiologicalStagesTimeline elapsedMs={12 * 60 * 60 * 1000} />);
     
-    // Check that mocked stages are rendered (we only mocked 3 for testing)
-    const fedStateCard = screen.getByTestId('stage-card-0');
-    expect(fedStateCard).toBeInTheDocument();
-    expect(fedStateCard).toHaveTextContent('Fed State');
+    // Check that all 7 stages are rendered with correct data
+    expect(screen.getByTestId('stage-card-0')).toBeInTheDocument();
+    expect(screen.getByTestId('stage-card-1')).toBeInTheDocument();
+    expect(screen.getByTestId('stage-card-2')).toBeInTheDocument();
+    expect(screen.getByTestId('stage-card-3')).toBeInTheDocument();
+    expect(screen.getByTestId('stage-card-4')).toBeInTheDocument();
+    expect(screen.getByTestId('stage-card-5')).toBeInTheDocument();
+    expect(screen.getByTestId('stage-card-6')).toBeInTheDocument();
     
-    const earlyFastingCard = screen.getByTestId('stage-card-1');
-    expect(earlyFastingCard).toBeInTheDocument();
-    expect(earlyFastingCard).toHaveTextContent('Early Fasting');
+    // Verify completed stages have checkmarks
+    const stage0 = screen.getByTestId('stage-card-0');
+    expect(stage0).toHaveTextContent('✓');
     
-    const glycogenCard = screen.getByTestId('stage-card-2');
-    expect(glycogenCard).toBeInTheDocument();
-    expect(glycogenCard).toHaveTextContent('Glycogen Depletion');
+    const stage1 = screen.getByTestId('stage-card-1');
+    expect(stage1).toHaveTextContent('✓');
+    
+    // Verify current stage does NOT have checkmark
+    const stage2 = screen.getByTestId('stage-card-2');
+    expect(stage2).not.toHaveTextContent('✓');
   });
 
   test('should highlight current stage', () => {

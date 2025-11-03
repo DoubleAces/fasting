@@ -22,7 +22,7 @@ import StageProgressBar from '@/components/atoms/StageProgressBar';
  * @param {number|null} props.hoursIntoStage - Hours progressed into current stage
  * @returns {JSX.Element} - Stage card element
  */
-export default function StageCard({ stage, isCurrent, progress, hoursIntoStage }) {
+export default function StageCard({ stage, isCurrent, progress, hoursIntoStage, isCompleted }) {
   const hourRangeText = stage.hourRangeEnd === null 
     ? `${stage.hourRangeStart}+ Hours`
     : `${stage.hourRangeStart}-${stage.hourRangeEnd} Hours`;
@@ -39,14 +39,21 @@ export default function StageCard({ stage, isCurrent, progress, hoursIntoStage }
           ? 'bg-purple-500/5 border-l-4 border-purple-500' 
           : 'border-l-4 border-transparent'
         }
+        border-b border-purple-500/10
         transition-all duration-200
       `}
     >
       {/* Single line: hour range + description + progress */}
       <div className="flex items-center justify-between gap-3">
-        {/* Left: Hour range and description in one line */}
+        {/* Left: Milestone indicator + Hour range and description in one line */}
         <div className="flex-1 flex items-baseline gap-2">
-          <span className={`text-sm font-semibold whitespace-nowrap ${isCurrent ? 'text-gray-900' : 'text-gray-700'}`}>
+          {/* Milestone indicator for completed stages */}
+          {isCompleted && (
+            <span className="text-green-600 text-sm font-medium" aria-label="Completed">
+              ✓
+            </span>
+          )}
+          <span className={`text-sm font-semibold whitespace-nowrap ${isCurrent ? 'text-purple-600' : 'text-gray-700'}`}>
             {hourRangeText}:
           </span>
           <span className={`text-sm ${isCurrent ? 'text-gray-800' : 'text-gray-600'}`}>

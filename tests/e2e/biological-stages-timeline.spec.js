@@ -177,3 +177,69 @@ test.describe('Biological Stages Timeline - User Story 2', () => {
     await expect(autophagyStage.locator('text=/25% through this stage/i')).toBeVisible();
   });
 });
+
+test.describe('Biological Stages Timeline - User Story 4', () => {
+  test.beforeEach(async ({ page }) => {
+    // Login or set up authenticated session
+    await page.goto('/login');
+    // Add login steps if needed
+  });
+
+  test('US4-AS1: Stage transition at 16hr boundary shifts highlighting', async ({ page }) => {
+    // Set up 15.9-hour fast (just before transition from stage 3 to stage 4)
+    await setMockFast(page, 15.9);
+    
+    const timeline = page.locator('[data-testid="biological-stages-timeline"]');
+    await expect(timeline).toBeVisible();
+    
+    // Verify currently in stage 3 (16-24 Hours)
+    const currentStage = page.locator('[data-testid="stage-card-3"]');
+    await expect(currentStage).toBeVisible();
+    await expect(currentStage).toHaveClass(/border-l-4/); // Current stage has left border
+    await expect(currentStage).toHaveClass(/border-purple-500/);
+    
+    // Verify stage 4 is not yet highlighted
+    const nextStage = page.locator('[data-testid="stage-card-4"]');
+    await expect(nextStage).toBeVisible();
+    await expect(nextStage).not.toHaveClass(/border-purple-500/);
+    
+    // Verify visual separators between stages
+    await expect(currentStage).toHaveClass(/border-b/); // Bottom border separator
+    
+    // Verify hour range is prominently displayed
+    await expect(currentStage.locator('text=/16-24 Hours/i')).toBeVisible();
+    
+    // Verify completed stages have milestone indicators
+    const completedStage = page.locator('[data-testid="stage-card-0"]');
+    await expect(completedStage).toBeVisible();
+    // Should show some indication of completion (checkmark or "Completed" text)
+    const hasCheckmark = await completedStage.locator('text=/✓|✔|Completed/i').count() > 0;
+    expect(hasCheckmark).toBeTruthy();
+  });
+
+  test('US4-AS2: Completed stages show milestone indicators', async ({ page }) => {
+    // Set up 20-hour fast (stages 0-3 completed)
+    await setMockFast(page, 20);
+    
+    const timeline = page.locator('[data-testid="biological-stages-timeline"]');
+    await expect(timeline).toBeVisible();
+    
+    // Check first completed stage (0-4 Hours)
+    const firstCompleted = page.locator('[data-testid="stage-card-0"]');
+    await expect(firstCompleted).toBeVisible();
+    const hasIndicator = await firstCompleted.locator('text=/✓|✔|Completed/i').count() > 0;
+    expect(hasIndicator).toBeTruthy();
+    
+    // Check another completed stage (4-8 Hours)
+    const secondCompleted = page.locator('[data-testid="stage-card-1"]');
+    await expect(secondCompleted).toBeVisible();
+    const hasIndicator2 = await secondCompleted.locator('text=/✓|✔|Completed/i').count() > 0;
+    expect(hasIndicator2).toBeTruthy();
+    
+    // Current stage should NOT show completion indicator
+    const currentStage = page.locator('[data-testid="stage-card-4"]');
+    await expect(currentStage).toBeVisible();
+    const hasIndicatorCurrent = await currentStage.locator('text=/✓|✔|Completed/i').count();
+    expect(hasIndicatorCurrent).toBe(0);
+  });
+});
