@@ -9,10 +9,10 @@ import StageCard from '@/components/molecules/StageCard';
 
 const mockStage = {
   id: 3,
-  hourRangeStart: 16,
-  hourRangeEnd: 24,
-  title: 'Ketosis Starting',
-  description: 'Early ketone production beginning',
+  hourRangeStart: 12,
+  hourRangeEnd: 18,
+  title: 'Fatty Acid Release',
+  description: 'Fat breakdown accelerates (lipolysis) to release fatty acids for energy',
   biologicalProcesses: [],
   scientificSources: [],
 };
@@ -21,8 +21,8 @@ describe('StageCard', () => {
   test('should render stage hour range and description', () => {
     render(<StageCard stage={mockStage} isCurrent={false} isCompleted={false} progress={null} />);
     
-    expect(screen.getByText(/Early ketone production beginning/)).toBeInTheDocument();
-    expect(screen.getByText(/16-24 Hours/)).toBeInTheDocument();
+    expect(screen.getByText(/Fat breakdown accelerates/)).toBeInTheDocument();
+    expect(screen.getByText(/12-18 Hours/)).toBeInTheDocument();
   });
 
   test('should highlight current stage with darker styling', () => {

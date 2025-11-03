@@ -43,10 +43,10 @@ export default function StageCard({ stage, isCurrent, progress, hoursIntoStage, 
         transition-all duration-200
       `}
     >
-      {/* Single line: hour range + description + progress */}
+      {/* Single line: hour range + title + description + progress */}
       <div className="flex items-center justify-between gap-3">
-        {/* Left: Milestone indicator + Hour range and description in one line */}
-        <div className="flex-1 flex items-baseline gap-2">
+        {/* Left: Milestone indicator + Hour range, title and description */}
+        <div className="flex-1 flex items-baseline gap-2 flex-wrap">
           {/* Milestone indicator for completed stages */}
           {isCompleted && (
             <span className="text-green-600 text-sm font-medium" aria-label="Completed">
@@ -54,9 +54,14 @@ export default function StageCard({ stage, isCurrent, progress, hoursIntoStage, 
             </span>
           )}
           <span className={`text-sm font-semibold whitespace-nowrap ${isCurrent ? 'text-purple-600' : 'text-gray-700'}`}>
-            {hourRangeText}:
+            {hourRangeText}
           </span>
-          <span className={`text-sm ${isCurrent ? 'text-gray-800' : 'text-gray-600'}`}>
+          {stage.title && (
+            <span className={`text-sm font-medium ${isCurrent ? 'text-gray-900' : 'text-gray-700'}`}>
+              {stage.title}:
+            </span>
+          )}
+          <span className={`text-sm ${isCurrent ? 'text-gray-700' : 'text-gray-600'}`}>
             {stage.description}
           </span>
         </div>

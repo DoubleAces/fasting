@@ -12,15 +12,15 @@ jest.mock('@/hooks/useStageCalculation', () => ({
   useStageCalculation: jest.fn(),
 }));
 
-// Mock the FASTING_STAGES constant (7 stages)
+// Mock the FASTING_STAGES constant (10 stages)
 jest.mock('@/lib/constants/fastingStages', () => ({
   FASTING_STAGES: [
     {
       id: 0,
       hourRangeStart: 0,
       hourRangeEnd: 4,
-      title: '',
-      description: 'Body processing your last meal',
+      title: 'Post-Meal Spike',
+      description: 'Insulin is at its highest, processing and directing glucose into storage',
       biologicalProcesses: [],
       scientificSources: [],
     },
@@ -28,53 +28,80 @@ jest.mock('@/lib/constants/fastingStages', () => ({
       id: 1,
       hourRangeStart: 4,
       hourRangeEnd: 8,
-      title: '',
-      description: 'Insulin dropping, using stored glucose',
+      title: 'Insulin Shift',
+      description: 'Insulin levels begin their descent, closing the door on bulk energy storage',
       biologicalProcesses: [],
       scientificSources: [],
     },
     {
       id: 2,
       hourRangeStart: 8,
-      hourRangeEnd: 16,
-      title: '',
-      description: 'Glycogen stores depleting, switching to fat',
+      hourRangeEnd: 12,
+      title: 'Glycogen Utilization',
+      description: 'Liver glycogen becomes the primary fuel source to maintain stable blood glucose',
       biologicalProcesses: [],
       scientificSources: [],
     },
     {
       id: 3,
-      hourRangeStart: 16,
-      hourRangeEnd: 24,
-      title: '',
-      description: 'Early ketone production beginning',
+      hourRangeStart: 12,
+      hourRangeEnd: 18,
+      title: 'Fatty Acid Release',
+      description: 'Fat breakdown accelerates (lipolysis) to release fatty acids for energy',
       biologicalProcesses: [],
       scientificSources: [],
     },
     {
       id: 4,
-      hourRangeStart: 24,
-      hourRangeEnd: 48,
-      title: '',
-      description: 'Running on ketones, fat burning optimized',
+      hourRangeStart: 18,
+      hourRangeEnd: 24,
+      title: 'Adrenaline Boost',
+      description: 'Norepinephrine (Adrenaline) levels rise to maintain alertness and metabolic rate',
       biologicalProcesses: [],
       scientificSources: [],
     },
     {
       id: 5,
-      hourRangeStart: 48,
-      hourRangeEnd: 72,
-      title: '',
-      description: 'Extended fat burning, cellular cleanup active',
+      hourRangeStart: 24,
+      hourRangeEnd: 36,
+      title: 'Gluconeogenesis Peak',
+      description: 'Glucose creation from fat (glycerol) and protein becomes the main source of glucose',
       biologicalProcesses: [],
       scientificSources: [],
     },
     {
       id: 6,
+      hourRangeStart: 36,
+      hourRangeEnd: 48,
+      title: 'Early HGH Surge',
+      description: 'Growth Hormone (HGH) levels ramp up, initiating the anti-catabolic defense',
+      biologicalProcesses: [],
+      scientificSources: [],
+    },
+    {
+      id: 7,
+      hourRangeStart: 48,
+      hourRangeEnd: 72,
+      title: 'Ketosis and HGH Peak',
+      description: 'Ketone production is established, and HGH surges dramatically (up to 500% increase)',
+      biologicalProcesses: [],
+      scientificSources: [],
+    },
+    {
+      id: 8,
       hourRangeStart: 72,
+      hourRangeEnd: 120,
+      title: 'Autophagy Activation',
+      description: 'Cellular cleanup (autophagy) reaches full activity for maximized systemic repair',
+      biologicalProcesses: [],
+      scientificSources: [],
+    },
+    {
+      id: 9,
+      hourRangeStart: 120,
       hourRangeEnd: null,
-      title: '',
-      description: 'Prolonged fasting state',
+      title: 'Protein Conservation',
+      description: 'The body enters the maximal protein-sparing state, conserving lean mass',
       biologicalProcesses: [],
       scientificSources: [],
     },
@@ -92,21 +119,21 @@ describe('BiologicalStagesTimeline', () => {
     Element.prototype.scrollIntoView = jest.fn();
   });
 
-  test('should render all 7 stages', () => {
-    // Mock timeline state for 14-hour fast (stage 2: 8-16hrs)
+  test('should render all 10 stages', () => {
+    // Mock timeline state for 14-hour fast (stage 3: 12-18hrs)
     useStageCalculation.mockReturnValue({
-      currentStageIndex: 2,
-      elapsedHours: 12,
-      progressWithinStage: 0.5,
-      hoursIntoStage: 4,
-      stagesCompleted: [FASTING_STAGES[0], FASTING_STAGES[1]],
-      stagesUpcoming: [FASTING_STAGES[3], FASTING_STAGES[4], FASTING_STAGES[5], FASTING_STAGES[6]],
-      currentStage: FASTING_STAGES[2],
+      currentStageIndex: 3,
+      elapsedHours: 14,
+      progressWithinStage: 0.33,
+      hoursIntoStage: 2,
+      stagesCompleted: [FASTING_STAGES[0], FASTING_STAGES[1], FASTING_STAGES[2]],
+      stagesUpcoming: [FASTING_STAGES[4], FASTING_STAGES[5], FASTING_STAGES[6], FASTING_STAGES[7], FASTING_STAGES[8], FASTING_STAGES[9]],
+      currentStage: FASTING_STAGES[3],
     });
 
-    render(<BiologicalStagesTimeline elapsedMs={12 * 60 * 60 * 1000} />);
+    render(<BiologicalStagesTimeline elapsedMs={14 * 60 * 60 * 1000} />);
     
-    // Check that all 7 stages are rendered with correct data
+    // Check that all 10 stages are rendered
     expect(screen.getByTestId('stage-card-0')).toBeInTheDocument();
     expect(screen.getByTestId('stage-card-1')).toBeInTheDocument();
     expect(screen.getByTestId('stage-card-2')).toBeInTheDocument();
@@ -114,6 +141,9 @@ describe('BiologicalStagesTimeline', () => {
     expect(screen.getByTestId('stage-card-4')).toBeInTheDocument();
     expect(screen.getByTestId('stage-card-5')).toBeInTheDocument();
     expect(screen.getByTestId('stage-card-6')).toBeInTheDocument();
+    expect(screen.getByTestId('stage-card-7')).toBeInTheDocument();
+    expect(screen.getByTestId('stage-card-8')).toBeInTheDocument();
+    expect(screen.getByTestId('stage-card-9')).toBeInTheDocument();
     
     // Verify completed stages have checkmarks
     const stage0 = screen.getByTestId('stage-card-0');
@@ -122,9 +152,12 @@ describe('BiologicalStagesTimeline', () => {
     const stage1 = screen.getByTestId('stage-card-1');
     expect(stage1).toHaveTextContent('✓');
     
-    // Verify current stage does NOT have checkmark
     const stage2 = screen.getByTestId('stage-card-2');
-    expect(stage2).not.toHaveTextContent('✓');
+    expect(stage2).toHaveTextContent('✓');
+    
+    // Verify current stage does NOT have checkmark
+    const stage3 = screen.getByTestId('stage-card-3');
+    expect(stage3).not.toHaveTextContent('✓');
   });
 
   test('should highlight current stage', () => {
