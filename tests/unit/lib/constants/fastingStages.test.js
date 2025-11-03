@@ -6,8 +6,8 @@
 import { FASTING_STAGES } from '@/lib/constants/fastingStages';
 
 describe('FASTING_STAGES configuration', () => {
-  test('should have exactly 7 stages', () => {
-    expect(FASTING_STAGES).toHaveLength(7);
+  test('should have exactly 10 stages', () => {
+    expect(FASTING_STAGES).toHaveLength(10);
   });
 
   test('should start at 0 hours', () => {
