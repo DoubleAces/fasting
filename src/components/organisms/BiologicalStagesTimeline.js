@@ -26,10 +26,22 @@ export default function BiologicalStagesTimeline({ elapsedMs }) {
   const timelineState = useStageCalculation(elapsedMs);
   const currentStageRef = useRef(null);
   const [hasScrolled, setHasScrolled] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
 
-  // Auto-scroll to current stage on mount (once only)
+  // Check if stages configuration is missing or invalid
+  if (!FASTING_STAGES || FASTING_STAGES.length === 0) {
+    console.error('BiologicalStagesTimeline: FASTING_STAGES configuration is missing or empty');
+    return (
+      <div className="w-full p-4 bg-red-50 border border-red-200 rounded-lg">
+        <p className="text-red-800 font-medium">Unable to load fasting stages.</p>
+        <p className="text-red-600 text-sm mt-1">Please refresh the page. If the problem persists, contact support.</p>
+      </div>
+    );
+  }
+
+  // Auto-scroll to current stage on mount (once only) - only when expanded
   useEffect(() => {
-    if (currentStageRef.current && !hasScrolled && timelineState) {
+    if (currentStageRef.current && !hasScrolled && timelineState && isExpanded) {
       // Check prefers-reduced-motion preference
       const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
       
@@ -40,36 +52,52 @@ export default function BiologicalStagesTimeline({ elapsedMs }) {
       
       setHasScrolled(true);
     }
-  }, [timelineState, hasScrolled]);
+  }, [timelineState, hasScrolled, isExpanded]);
 
   // Return null if no active fast
   if (!timelineState) {
     return null;
   }
 
+  // Get stages to display based on expanded state
+  const stagesToDisplay = isExpanded 
+    ? FASTING_STAGES 
+    : [FASTING_STAGES[timelineState.currentStageIndex]];
+
   return (
-    <div
+    <nav
       data-testid="biological-stages-timeline"
       className="w-full"
+      aria-label="Fasting stages timeline"
     >
-      {/* Timeline Header */}
-      <div className="mb-3">
-        <h2 className="text-lg font-semibold text-gray-800">
-          Your Fasting Journey
+      {/* Timeline Header with Expand/Collapse Button */}
+      <div className="flex items-center justify-between mb-3">
+        <h2 id="timeline-heading" className="text-lg font-semibold text-gray-800">
+          Your body&apos;s biological stages
         </h2>
-        <p className="text-xs text-gray-600 mt-1">
-          Tracking your body's biological stages
-        </p>
+        <button
+          onClick={() => setIsExpanded(!isExpanded)}
+          className="text-sm text-purple-600 hover:text-purple-700 font-medium transition-colors cursor-pointer"
+          aria-expanded={isExpanded}
+          aria-controls="stages-list"
+        >
+          {isExpanded ? '− Show less' : '+ View all stages'}
+        </button>
       </div>
 
-      {/* Compact Timeline List */}
-      <div className="space-y-1">
-        {FASTING_STAGES.map((stage) => {
+      {/* Semantic Ordered List for Timeline */}
+      <ol 
+        id="stages-list"
+        className="space-y-1"
+        aria-labelledby="timeline-heading"
+        role="list"
+      >
+        {stagesToDisplay.map((stage) => {
           const isCurrent = stage.id === timelineState.currentStageIndex;
           const isCompleted = stage.id < timelineState.currentStageIndex;
           
           return (
-            <div
+            <li
               key={stage.id}
               ref={isCurrent ? currentStageRef : null}
             >
@@ -80,10 +108,17 @@ export default function BiologicalStagesTimeline({ elapsedMs }) {
                 progress={isCurrent ? timelineState.progressWithinStage : null}
                 hoursIntoStage={isCurrent ? timelineState.hoursIntoStage : null}
               />
-            </div>
+            </li>
           );
         })}
-      </div>
-    </div>
+      </ol>
+
+      {/* Stage Counter when collapsed */}
+      {!isExpanded && (
+        <div className="mt-2 text-center text-xs text-gray-500">
+          Stage {timelineState.currentStageIndex + 1} of {FASTING_STAGES.length}
+        </div>
+      )}
+    </nav>
   );
 }

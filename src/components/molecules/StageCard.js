@@ -22,7 +22,7 @@ import StageProgressBar from '@/components/atoms/StageProgressBar';
  * @param {number|null} props.hoursIntoStage - Hours progressed into current stage
  * @returns {JSX.Element} - Stage card element
  */
-export default function StageCard({ stage, isCurrent, progress, hoursIntoStage, isCompleted }) {
+function StageCard({ stage, isCurrent, progress, hoursIntoStage, isCompleted }) {
   const hourRangeText = stage.hourRangeEnd === null 
     ? `${stage.hourRangeStart}+ Hours`
     : `${stage.hourRangeStart}-${stage.hourRangeEnd} Hours`;
@@ -33,6 +33,8 @@ export default function StageCard({ stage, isCurrent, progress, hoursIntoStage, 
   return (
     <article
       data-testid={`stage-card-${stage.id}`}
+      aria-current={isCurrent ? 'step' : undefined}
+      aria-label={`${stage.title || ''} ${hourRangeText}${isCompleted ? ' - Completed' : ''}`}
       className={`
         relative px-3 py-2
         ${isCurrent 
@@ -88,3 +90,15 @@ export default function StageCard({ stage, isCurrent, progress, hoursIntoStage, 
     </article>
   );
 }
+
+// Memoize StageCard to prevent unnecessary re-renders
+// Only re-render if isCurrent, progress, or isCompleted changes
+export default React.memo(StageCard, (prevProps, nextProps) => {
+  return (
+    prevProps.isCurrent === nextProps.isCurrent &&
+    prevProps.progress === nextProps.progress &&
+    prevProps.isCompleted === nextProps.isCompleted &&
+    prevProps.hoursIntoStage === nextProps.hoursIntoStage &&
+    prevProps.stage.id === nextProps.stage.id
+  );
+});

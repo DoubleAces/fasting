@@ -243,3 +243,80 @@ test.describe('Biological Stages Timeline - User Story 4', () => {
     expect(hasIndicatorCurrent).toBe(0);
   });
 });
+
+test.describe('Biological Stages Timeline - Edge Cases', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/login');
+    // Add login steps if needed
+  });
+
+  test('T037: Extended fast (120+ hours) shows Protein Conservation stage', async ({ page }) => {
+    // Set up 130-hour fast (5+ days)
+    await setMockFast(page, 130);
+    
+    const timeline = page.locator('[data-testid="biological-stages-timeline"]');
+    await expect(timeline).toBeVisible();
+    
+    // Verify stage 9 (Protein Conservation, 120+ hours) is current
+    const currentStage = page.locator('[data-testid="stage-card-9"]');
+    await expect(currentStage).toBeVisible();
+    await expect(currentStage).toHaveClass(/border-purple-500/); // Highlighted
+    
+    // Verify stage title is displayed
+    await expect(currentStage.locator('text=/Protein Conservation/i')).toBeVisible();
+    
+    // Verify hour range shows "120+ Hours"
+    await expect(currentStage.locator('text=/120\+/i')).toBeVisible();
+    
+    // Verify progress information is displayed
+    await expect(currentStage.locator('text=/130.*hours?/i')).toBeVisible();
+    
+    // Verify all previous stages (0-8) show completion indicators
+    for (let i = 0; i < 9; i++) {
+      const completedStage = page.locator(`[data-testid="stage-card-${i}"]`);
+      await expect(completedStage).toBeVisible();
+      const hasCheckmark = await completedStage.locator('text=/✓|✔/i').count() > 0;
+      expect(hasCheckmark).toBeTruthy();
+    }
+    
+    // Verify stage 9 does NOT show completion indicator (it's current)
+    const hasCurrentCheckmark = await currentStage.locator('text=/✓|✔/i').count();
+    expect(hasCurrentCheckmark).toBe(0);
+  });
+
+  test('T038: Very short fast (<1 hour) shows Post-Meal Spike stage', async ({ page }) => {
+    // Set up 0.5-hour (30 minute) fast
+    await setMockFast(page, 0.5);
+    
+    const timeline = page.locator('[data-testid="biological-stages-timeline"]');
+    await expect(timeline).toBeVisible();
+    
+    // Verify stage 0 (Post-Meal Spike, 0-4 hours) is current
+    const currentStage = page.locator('[data-testid="stage-card-0"]');
+    await expect(currentStage).toBeVisible();
+    await expect(currentStage).toHaveClass(/border-purple-500/); // Highlighted
+    
+    // Verify stage title is displayed
+    await expect(currentStage.locator('text=/Post-Meal Spike/i')).toBeVisible();
+    
+    // Verify hour range shows "0-4 Hours"
+    await expect(currentStage.locator('text=/0-4 Hours?/i')).toBeVisible();
+    
+    // Verify low progress is displayed (should be around 12.5% for 0.5/4 hours)
+    await expect(currentStage.locator('text=/0\.5.*hours?/i')).toBeVisible();
+    
+    // Verify no completion indicators (no stages completed yet)
+    const allStages = await page.locator('[data-testid^="stage-card-"]').all();
+    for (const stage of allStages) {
+      const hasCheckmark = await stage.locator('text=/✓|✔/i').count();
+      expect(hasCheckmark).toBe(0);
+    }
+    
+    // Verify all other stages are not highlighted
+    for (let i = 1; i < 10; i++) {
+      const futureStage = page.locator(`[data-testid="stage-card-${i}"]`);
+      await expect(futureStage).toBeVisible();
+      await expect(futureStage).not.toHaveClass(/border-purple-500/);
+    }
+  });
+});

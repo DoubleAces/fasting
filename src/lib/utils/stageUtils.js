@@ -45,6 +45,10 @@ export function calculateTimelineState(elapsedMs, stages) {
   }
   
   if (!Array.isArray(stages) || stages.length === 0) {
+    console.error('calculateTimelineState: Invalid stages configuration', {
+      stagesType: typeof stages,
+      stagesLength: Array.isArray(stages) ? stages.length : 'N/A'
+    });
     return null;
   }
 

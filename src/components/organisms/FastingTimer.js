@@ -59,14 +59,7 @@ export default function FastingTimer({ lastMealTime, date, isActive }) {
         </div>
       )}
 
-      {/* Biological Stages Timeline Section (Feature 026) */}
-      {isActive && (
-        <div className="pt-6 border-t border-gray-100">
-          <BiologicalStagesTimeline elapsedMs={elapsedMs} />
-        </div>
-      )}
-
-      {/* Goal Setting Section */}
+      {/* Goal Setting Section - Moved up, closer to timer */}
       {isActive && (
         <div className="pt-4 border-t border-gray-100">
           {!goalMinutes && (
@@ -75,6 +68,13 @@ export default function FastingTimer({ lastMealTime, date, isActive }) {
             </p>
           )}
           <GoalSettingPanel />
+        </div>
+      )}
+
+      {/* Biological Stages Timeline Section (Feature 026) */}
+      {isActive && (
+        <div className="pt-6 border-t border-gray-100">
+          <BiologicalStagesTimeline elapsedMs={elapsedMs} />
         </div>
       )}
     </div>
