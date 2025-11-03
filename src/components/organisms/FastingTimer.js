@@ -4,6 +4,7 @@
  * FastingTimer Component
  * Main container that integrates the timer hook and display
  * Redesigned for dashboard with glassmorphic theme
+ * Enhanced with biological fasting stages timeline (Feature 026)
  */
 
 import React from 'react';
@@ -12,6 +13,7 @@ import TimerDisplay from '@/components/molecules/TimerDisplay';
 import { GoalSettingPanel } from '@/components/molecules/GoalSettingPanel';
 import { GoalProgressDisplay } from '@/components/molecules/GoalProgressDisplay';
 import { useFastingGoal } from '@/contexts/FastingGoalContext';
+import BiologicalStagesTimeline from '@/components/organisms/BiologicalStagesTimeline';
 
 /**
  * Displays active or completed fasting timer
@@ -54,6 +56,13 @@ export default function FastingTimer({ lastMealTime, date, isActive }) {
             lastMealTime={lastMealTime}
             date={date}
           />
+        </div>
+      )}
+
+      {/* Biological Stages Timeline Section (Feature 026) */}
+      {isActive && (
+        <div className="pt-6 border-t border-gray-100">
+          <BiologicalStagesTimeline elapsedMs={elapsedMs} />
         </div>
       )}
 
