@@ -99,7 +99,259 @@ Features that deliver significant value and user engagement:
 - ⏳ Custom reminder schedules (basic scheduling exists, needs UI for customization)
 - ⏳ Smart timing based on patterns
 
-### 👥 Social/Community Features
+### � Scientific Fact-Checking System (Community-Driven)
+**Effort**: High | **Value**: High | **Time**: 30-40 hours | **Status**: NOT implemented
+
+**Problem**: Biological fasting stage descriptions need scientific accuracy, but maintaining this requires:
+- Expert review of every claim
+- Tracking of primary research sources
+- Monitoring for updated/contradicting research
+- Legal liability for medical misinformation
+
+**Solution**: Build a three-phase system that combines admin tools, automation, and community involvement
+
+#### Phase 1: Citation Management System (Foundation)
+**Time**: 8-12 hours | **Priority**: P1 - Must Have
+
+**Admin Dashboard for Scientific Claims**:
+- Database of all biological claims with metadata
+- Track sources (PubMed ID, journal, authors, year)
+- Review schedule (flag claims older than 6-12 months)
+- Approval workflow (draft → reviewed → published)
+- Audit trail (who verified what when)
+- Bulk status updates
+
+**Database Schema**:
+```javascript
+ScientificClaim {
+  claimText: String,              // "Brain uses ketones for 60-75% energy"
+  category: String,               // "Ketosis", "Autophagy", "HGH"
+  stage: String,                  // References FASTING_STAGES
+  sources: [{
+    citation: String,             // "Cahill, G.F. (2006)"
+    title: String,                // Full paper title
+    journal: String,              // "Annual Review of Nutrition"
+    pubmedId: String,             // "16848698"
+    doi: String,                  // "10.1146/annurev.nutr.26.061505.111258"
+    url: String,                  // Direct link to paper
+    addedDate: Date,
+    addedBy: ObjectId             // Admin user who added it
+  }],
+  status: Enum,                   // 'draft', 'verified', 'needs-review', 'disputed'
+  lastVerified: Date,
+  lastVerifiedBy: ObjectId,
+  reviewInterval: Number,         // Days (default: 180)
+  adminNotes: String,             // Internal notes for reviewers
+  publiclyVisible: Boolean,       // Show in app UI?
+  qualityScore: Number            // 0-100 based on source quality
+}
+```
+
+**Admin Features**:
+- View all claims grouped by stage/category
+- Filter by status (draft, needs review, verified)
+- Reminder notifications when review is due
+- Compare claim against multiple sources
+- Version history of claim edits
+- Export claims as CSV for external review
+
+**Benefits**:
+- Prevents outdated science from going live
+- Clear responsibility (who verified what)
+- Systematic review process
+- Works with 1 admin (you)
+
+#### Phase 2: Automated Citation Monitoring (Enhancement)
+**Time**: 20-30 hours | **Priority**: P2 - Nice to Have
+
+**Automated Research Monitoring**:
+- Nightly cron job checks citation health
+- PubMed API integration to verify papers exist
+- Retraction watch (flag if paper withdrawn)
+- Citation count tracking (highly debated topics)
+- Related research finder (new papers since last review)
+- Email alerts for admin when action needed
+
+**External APIs to Integrate**:
+- **PubMed E-utilities** (free, official NIH)
+  - Verify papers exist
+  - Get citation metadata
+  - Search related research
+- **Semantic Scholar API** (free)
+  - Citation graphs
+  - Find related papers
+  - Track influence metrics
+- **Crossref API** (free)
+  - DOI verification
+  - Journal metadata
+  - Retraction notices
+
+**Automated Health Checks**:
+```javascript
+// Example nightly job
+async function checkCitationHealth() {
+  const claims = await ScientificClaim.find({ 
+    status: 'verified',
+    lastVerified: { $lt: thirtyDaysAgo }
+  });
+  
+  for (const claim of claims) {
+    // Check if sources still valid
+    const healthReport = await validateSources(claim.sources);
+    
+    if (healthReport.retracted.length > 0) {
+      await flagClaimForReview(claim, 'Source retracted!');
+    }
+    
+    // Find newer research
+    const newPapers = await findRelatedResearch(claim);
+    if (newPapers.length > 10) {
+      await notifyAdmin(claim, `${newPapers.length} new papers found`);
+    }
+  }
+}
+```
+
+**Admin Notifications**:
+- Weekly digest: "3 claims need review, 5 new papers found"
+- Urgent alerts: "Paper retracted! Review claim immediately"
+- Monthly summary: Overall fact-checking health score
+
+**Benefits**:
+- Reduces manual monitoring burden
+- Catches retractions automatically
+- Discovers new research you might miss
+- Prioritizes which claims need urgent review
+
+#### Phase 3: Community Fact-Checking (Gamification)
+**Time**: 16-24 hours | **Priority**: P2 - Nice to Have
+
+**User-Driven Accuracy Improvement**:
+- Users can flag potentially inaccurate claims
+- Submit corrections with supporting sources
+- Vote on other users' submissions (upvote/downvote)
+- Earn reputation points and badges
+- Admin reviews and approves/rejects submissions
+
+**Public-Facing UI**:
+```
+┌──────────────────────────────────────────────┐
+│ Stage 7: Ketosis and HGH Peak (48-72 hours) │
+│                                              │
+│ "Brain uses ketones for 30-40% of energy"   │
+│ Source: Owen et al. (1967)                  │
+│                                              │
+│ 🚩 3 users flagged this claim                │
+│                                              │
+│ Top Correction (by @biochemist42):          │
+│ "Actually 60-75% in prolonged ketosis"      │
+│ Source: Cahill (2003) PMID: 12345678        │
+│ 👍 12  👎 1                                   │
+│                                              │
+│ [View All Corrections] [Submit Correction]   │
+└──────────────────────────────────────────────┘
+```
+
+**Admin Review Queue**:
+```
+┌──────────────────────────────────────────────┐
+│ User Corrections - 5 Pending Review          │
+├──────────────────────────────────────────────┤
+│ ⭐⭐⭐⭐ @biochemist42 (reputation: 850)        │
+│                                              │
+│ Original: "Brain uses ketones 30-40%"       │
+│ Correction: "Brain uses ketones 60-75%"     │
+│ Source: Cahill (2003) PMID: 12345678        │
+│ Community: 👍 12  👎 1                        │
+│                                              │
+│ [Approve & Update] [Reject] [Request Info]   │
+├──────────────────────────────────────────────┤
+│ ⭐ @newuser123 (reputation: 50)              │
+│ ...                                          │
+└──────────────────────────────────────────────┘
+```
+
+**Gamification System**:
+- **Reputation Points**:
+  - Flag claim (approved): +10 points
+  - Submit correction (approved): +50 points
+  - Correction gets upvoted: +5 points per vote
+  - Bad submission (rejected): -20 points
+- **Badges**:
+  - 🔬 Fact Finder: First approved correction
+  - 🏆 Research Hero: 10 approved corrections
+  - 📚 Science Champion: 50 approved corrections
+  - ⭐ Trusted Reviewer: 90%+ approval rate (min 10 submissions)
+- **Leaderboard**:
+  - Top contributors this month
+  - All-time accuracy champions
+  - Display on user profiles
+
+**User Profiles**:
+```
+┌──────────────────────────────────────────────┐
+│ @biochemist42                    ⭐⭐⭐⭐       │
+│ Reputation: 850 points                       │
+│                                              │
+│ Contributions:                               │
+│ • 15 approved corrections                    │
+│ • 8 flagged inaccuracies                     │
+│ • 92% approval rate                          │
+│                                              │
+│ Badges:                                      │
+│ 🔬 🏆 📚 ⭐                                    │
+│                                              │
+│ Recent Activity:                             │
+│ • Corrected "Ketosis" claim - approved       │
+│ • Flagged "Autophagy" timing - under review  │
+└──────────────────────────────────────────────┘
+```
+
+**Benefits**:
+- Users help find errors (crowdsourced QA)
+- Engaged community feels ownership
+- Free fact-checking labor (incentivized by gamification)
+- High-reputation users are trusted experts
+- You still have final approval (quality control)
+
+#### Implementation Roadmap
+
+**Phase 1 First** (8-12 hours):
+1. Create ScientificClaim model
+2. Admin CRUD pages for claims
+3. Review reminder system
+4. Basic approval workflow
+- **Outcome**: You can track and verify claims systematically
+
+**Phase 2 When Needed** (20-30 hours):
+- Wait until you have 50+ claims to manage
+- Add API integrations for automation
+- Set up nightly monitoring jobs
+- **Outcome**: Automation reduces your workload
+
+**Phase 3 When Community Exists** (16-24 hours):
+- Wait until you have 500+ active users
+- Add flagging and correction system
+- Build reputation and badge system
+- **Outcome**: Users help maintain accuracy
+
+**Total Effort**: 44-66 hours across 3 phases (spread over time)
+
+**Legal Considerations**:
+- Add disclaimer: "Educational purposes only, not medical advice"
+- Terms of Service: User-submitted content moderated
+- Consult healthcare provider clause on every page with health claims
+- Consider medical review before launching (optional)
+
+**Success Metrics**:
+- 100% of claims have ≥2 verified sources
+- Review cycle < 6 months for all claims
+- Community accuracy: 80%+ approved submissions
+- User engagement: 10% of users submit corrections
+
+---
+
+### �👥 Social/Community Features
 - Share progress publicly
 - Friend connections
 - Group challenges
