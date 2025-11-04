@@ -50,6 +50,8 @@ Auto-generated from all feature plans. Last updated: 2025-10-17
 - JavaScript (ES6+) / Next.js 15.5.6 with App Router + React 18, Tailwind CSS 3.4, Mongoose 8.x, NextAuth.js, date-fns (025-entry-details-enhancement)
 - MongoDB with existing Entry collection (no schema changes required) (025-entry-details-enhancement)
 - N/A (no database changes - stage definitions as static configuration in code) (026-biological-fasting-stages)
+- JavaScript ES6+ (React 19.1.0, Next.js 15.5.6) + React hooks (useState, useEffect, useMemo), Native JavaScript Date object (027-timer-date-crossing)
+- N/A (pure calculation bug fix, no database changes) (027-timer-date-crossing)
 
 ## Project Structure
 ```
@@ -65,9 +67,9 @@ npm test; npm run lint
 JavaScript ES6+ with Node.js 18+ (Next.js 14+): Follow standard conventions
 
 ## Recent Changes
+- 027-timer-date-crossing: Added JavaScript ES6+ (React 19.1.0, Next.js 15.5.6) + React hooks (useState, useEffect, useMemo), Native JavaScript Date object
 - 026-biological-fasting-stages: Added JavaScript (ES6+) with React 19.1.0, Next.js 15.5.6 (App Router)
 - 025-entry-details-enhancement: Added JavaScript (ES6+) / Next.js 15.5.6 with App Router + React 18, Tailwind CSS 3.4, Mongoose 8.x, NextAuth.js, date-fns
-- 024-user-dashboard: Added JavaScript (ES6+) with Next.js 15.5.6 and React 18 + Next.js (App Router), NextAuth v5, Mongoose (MongoDB ODM), Recharts 2.12.7, Tailwind CSS, date-fns
 
 <!-- MANUAL ADDITIONS START -->
 
