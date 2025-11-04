@@ -351,6 +351,599 @@ async function checkCitationHealth() {
 
 ---
 
+### 🏆 Achievement & Badges System (Database-First with Multilang)
+**Effort**: High | **Value**: High | **Time**: 50-67 hours | **Status**: NOT implemented
+
+**Problem**: Users need motivation and recognition for their fasting milestones. Gamification increases engagement and retention.
+
+**Solution**: Comprehensive achievement system with unlockable badges, progress tracking, and full admin control for multilingual support.
+
+---
+
+#### Core Features
+
+**Dedicated Achievements Page** (`/achievements`):
+- Grid/list view of all available achievements
+- Unlocked badges displayed in full color with unlock date
+- Locked badges grayed out with "???" or teaser description
+- Progress bars for incremental achievements (e.g., "Fast 50 times: 23/50")
+- Filter by category (Getting Started, Duration, Streak, Goals, etc.)
+- Search functionality
+- Total completion stats (e.g., "23/78 achievements unlocked")
+
+**Achievement Categories** (80+ total badges):
+
+1. **🚀 Getting Started** (Easy wins for new users)
+   - First Steps - Log your first entry
+   - Breaking the Fast - Complete your first fast
+   - Double Digits - Fast for 10+ hours
+   - Sweet Sixteen - Fast for 16+ hours
+   - Daily Dozen - Log 12 days in a row
+
+2. **⏱️ Duration Milestones**
+   - Half Day Hero - Fast for 12+ hours
+   - Golden Ratio - Fast for 16+ hours (classic IF)
+   - Eighteen & Beyond - Fast for 18+ hours
+   - Full Day Faster - Fast for 24+ hours
+   - 36 Hour Warrior - Fast for 36+ hours
+   - Two Day Champion - Fast for 48+ hours
+   - Three Day Master - Fast for 72+ hours
+   - Extended Elite - Fast for 120+ hours (5 days)
+
+3. **🔥 Streak Achievements**
+   - Newbie Streak - 3 days in a row
+   - Weekly Warrior - 7 days in a row
+   - Two Week Triumph - 14 days in a row
+   - Monthly Master - 30 days in a row
+   - Century Club - 100 days in a row
+   - Unstoppable - 365 days in a row
+
+4. **🎯 Goal Achievements**
+   - Goal Getter - Hit your first goal
+   - Overachiever - Exceed goal by 2+ hours
+   - Consistent - Hit goals 7 days in a row
+   - Perfectionist - Hit goals 30 days in a row
+   - Goal Machine - Hit 100 goals total
+
+5. **⚖️ Weight Tracking**
+   - Scale Master - Log weight 7 days in a row
+   - Progress Tracker - Log weight 30 times
+   - 5 Pound Drop - Lose 5 lbs from starting weight
+   - 10 Pound Victory - Lose 10 lbs from starting weight
+   - Goal Weight - Reach your target weight
+
+6. **� Consistency & Dedication**
+   - Data Devotee - 30 complete entries (all fields filled)
+   - Hundred Club - Log 100 entries total
+   - Journaling Pro - Write food notes 50 times
+   - Health Conscious - Log energy/mood 100 times
+   - Early Bird - 10 entries before 8am
+
+7. **🌟 Special Achievements**
+   - Personal Best - Set a new longest fast record
+   - Wellness Warrior - 10 "Best Days" (high energy + good mood)
+   - Iron Will - Deny extended fast 5 times (discipline)
+   - Night Owl - Log entry after midnight
+   - Weekend Warrior - 10 weekend fasts 18h+
+
+8. **🎓 Knowledge & Exploration**
+   - Stage Explorer - Reach each of the 10 biological stages
+   - Autophagy Activator - Reach 72h stage (autophagy)
+   - Ketosis King/Queen - Reach 48h stage 10 times
+
+---
+
+#### Database Architecture
+
+**Achievement Collection** (MongoDB):
+```javascript
+Achievement {
+  _id: ObjectId,
+  achievementId: String,           // Unique slug: 'sweet-sixteen'
+  
+  // Multilang support
+  translations: {
+    en: {
+      name: String,                // 'Sweet Sixteen'
+      description: String,         // 'Fast for 16+ hours'
+      shortDescription: String     // 'Complete a 16h fast'
+    },
+    es: { name, description, shortDescription },
+    fr: { name, description, shortDescription },
+    de: { name, description, shortDescription },
+    pt: { name, description, shortDescription }
+    // Add languages as needed
+  },
+  
+  // Badge images (uploaded via admin)
+  badgeImage: {
+    locked: String,                // '/uploads/badges/sweet-sixteen-locked.png'
+    unlocked: String               // '/uploads/badges/sweet-sixteen-unlocked.png'
+  },
+  
+  // Or use emoji/icon
+  icon: String,                    // '⏱️'
+  iconColor: String,               // '#8B5CF6' (purple)
+  
+  // Metadata
+  category: String,                // 'duration', 'streak', 'goal', 'weight', 'consistency', 'special'
+  points: Number,                  // 25 (gamification points)
+  rarity: String,                  // 'common', 'rare', 'epic', 'legendary'
+  order: Number,                   // Display order within category
+  
+  // Unlock criteria
+  criteria: {
+    type: String,                  // 'duration-milestone', 'streak', 'entry-count', 'goal-completion'
+    params: Mixed                  // { hours: 16 } or { days: 7 } or { count: 100 }
+  },
+  
+  // Admin control
+  isActive: Boolean,               // Can disable without deleting
+  isSecret: Boolean,               // Hidden until unlocked (easter eggs)
+  releaseDate: Date,               // Launch new achievements over time
+  
+  // Timestamps
+  createdAt: Date,
+  updatedAt: Date,
+  createdBy: ObjectId              // Admin who created it
+}
+```
+
+**UserAchievement Collection** (MongoDB):
+```javascript
+UserAchievement {
+  _id: ObjectId,
+  userId: ObjectId,                // User who earned it
+  achievementId: String,           // References Achievement.achievementId
+  unlockedAt: Date,                // When earned
+  progress: Number,                // For incremental (e.g., 7/12 days)
+  notificationSeen: Boolean,       // Has user seen unlock notification?
+  
+  createdAt: Date
+}
+
+// Indexes
+Index: { userId: 1, achievementId: 1 }, unique: true
+Index: { userId: 1, unlockedAt: -1 }
+```
+
+**User Model Extension**:
+```javascript
+User {
+  // ... existing fields
+  preferredLanguage: {
+    type: String,
+    enum: ['en', 'es', 'fr', 'de', 'pt', 'ja', 'zh'],
+    default: 'en'
+  },
+  achievementPoints: Number,       // Total points earned (sum of all unlocked)
+}
+```
+
+---
+
+#### Admin UI Features
+
+**1. Achievement Management Dashboard**
+- List all achievements with status (active/draft)
+- Filter by category, status, rarity
+- Search by name/description
+- View unlock statistics (how many users earned each)
+- Bulk activate/deactivate achievements
+- Sort by display order, date created, popularity
+
+**2. Achievement Create/Edit Form**
+- Achievement ID (slug, unique)
+- Multi-language fields:
+  - Name (per language)
+  - Description (per language)
+  - Short description (per language)
+  - Add/remove language tabs
+- Badge image uploads:
+  - Locked state image
+  - Unlocked state image
+  - Image preview
+  - Drag & drop upload
+  - Support PNG/JPG/SVG
+- Emoji/icon alternative (if not using images)
+- Metadata:
+  - Category dropdown
+  - Points value
+  - Rarity selector
+  - Display order
+- Unlock criteria builder:
+  - Type selector (duration, streak, count, etc.)
+  - Dynamic parameter fields based on type
+  - Preview criteria logic
+- Settings:
+  - Active toggle
+  - Secret achievement toggle
+  - Release date picker
+- Save draft or publish
+
+**3. Bulk Translation Manager**
+- Select target language
+- View all achievements with missing translations
+- Inline editing for quick translations
+- Export to CSV for external translation
+- Import from CSV after translation
+- Mark translations as "needs review"
+
+**4. Badge Image Upload System**
+- File upload via drag & drop or file picker
+- Image preview before saving
+- Automatic resizing/optimization
+- Support for multiple formats (PNG, JPG, SVG)
+- Cloud storage integration (AWS S3, Cloudinary, or Vercel Blob)
+- Image validation (dimensions, file size)
+
+**5. Achievement Analytics**
+- Total achievements created
+- Most popular achievements (highest unlock rate)
+- Rarest achievements (lowest unlock rate)
+- Average unlock time per achievement
+- User progress distribution (0-10%, 10-25%, etc.)
+- Unlock trends over time (chart)
+
+---
+
+#### Public User Features
+
+**1. Achievements Page (`/achievements`)**
+
+**Desktop Layout:**
+```
+┌─────────────────────────────────────────────────────────────┐
+│ Your Achievements                              🏆 23/78 (29%)│
+├─────────────────────────────────────────────────────────────┤
+│ [All] [🚀 Started] [⏱️ Duration] [🔥 Streak] [🎯 Goals] ... │
+├─────────────────────────────────────────────────────────────┤
+│ Search: [____________]              Sort: [Recent ▼]        │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│ 🚀 GETTING STARTED                                   5/6    │
+│ ─────────────────────────────────────────────────────────  │
+│                                                             │
+│ ┌─────────┐  ┌─────────┐  ┌─────────┐  ┌─────────┐       │
+│ │   🏆    │  │   🏆    │  │   🔒    │  │   🏆    │       │
+│ │  First  │  │Breaking │  │  Daily  │  │ Sweet   │       │
+│ │  Steps  │  │the Fast │  │  Dozen  │  │ Sixteen │       │
+│ │         │  │         │  │         │  │         │       │
+│ │ ✅ Nov 1│  │ ✅ Nov 1│  │ 7/12    │  │ ✅ Nov 2│       │
+│ └─────────┘  └─────────┘  └─────────┘  └─────────┘       │
+│                                                             │
+│ ⏱️ DURATION MILESTONES                              3/8    │
+│ ─────────────────────────────────────────────────────────  │
+│                                                             │
+│ ┌─────────┐  ┌─────────┐  ┌─────────┐  ┌─────────┐       │
+│ │   ⏱️    │  │   ⏱️    │  │   🔒    │  │   🔒    │       │
+│ │ Golden  │  │Eighteen │  │  Full   │  │ 36 Hour │       │
+│ │  Ratio  │  │ Beyond  │  │   Day   │  │ Warrior │       │
+│ │         │  │         │  │         │  │         │       │
+│ │ ✅ Nov 2│  │ ✅ Nov 3│  │ ??? ??? │  │ ??? ??? │       │
+│ └─────────┘  └─────────┘  └─────────┘  └─────────┘       │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**Badge Hover Tooltip:**
+```
+┌───────────────────────────┐
+│ 🏆 Sweet Sixteen          │
+├───────────────────────────┤
+│ Fast for 16+ hours        │
+│                           │
+│ ✅ Unlocked: Nov 2, 2025  │
+│ 🎖️ 25 points              │
+│ ⭐ Common                  │
+└───────────────────────────┘
+```
+
+**Locked Badge Hover:**
+```
+┌───────────────────────────┐
+│ 🔒 Full Day Faster        │
+├───────────────────────────┤
+│ Fast for 24+ hours        │
+│                           │
+│ Progress: 18/24 hours     │
+│ Your best: 18h 30m        │
+│ 🎖️ 50 points              │
+│ ⭐ Rare                    │
+└───────────────────────────┘
+```
+
+**2. Achievement Unlock Notification (Toast)**
+```
+┌─────────────────────────────────────────────────┐
+│ 🎉 Achievement Unlocked!                        │
+│                                                 │
+│         🏆                                      │
+│    Sweet Sixteen                                │
+│                                                 │
+│ You fasted for 16+ hours!                       │
+│ +25 points                                      │
+│                                                 │
+│ [View Achievements]              [Dismiss]      │
+└─────────────────────────────────────────────────┘
+```
+
+**3. Dashboard Widget (Recent Achievements)**
+```
+┌──────────────────────────────────────────────────┐
+│ Recent Achievements                     [View All│
+├──────────────────────────────────────────────────┤
+│ 🏆 Sweet Sixteen              Nov 2, 2025   NEW! │
+│ 🔥 Newbie Streak              Nov 4, 2025   NEW! │
+│ 🎯 Goal Getter                Nov 3, 2025        │
+└──────────────────────────────────────────────────┘
+```
+
+**4. Profile Badge Display**
+- Show top 3-5 achievements on user profile
+- "Featured badges" user can select to showcase
+- Display total points and achievement percentage
+
+---
+
+#### Achievement Checking System
+
+**Automatic Check After Entry Actions:**
+```javascript
+// Triggered after: entry create, entry update, entry delete
+async function checkAchievementsForUser(userId, triggerType, entry) {
+  const allAchievements = await Achievement.find({ isActive: true });
+  const userAchievements = await UserAchievement.find({ userId });
+  const unlockedIds = userAchievements.map(ua => ua.achievementId);
+  
+  const newUnlocks = [];
+  
+  for (const achievement of allAchievements) {
+    // Skip if already unlocked
+    if (unlockedIds.includes(achievement.achievementId)) continue;
+    
+    // Evaluate criteria
+    const earned = await evaluateCriteria(userId, achievement.criteria, entry);
+    
+    if (earned) {
+      // Create UserAchievement
+      await UserAchievement.create({
+        userId,
+        achievementId: achievement.achievementId,
+        unlockedAt: new Date(),
+        progress: 100,
+        notificationSeen: false
+      });
+      
+      // Update user points
+      await User.updateOne(
+        { _id: userId },
+        { $inc: { achievementPoints: achievement.points } }
+      );
+      
+      newUnlocks.push(achievement);
+    } else {
+      // Update progress for incremental achievements
+      const progress = await calculateProgress(userId, achievement.criteria);
+      if (progress > 0) {
+        await UserAchievement.updateOne(
+          { userId, achievementId: achievement.achievementId },
+          { progress },
+          { upsert: true }
+        );
+      }
+    }
+  }
+  
+  return newUnlocks; // Return for notification display
+}
+```
+
+**Criteria Evaluators:**
+```javascript
+// Duration milestone
+async function checkDurationMilestone(userId, params) {
+  const entry = await Entry.findOne({
+    userId,
+    fastingDuration: { $gte: params.hours * 60 }
+  });
+  return !!entry;
+}
+
+// Streak
+async function checkStreak(userId, params) {
+  const entries = await Entry.find({ userId }).sort({ date: -1 });
+  const streak = calculateStreak(entries);
+  return streak >= params.days;
+}
+
+// Entry count
+async function checkEntryCount(userId, params) {
+  const count = await Entry.countDocuments({ userId });
+  return count >= params.count;
+}
+
+// Goal completion
+async function checkGoalCompletion(userId, params) {
+  const count = await Entry.countDocuments({
+    userId,
+    goalStatus: 'completed'
+  });
+  return count >= params.count;
+}
+```
+
+---
+
+#### Image Upload & Storage
+
+**Storage Options:**
+
+1. **Local Filesystem** (development):
+   - Store in `public/uploads/badges/`
+   - Serve via Next.js static files
+   - Simple but not scalable
+
+2. **Cloud Storage** (production):
+   - **AWS S3**: Industry standard, cheap, reliable
+   - **Cloudinary**: Image optimization, transformations, CDN
+   - **Vercel Blob**: Integrated with Vercel deployment
+   - Recommended for production (CDN, backups, optimization)
+
+**Upload Implementation:**
+```javascript
+// API: POST /api/admin/achievements/:id/badge
+import multer from 'multer';
+import { uploadToS3 } from '@/lib/storage/s3';
+
+const upload = multer({
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB max
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only images allowed'));
+    }
+  }
+});
+
+export async function POST(req, res) {
+  const { id } = req.params;
+  const { type } = req.body; // 'locked' or 'unlocked'
+  const file = req.file;
+  
+  // Upload to S3 or local storage
+  const url = await uploadToS3(file, `badges/${id}-${type}.png`);
+  
+  // Update achievement
+  await Achievement.updateOne(
+    { _id: id },
+    { [`badgeImage.${type}`]: url }
+  );
+  
+  return res.json({ url });
+}
+```
+
+---
+
+#### Multilang Implementation
+
+**Frontend Language Switching:**
+```javascript
+// hooks/useTranslation.js
+import { useUser } from '@/contexts/UserContext';
+
+export function useTranslation() {
+  const { user } = useUser();
+  const lang = user?.preferredLanguage || 'en';
+  
+  return {
+    lang,
+    t: (translations) => translations[lang] || translations.en
+  };
+}
+
+// Usage in component
+function AchievementCard({ achievement }) {
+  const { t } = useTranslation();
+  
+  return (
+    <div>
+      <h3>{t(achievement.translations).name}</h3>
+      <p>{t(achievement.translations).description}</p>
+    </div>
+  );
+}
+```
+
+**Language Selector (Settings Page):**
+```
+┌──────────────────────────────────┐
+│ Language Preference              │
+├──────────────────────────────────┤
+│ ◉ English                        │
+│ ○ Español (Spanish)              │
+│ ○ Français (French)              │
+│ ○ Deutsch (German)               │
+│ ○ Português (Portuguese)         │
+│ ○ 日本語 (Japanese)              │
+│ ○ 中文 (Chinese)                 │
+│                                  │
+│ [Save Preference]                │
+└──────────────────────────────────┘
+```
+
+---
+
+#### Implementation Phases
+
+**Phase 1: Core System (16-20 hours)**
+- Database models (Achievement, UserAchievement)
+- API endpoints (CRUD achievements, check unlocks)
+- Basic achievement checking logic
+- 10 starter achievements (hard-coded, no admin UI)
+- Public achievements page (basic UI)
+- Unlock notifications
+
+**Phase 2: Admin UI (16-20 hours)**
+- Admin achievement list page
+- Create/edit achievement form
+- Single language support (English only)
+- Local image uploads
+- Achievement activation/deactivation
+
+**Phase 3: Multilang & Images (10-14 hours)**
+- Multi-language translation fields
+- Bulk translation manager
+- Cloud image storage (S3/Cloudinary)
+- Language preference in user settings
+- Frontend translation system
+
+**Phase 4: Polish & Gamification (8-13 hours)**
+- Badge rarity system
+- Points leaderboard (optional)
+- Achievement analytics for admin
+- Secret achievements
+- Progress tracking for incremental achievements
+- Share achievement unlocks (social)
+
+**Total: 50-67 hours** across 4 phases
+
+---
+
+#### Success Metrics
+
+- **Engagement**: 80%+ of users unlock at least 1 achievement
+- **Retention**: Users with achievements have 2x higher 30-day retention
+- **Admin Usage**: Admin can add new achievements without developer help
+- **Multilang**: 50%+ of non-English users set preferred language
+- **Performance**: Achievement page loads in <500ms
+- **Unlock Rate**: Most common achievements unlock within first week
+
+---
+
+#### Technical Considerations
+
+**Performance:**
+- Cache active achievements list (30 min TTL)
+- Index userId + achievementId for fast lookup
+- Run achievement checks async (don't block entry save)
+- Batch check multiple achievements in one query
+
+**Security:**
+- Admin-only routes protected by role check
+- Validate uploaded images (type, size, dimensions)
+- Rate limit achievement checks (prevent spam)
+- Sanitize user input in translation fields
+
+**SEO:**
+- Achievement page is public (good for discovery)
+- Social share cards for unlocked achievements
+- Meta tags for achievement categories
+
+---
+
 ### �👥 Social/Community Features
 - Share progress publicly
 - Friend connections
