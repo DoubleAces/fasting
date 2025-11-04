@@ -1,26 +1,52 @@
 # Feature Backlog - Fasting Tracker
 
-**Last Updated**: October 29, 2025  
-**Completed Features**: 001-019, 022-Mobile-UX (All shipped!)
+**Last Updated**: November 4, 2025  
+**Completed Features**: 001-027 (All shipped!)
+**Note**: This backlog has been audited against the actual codebase. Only features NOT yet implemented are listed below.
 
 ---
 
-## ✅ Recently Completed
+## ✅ Recently Completed (Features 022-027)
 
-### Feature 022: Mobile UX Quick Fixes (October 29, 2025)
-**Status**: ✅ Completed & Live in Production
+### Feature 027: Timer Date Crossing Bug Fix (November 4, 2025)
+- Fixed critical bug where timer showed 0:00:00 at month boundaries
+- Replaced manual calendar arithmetic with native Date API
+- All 8 comprehensive tests passing
 
-**What Was Delivered**:
-- Responsive entry table (3 cols mobile, 8 cols desktop)
-- Compact mobile typography (14px body, 12px padding)
-- Mobile-friendly forms (vertical stacking, full-width buttons, 44px touch targets)
-- ⏱ icon for fasting durations
-- CSS-only, WCAG 2.1 AA compliant
-- 40% more content visible on mobile
+### Feature 026: Biological Fasting Stages Timeline (November 2025)
+- 10-stage fasting timeline with hormonal markers
+- Real-time stage tracking in live timer
+- Collapsible/expandable timeline view
 
-**Impact**: Significantly improved mobile user experience
-**Effort**: 4 hours (within 3.5hr estimate)
-**Documentation**: `specs/022-mobile-ux-improvements/`
+### Feature 025: Entry Details Enhancement (October 2025)
+- Share functionality for entries
+- Enhanced navigation
+- Dashboard chart integration
+
+### Feature 024: User Dashboard (October 2025)
+- ✅ Current fast timer with live updates
+- ✅ Streak counter (current & longest)
+- ✅ Key statistics (total fasts, average duration)
+- ✅ Weight progress chart (Recharts line chart)
+- ✅ Recent fasting history (last 5 entries)
+- ✅ Quick actions (Start/End fast buttons)
+
+### Feature 023: Homepage Redesign (October 2025)
+- Modern glassmorphic design system
+- Purple-pink-indigo gradient palette
+- GlassmorphicCard and GradientButton components
+
+### Feature 022: Mobile UX Quick Fixes (October 2025)
+- Responsive entry table
+- Compact mobile typography
+- Mobile-friendly forms
+
+### Feature 020: Fasting Goal Timer (October 2025)
+- ✅ Set fasting goals (12h, 16h, 18h, 24h presets + custom)
+- ✅ Real-time progress tracking
+- ✅ Goal completion time calculation
+- ✅ Session-based goals (per fast)
+- ✅ Goal status tracking (completed/not-completed/no-goal)
 
 ---
 
@@ -28,82 +54,50 @@
 
 Features that deliver significant value and user engagement:
 
-### 📊 User Dashboard (Feature 024 Candidate)
-**Priority**: High | **Effort**: Medium | **Value**: High
+### ⏱️ Smart Goal Suggestions (Enhancement to Feature 020)
+- **Problem**: Users set manual goals; system could suggest optimal targets based on history
+- **Solution**: Analyze user's past fasting patterns to suggest achievable goals
+  - Use historical average (not median to avoid unambitious 8h suggestions)
+  - Consider time-of-day patterns (weekday vs weekend fasts)
+  - Adaptive targets that grow with user's progress
+  - "You usually fast 16h on weekdays - try for 17h today?"
+- **Value**: Motivation and personalized guidance
+- **Effort**: Medium (8-12 hours)
+- **Note**: Feature 020 (goal setting) is complete, this adds intelligence
 
-**Problem**: Currently logged-in users see the marketing homepage or go directly to /entries. No centralized place to see their fasting status, progress, and quick actions.
+### 📊 Data Visualization & Trends (Partially Complete)
+- ✅ Weight progress visualization (Feature 024 - DashboardChart component)
+- ✅ Basic fasting duration trends (Dashboard stats)
+- ⏳ Interactive charts and graphs (only weight chart exists)
+- ⏳ Energy/wellbeing correlation charts
+- ⏳ Heat maps (calendar view)
+- ⏳ Comparative analytics (week/month/year)
 
-**Solution**: Create a proper user dashboard that serves as the main hub for logged-in users.
-
-**Core Features**:
-- **Current Fast Status**: Active fast timer with countdown/countup
-- **Quick Actions**: Start Fast / End Fast buttons prominently displayed
-- **Streak Counter**: Current streak with visual indicator (🔥)
-- **Recent Fasts**: Last 5-7 fasts with durations
-- **Weekly Stats**: Average fast duration, total fasts this week
-- **Progress Overview**: Visual progress toward goals
-- **Weight Tracking**: Latest weight entry + trend chart
-- **Motivational Elements**: Achievements, milestones, encouraging messages
-
-**Technical Approach**:
-- Server component for initial data load
-- Client component for real-time timer updates
-- Reuse existing components (GradientButton, GlassmorphicCard)
-- Mobile-first responsive design
-- Fast initial render (< 1s)
-
-**User Flow**:
-- Logged-in users navigate to `/` → automatically redirect to `/dashboard`
-- Dashboard becomes the home page for authenticated users
-- Homepage marketing content only shown to unauthenticated visitors
-
-**Benefits**:
-- Single source of truth for user's fasting status
-- Reduces friction (no need to navigate to /entries to start/end fast)
-- Increases engagement and motivation
-- More "app-like" experience vs website feel
-- Foundation for future features (goals, notifications, achievements)
-
----
-
-### ⏱️ Timer Enhancements (Future Consideration)
-- **Smart Progress Bar**: Visual progress indicator for active fasts with intelligent goal calculation
-  - **Challenge**: Need better algorithm than median (could suggest unambitious 8-hour goals)
-  - **Ideas to explore**: User-set goals, historical best, adaptive targets, time-of-day awareness
-  - **Value**: Motivation and visual feedback during fasting
-  - **Deferred from**: Feature 017 (core timer shipped, progress bar needs rethinking)
-
-### 📊 Data Visualization & Trends
-- Interactive charts and graphs
-- Fasting duration trends over time
-- Weight progress visualization
-- Energy/wellbeing correlation charts
-- Heat maps (calendar view)
-- Comparative analytics (week/month/year)
-
-### 🎯 Goal Setting & Tracking
-- Set fasting duration goals
-- Weight loss targets
-- Streak goals
-- Custom milestones
-- Progress tracking
-- Achievement notifications
+### 🎯 Goal Setting & Tracking (Basic Implementation Complete)
+- ✅ Set fasting duration goals (Feature 020 - FastingGoalContext)
+- ✅ Progress tracking (Goal progress shown on timer)
+- ✅ Streak goals (Dashboard shows current streak)
+- ⏳ Weight loss targets (weight tracking exists, but no target setting)
+- ⏳ Custom milestones
+- ⏳ Achievement notifications
 
 ### 📥 Export/Import Data
-- CSV export (all entries)
-- PDF reports (formatted, shareable)
-- JSON backup/restore
-- Import from other apps
-- Data portability
-- Scheduled exports
+- ⏳ CSV export (NOT implemented)
+- ⏳ PDF reports (formatted, shareable)
+- ⏳ JSON backup/restore
+- ⏳ Import from other apps
+- ⏳ Data portability
+- ⏳ Scheduled exports
 
-### 🔔 Reminders & Notifications
-- Daily log reminders
-- Fasting start/end alerts
-- Goal milestone notifications
-- Streak preservation alerts
-- Custom reminder schedules
-- Smart timing (based on patterns)
+### 🔔 Reminders & Notifications (Infrastructure Complete)
+- ✅ Push notification system (pushNotifications.js, notificationScheduler.js)
+- ✅ Daily log reminders (notification infrastructure supports this)
+- ✅ Fasting start/end alerts (scheduler can send timed notifications)
+- ✅ PWA notification integration (complete)
+- ⏳ Goal milestone notifications (infrastructure exists, milestone triggers not implemented)
+- ⏳ Streak preservation alerts (infrastructure exists, need to implement streak logic)
+- ⏳ Custom reminder schedules (basic scheduling exists, needs UI for customization)
+- ⏳ Smart timing based on patterns
 
 ### 👥 Social/Community Features
 - Share progress publicly
@@ -157,9 +151,11 @@ Features that deliver significant value and user engagement:
 
 ## 📱 Mobile UX Improvements
 
+**Status**: Phase 1 ✅ COMPLETE (Feature 022)
+
 Features to make the app feel more like a native mobile app rather than a responsive website:
 
-### Phase 1: Quick Fixes (Immediate Impact)
+### Phase 1: Quick Fixes ✅ COMPLETE (Feature 022)
 **Effort**: Low | **Value**: High | **Time**: 2 hours
 
 **Entries Table Mobile Optimization**:
@@ -291,41 +287,13 @@ YESTERDAY
 
 Features that can be implemented quickly but deliver immediate value:
 
-### 🔥 Streak Counter
-**Effort**: Low | **Value**: High | **Time**: 4-6 hours
-- Display current streak on dashboard
-- Longest streak badge
-- Streak preservation alerts
-- Visual streak calendar
-- **Note**: Data already available from insights service
-
-### 📊 Weight Progress Chart
-**Effort**: Low | **Value**: Medium | **Time**: 6-8 hours
-- Line chart showing weight over time
-- Goal line overlay
-- Trend indicators
-- Export chart as image
-
-### 📥 CSV Export
+###  CSV Export
 **Effort**: Low | **Value**: Medium | **Time**: 3-4 hours
 - Export all entries to CSV
 - Date range selection
 - Custom field selection
 - Download button on entries page
-
-### 🎯 Basic Goal Setting
-**Effort**: Medium | **Value**: High | **Time**: 8-12 hours
-- Set fasting duration goal
-- Set weight goal
-- Progress indicators
-- Goal achievement notifications
-
-### ⏰ Daily Log Reminder
-**Effort**: Low | **Value**: High | **Time**: 4-6 hours
-- Browser notification
-- Customizable time
-- Skip weekends option
-- PWA notification integration
+- **Status**: NOT implemented
 
 ### 📅 Enhanced Date Picker (react-datepicker)
 **Effort**: Low | **Value**: Medium | **Time**: 2-3 hours
@@ -336,6 +304,7 @@ Features that can be implemented quickly but deliver immediate value:
 - More flexible date range restrictions
 - Custom date format display
 - **Note**: Currently using native HTML5 inputs (Feature 018), works well but limited styling options
+- **Status**: NOT implemented
 
 ---
 
@@ -536,57 +505,44 @@ When deciding what to build next, consider:
 
 ---
 
-## 🎯 Suggested Next Features
+## 🎯 Recommended Next Features
 
-Based on quick wins and user value:
+Based on codebase audit (November 4, 2025) - Features 001-027 complete:
 
-### Feature 017: ✅ Live Fasting Timer (SHIPPED)
-**Status**: Complete and deployed
-- Real-time countdown/up timer
-- Visual progress indicators
-- Responsive design
-
-### Feature 018: ✅ Form Input Improvements (SHIPPED)
-**Status**: Complete and deployed
-- Enhanced datetime inputs
-- Better mobile experience
-- Improved validation
-
-### Feature 019: ✅ Entry Click Performance Optimization (SHIPPED)
-**Status**: Complete and deployed
-- 91% faster navigation (1200ms → 100ms)
-- Link prefetching implementation
-- Performance measurement infrastructure
-
-### Feature 020: CSV Export
+### CSV Export
 **Why**: User control, data portability, easy to implement
 - Effort: Very Low (3-4 hours)
 - Impact: Medium
 - Priority Score: 2.5
+- **Status**: NOT implemented
 
-### Feature 021: Streak Counter & Visualization
-**Why**: Already have the data, high engagement, quick win
-- Effort: Low (4-6 hours)
-- Impact: High (gamification, retention)
-- Priority Score: 2.5
+### Enhanced Date Picker (react-datepicker)
+**Why**: Better UX than HTML5 inputs, cross-browser consistency, customizable styling
+- Effort: Very Low (2-3 hours)
+- Impact: Low-Medium
+- Priority Score: 1.5
+- **Status**: NOT implemented (currently using HTML5 inputs)
 
-### Feature 022: Weight Progress Chart
-**Why**: Visual feedback, common request, data visualization
-- Effort: Low (6-8 hours)
-- Impact: Medium-High
+### Mobile UX Phase 2: Card-Based Entry List
+**Why**: Better mobile experience, more native feel, improved information density
+- Effort: Medium (6 hours)
+- Impact: High
 - Priority Score: 2.0
+- **Status**: Phase 1 complete (Feature 022), Phase 2 NOT implemented
 
-### Feature 023: Basic Goal Setting
-**Why**: High user value, motivation, retention driver
+### Smart Goal Suggestions
+**Why**: Personalization, motivation, uses existing goal system
 - Effort: Medium (8-12 hours)
 - Impact: High
-- Priority Score: 1.8
+- Priority Score: 1.5
+- **Status**: Basic goal setting complete (Feature 020), intelligent suggestions NOT implemented
 
-### Feature 024: Daily Reminder Notifications
-**Why**: Habit formation, engagement, uses existing PWA infrastructure
-- Effort: Low (4-6 hours)
-- Impact: High
-- Priority Score: 2.5
+### Photo Food Logging
+**Why**: Visual tracking, enhanced journaling, user requested
+- Effort: High (16+ hours - needs image upload, storage, display)
+- Impact: Medium-High
+- Priority Score: 1.0
+- **Status**: NOT implemented
 
 ---
 
@@ -607,10 +563,12 @@ Based on quick wins and user value:
 - **v1.0** (Oct 26, 2025): Initial backlog created after Feature 016 completion
 - **v1.1** (Oct 28, 2025): Updated after Features 017-019 completion
 - **v1.2** (Oct 29, 2025): Feature 022 (Mobile UX Quick Fixes) completed and deployed
-- Features 001-019, 022-Mobile-UX: All completed and shipped ✅
+- **v1.3** (November 4, 2025): Comprehensive codebase audit - Features 001-027 all complete
+  - Removed completed features: User Dashboard, Streak Counter, Weight Chart, Goal Setting, Push Notifications
+  - Updated sections with accurate completion status
+  - Identified truly unimplemented features: CSV Export, react-datepicker, Photo Logging, Smart Goal Suggestions
+  - Clarified partial implementations (notifications infrastructure exists, Mobile UX Phase 1 complete)
 
 ---
 
 **Next Review**: After gathering user feedback or completing next 3-5 features
-
-**Note**: Feature 022 in this backlog (Weight Progress Chart) is different from the Mobile UX Quick Fixes that was just completed. Consider renumbering future features to avoid confusion.
