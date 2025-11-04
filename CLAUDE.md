@@ -52,6 +52,8 @@ Auto-generated from all feature plans. Last updated: 2025-10-17
 - N/A (no database changes - stage definitions as static configuration in code) (026-biological-fasting-stages)
 - JavaScript ES6+ (React 19.1.0, Next.js 15.5.6) + React hooks (useState, useEffect, useMemo), Native JavaScript Date object (027-timer-date-crossing)
 - N/A (pure calculation bug fix, no database changes) (027-timer-date-crossing)
+- JavaScript (ES6+) / Node.js (current project version) + Mongoose ODM (existing), MongoDB 4.4+ (028-achievement-badges-models)
+- MongoDB with compound indexes (userId+achievementId unique, userId+unlockedAt descending) (028-achievement-badges-models)
 
 ## Project Structure
 ```
@@ -67,9 +69,9 @@ npm test; npm run lint
 JavaScript ES6+ with Node.js 18+ (Next.js 14+): Follow standard conventions
 
 ## Recent Changes
+- 028-achievement-badges-models: Added JavaScript (ES6+) / Node.js (current project version) + Mongoose ODM (existing), MongoDB 4.4+
 - 027-timer-date-crossing: Added JavaScript ES6+ (React 19.1.0, Next.js 15.5.6) + React hooks (useState, useEffect, useMemo), Native JavaScript Date object
 - 026-biological-fasting-stages: Added JavaScript (ES6+) with React 19.1.0, Next.js 15.5.6 (App Router)
-- 025-entry-details-enhancement: Added JavaScript (ES6+) / Next.js 15.5.6 with App Router + React 18, Tailwind CSS 3.4, Mongoose 8.x, NextAuth.js, date-fns
 
 <!-- MANUAL ADDITIONS START -->
 

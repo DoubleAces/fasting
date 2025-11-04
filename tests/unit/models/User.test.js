@@ -185,4 +185,224 @@ describe('User Model - Terms Acceptance', () => {
       expect(user.termsAcceptedAt).toBeDefined(); // New field
     });
   });
+
+  /**
+   * User Model Extensions - Achievement Features (Phase 5)
+   * Tests for preferredLanguage and achievementPoints fields
+   */
+  describe('Achievement Extensions', () => {
+    /**
+     * T056: User.preferredLanguage enum validation
+     */
+    describe('T056 - preferredLanguage enum validation', () => {
+      it('should accept valid language codes', async () => {
+        const validLanguages = ['en', 'es', 'fr', 'de', 'pt', 'ja', 'zh'];
+
+        for (const lang of validLanguages) {
+          const user = await User.create({
+            email: `user-${lang}@test.com`,
+            password: '$2b$10$KIXd2H7cKZqE.WxBVL1Zv.3F0jHGXZJgQZ7mYKvN5xQ8YhKlFwJRm',
+            authMethod: 'email',
+            name: `User ${lang.toUpperCase()}`,
+            preferredLanguage: lang,
+          });
+
+          expect(user.preferredLanguage).toBe(lang);
+        }
+      });
+
+      it('should reject invalid language code', async () => {
+        const invalidUser = {
+          email: 'invalid-lang@test.com',
+          password: '$2b$10$KIXd2H7cKZqE.WxBVL1Zv.3F0jHGXZJgQZ7mYKvN5xQ8YhKlFwJRm',
+          authMethod: 'email',
+          name: 'Invalid Language User',
+          preferredLanguage: 'xx', // Invalid language code
+        };
+
+        await expect(User.create(invalidUser)).rejects.toThrow();
+      });
+    });
+
+    /**
+     * T057: User.preferredLanguage default value
+     */
+    describe('T057 - preferredLanguage default value', () => {
+      it('should default to "en" when not provided', async () => {
+        const user = await User.create({
+          email: 'default-lang@test.com',
+          password: '$2b$10$KIXd2H7cKZqE.WxBVL1Zv.3F0jHGXZJgQZ7mYKvN5xQ8YhKlFwJRm',
+          authMethod: 'email',
+          name: 'Default Language User',
+          // preferredLanguage not provided
+        });
+
+        expect(user.preferredLanguage).toBe('en');
+      });
+
+      it('should allow explicit English preference', async () => {
+        const user = await User.create({
+          email: 'explicit-en@test.com',
+          password: '$2b$10$KIXd2H7cKZqE.WxBVL1Zv.3F0jHGXZJgQZ7mYKvN5xQ8YhKlFwJRm',
+          authMethod: 'email',
+          name: 'Explicit English User',
+          preferredLanguage: 'en',
+        });
+
+        expect(user.preferredLanguage).toBe('en');
+      });
+    });
+
+    /**
+     * T058: User.achievementPoints default value
+     */
+    describe('T058 - achievementPoints default value', () => {
+      it('should default to 0 when not provided', async () => {
+        const user = await User.create({
+          email: 'default-points@test.com',
+          password: '$2b$10$KIXd2H7cKZqE.WxBVL1Zv.3F0jHGXZJgQZ7mYKvN5xQ8YhKlFwJRm',
+          authMethod: 'email',
+          name: 'Default Points User',
+          // achievementPoints not provided
+        });
+
+        expect(user.achievementPoints).toBe(0);
+      });
+
+      it('should allow explicit zero points', async () => {
+        const user = await User.create({
+          email: 'explicit-zero@test.com',
+          password: '$2b$10$KIXd2H7cKZqE.WxBVL1Zv.3F0jHGXZJgQZ7mYKvN5xQ8YhKlFwJRm',
+          authMethod: 'email',
+          name: 'Zero Points User',
+          achievementPoints: 0,
+        });
+
+        expect(user.achievementPoints).toBe(0);
+      });
+    });
+
+    /**
+     * T059: User.achievementPoints minimum value validation
+     */
+    describe('T059 - achievementPoints non-negative validation', () => {
+      it('should accept positive achievementPoints', async () => {
+        const user = await User.create({
+          email: 'positive-points@test.com',
+          password: '$2b$10$KIXd2H7cKZqE.WxBVL1Zv.3F0jHGXZJgQZ7mYKvN5xQ8YhKlFwJRm',
+          authMethod: 'email',
+          name: 'Positive Points User',
+          achievementPoints: 150,
+        });
+
+        expect(user.achievementPoints).toBe(150);
+      });
+
+      it('should accept zero achievementPoints', async () => {
+        const user = await User.create({
+          email: 'zero-points@test.com',
+          password: '$2b$10$KIXd2H7cKZqE.WxBVL1Zv.3F0jHGXZJgQZ7mYKvN5xQ8YhKlFwJRm',
+          authMethod: 'email',
+          name: 'Zero Points User',
+          achievementPoints: 0,
+        });
+
+        expect(user.achievementPoints).toBe(0);
+      });
+
+      it('should reject negative achievementPoints', async () => {
+        const invalidUser = {
+          email: 'negative-points@test.com',
+          password: '$2b$10$KIXd2H7cKZqE.WxBVL1Zv.3F0jHGXZJgQZ7mYKvN5xQ8YhKlFwJRm',
+          authMethod: 'email',
+          name: 'Negative Points User',
+          achievementPoints: -50,
+        };
+
+        await expect(User.create(invalidUser)).rejects.toThrow();
+      });
+    });
+
+    /**
+     * T060: User.achievementPoints increment operations
+     */
+    describe('T060 - achievementPoints increment', () => {
+      it('should increment achievementPoints correctly', async () => {
+        const user = await User.create({
+          email: 'increment@test.com',
+          password: '$2b$10$KIXd2H7cKZqE.WxBVL1Zv.3F0jHGXZJgQZ7mYKvN5xQ8YhKlFwJRm',
+          authMethod: 'email',
+          name: 'Increment User',
+          achievementPoints: 50,
+        });
+
+        // Increment by 25
+        user.achievementPoints += 25;
+        await user.save();
+
+        const updatedUser = await User.findById(user._id);
+        expect(updatedUser.achievementPoints).toBe(75);
+      });
+
+      it('should increment from zero', async () => {
+        const user = await User.create({
+          email: 'increment-zero@test.com',
+          password: '$2b$10$KIXd2H7cKZqE.WxBVL1Zv.3F0jHGXZJgQZ7mYKvN5xQ8YhKlFwJRm',
+          authMethod: 'email',
+          name: 'Increment From Zero',
+        });
+
+        expect(user.achievementPoints).toBe(0);
+
+        user.achievementPoints += 100;
+        await user.save();
+
+        const updatedUser = await User.findById(user._id);
+        expect(updatedUser.achievementPoints).toBe(100);
+      });
+    });
+
+    /**
+     * T061: New fields don't break existing User methods
+     */
+    describe('T061 - Backward compatibility', () => {
+      it('should not break existing authentication functionality', async () => {
+        const user = await User.create({
+          email: 'compat@test.com',
+          password: '$2b$10$KIXd2H7cKZqE.WxBVL1Zv.3F0jHGXZJgQZ7mYKvN5xQ8YhKlFwJRm',
+          authMethod: 'email',
+          name: 'Compatibility User',
+          preferredLanguage: 'es',
+          achievementPoints: 50,
+        });
+
+        // Verify existing fields still work
+        expect(user.email).toBe('compat@test.com');
+        expect(user.authMethod).toBe('email');
+        expect(user.name).toBe('Compatibility User');
+        expect(user.termsAcceptedAt).toBeDefined();
+
+        // Verify new fields
+        expect(user.preferredLanguage).toBe('es');
+        expect(user.achievementPoints).toBe(50);
+      });
+
+      it('should work with OAuth users', async () => {
+        const user = await User.create({
+          email: 'oauth-achievement@test.com',
+          authMethod: 'google',
+          googleId: 'google-achievement-123',
+          name: 'OAuth Achievement User',
+          emailVerified: true,
+          preferredLanguage: 'fr',
+          achievementPoints: 200,
+        });
+
+        expect(user.authMethod).toBe('google');
+        expect(user.googleId).toBe('google-achievement-123');
+        expect(user.preferredLanguage).toBe('fr');
+        expect(user.achievementPoints).toBe(200);
+      });
+    });
+  });
 });
