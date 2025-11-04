@@ -16,6 +16,9 @@
  * - registrationDate: Account creation timestamp
  * - lastLogin: Last login timestamp
  * - isActive: Account active status
+ * - termsAcceptedAt: Terms & Conditions acceptance timestamp
+ * - preferredLanguage: ISO 639-1 language code for achievement translations (en/es/fr/de/pt/ja/zh)
+ * - achievementPoints: Total points earned from unlocked achievements (non-negative integer)
  * 
  * Features:
  * - Bcrypt password hashing (minimum 10 rounds)
@@ -25,6 +28,7 @@
  * - Instance methods: comparePassword, updateLastLogin
  * - Static methods: findByEmail, hashPassword
  * - Automatic timestamp updates
+ * - Achievement gamification support (preferredLanguage, achievementPoints)
  * 
  * Security:
  * - Passwords must be pre-hashed before saving (60 char bcrypt hash)
@@ -240,6 +244,66 @@ const userSchema = new mongoose.Schema(
           return value <= new Date();
         },
         message: 'Terms acceptance date cannot be in the future'
+      }
+    },
+
+    // ============================================================================
+    // ACHIEVEMENT & GAMIFICATION
+    // ============================================================================
+
+    /**
+     * User's preferred language for achievement translations
+     * - ISO 639-1 language codes (2 characters)
+     * - Used to select which translation to display from Achievement.translations
+     * - Defaults to English ('en')
+     * - Supports: English, Spanish, French, German, Portuguese, Japanese, Chinese
+     * 
+     * Supported Languages:
+     * - 'en': English (default)
+     * - 'es': Spanish (Español)
+     * - 'fr': French (Français)
+     * - 'de': German (Deutsch)
+     * - 'pt': Portuguese (Português)
+     * - 'ja': Japanese (日本語)
+     * - 'zh': Chinese (中文)
+     * 
+     * @type {String}
+     */
+    preferredLanguage: {
+      type: String,
+      enum: {
+        values: ['en', 'es', 'fr', 'de', 'pt', 'ja', 'zh'],
+        message: 'Language must be one of: en, es, fr, de, pt, ja, zh'
+      },
+      default: 'en',
+      lowercase: true,
+      trim: true,
+    },
+
+    /**
+     * Total achievement points earned by the user
+     * - Accumulated from unlocked achievements
+     * - Each achievement has a points value (5-100)
+     * - Used for leaderboards, rankings, and gamification
+     * - Cannot be negative
+     * - Defaults to 0 for new users
+     * - Incremented when achievements are unlocked
+     * 
+     * Point Tiers (suggested):
+     * - Common achievements: 5-10 points
+     * - Rare achievements: 15-25 points
+     * - Epic achievements: 30-50 points
+     * - Legendary achievements: 75-100 points
+     * 
+     * @type {Number}
+     */
+    achievementPoints: {
+      type: Number,
+      default: 0,
+      min: [0, 'Achievement points cannot be negative'],
+      validate: {
+        validator: Number.isInteger,
+        message: 'Achievement points must be a whole number'
       }
     },
 
