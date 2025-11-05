@@ -325,5 +325,17 @@ export const POST = withErrorHandler(async (request) => {
     // Continue - don't fail entry creation if cache invalidation fails
   }
 
+  // Trigger achievement evaluation for this user (async, non-blocking)
+  try {
+    const { evaluateAchievements } = await import('@/lib/services/achievementEvaluator');
+    // Fire and forget - don't block entry creation response
+    evaluateAchievements(session.user.id).catch(evalError => {
+      console.error('Achievement evaluation failed:', evalError);
+    });
+  } catch (importError) {
+    console.warn('Could not trigger achievement evaluation:', importError.message);
+    // Continue - don't fail entry creation if evaluation fails
+  }
+
   return createdResponse(entry);
 });
