@@ -41,6 +41,7 @@ export default function Navbar() {
   const authLinks = session
     ? [
         { href: '/entries', label: 'My Entries' },
+        { href: '/achievements', label: '🏆 Achievements' },
         { href: '/settings', label: 'Settings' },
       ]
     : [

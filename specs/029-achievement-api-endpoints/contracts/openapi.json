@@ -1,0 +1,726 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Achievement API Endpoints",
+    "version": "1.0.0",
+    "description": "API contracts for browsing, managing, and unlocking achievements in the fasting tracker gamification system"
+  },
+  "servers": [
+    {
+      "url": "/api",
+      "description": "Next.js API routes"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "sessionAuth": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "next-auth.session-token",
+        "description": "NextAuth session cookie"
+      }
+    },
+    "schemas": {
+      "Achievement": {
+        "type": "object",
+        "properties": {
+          "achievementId": {
+            "type": "string",
+            "pattern": "^[a-z0-9-]+$",
+            "example": "sweet-sixteen"
+          },
+          "name": {
+            "type": "string",
+            "example": "Sweet Sixteen"
+          },
+          "description": {
+            "type": "string",
+            "example": "Complete your first 16-hour fast"
+          },
+          "shortDescription": {
+            "type": "string",
+            "example": "First 16hr fast"
+          },
+          "badgeImage": {
+            "type": "object",
+            "properties": {
+              "locked": {
+                "type": "string",
+                "format": "uri"
+              },
+              "unlocked": {
+                "type": "string",
+                "format": "uri"
+              }
+            }
+          },
+          "icon": {
+            "type": "string",
+            "example": "🎯"
+          },
+          "iconColor": {
+            "type": "string",
+            "pattern": "^#[0-9A-Fa-f]{6}$",
+            "example": "#4F46E5"
+          },
+          "category": {
+            "type": "string",
+            "enum": ["getting-started", "duration", "streak", "goal", "weight", "consistency", "special", "knowledge"]
+          },
+          "points": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 1000
+          },
+          "rarity": {
+            "type": "string",
+            "enum": ["common", "rare", "epic", "legendary"]
+          },
+          "order": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "criteria": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string"
+              },
+              "params": {
+                "type": "object"
+              }
+            },
+            "required": ["type", "params"]
+          },
+          "isSecret": {
+            "type": "boolean"
+          }
+        }
+      },
+      "UserAchievement": {
+        "type": "object",
+        "properties": {
+          "_id": {
+            "type": "string",
+            "format": "objectid"
+          },
+          "achievementId": {
+            "type": "string"
+          },
+          "achievement": {
+            "$ref": "#/components/schemas/Achievement"
+          },
+          "unlockedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "progress": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 100
+          },
+          "notificationSeen": {
+            "type": "boolean"
+          }
+        }
+      },
+      "PaginationMeta": {
+        "type": "object",
+        "properties": {
+          "page": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100
+          },
+          "total": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "totalPages": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "hasMore": {
+            "type": "boolean"
+          }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": ["error"]
+          },
+          "message": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          }
+        },
+        "required": ["status", "message"]
+      }
+    },
+    "responses": {
+      "UnauthorizedError": {
+        "description": "Authentication required",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "status": "error",
+              "message": "Authentication required"
+            }
+          }
+        }
+      },
+      "ForbiddenError": {
+        "description": "Insufficient permissions",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "status": "error",
+              "message": "Admin access required"
+            }
+          }
+        }
+      },
+      "NotFoundError": {
+        "description": "Resource not found",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "status": "error",
+              "message": "Achievement not found"
+            }
+          }
+        }
+      },
+      "ConflictError": {
+        "description": "Resource conflict",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "status": "error",
+              "message": "Achievement already unlocked"
+            }
+          }
+        }
+      }
+    }
+  },
+  "paths": {
+    "/achievements": {
+      "get": {
+        "summary": "List active achievements",
+        "description": "Browse all active achievements with optional filtering, pagination, and sorting. Requires authentication.",
+        "operationId": "listAchievements",
+        "security": [
+          {
+            "sessionAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "category",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["getting-started", "duration", "streak", "goal", "weight", "consistency", "special", "knowledge"]
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 1,
+              "minimum": 1
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 20,
+              "minimum": 1,
+              "maximum": 100
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["order", "rarity", "points", "newest"],
+              "default": "order"
+            }
+          },
+          {
+            "name": "lang",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["en", "es", "fr", "de", "pt", "ja", "zh"]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "enum": ["success"]
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "achievements": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/Achievement"
+                          }
+                        },
+                        "pagination": {
+                          "$ref": "#/components/schemas/PaginationMeta"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "400": {
+            "description": "Invalid query parameters",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/achievements/{id}": {
+      "get": {
+        "summary": "Get achievement details",
+        "description": "Get complete details for a single achievement by ID. Secret achievements are masked if not unlocked.",
+        "operationId": "getAchievement",
+        "security": [
+          {
+            "sessionAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[a-z0-9-]+$"
+            },
+            "example": "sweet-sixteen"
+          },
+          {
+            "name": "lang",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["en", "es", "fr", "de", "pt", "ja", "zh"]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "enum": ["success"]
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Achievement"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          }
+        }
+      }
+    },
+    "/user/achievements": {
+      "get": {
+        "summary": "Get user's unlocked achievements",
+        "description": "Get authenticated user's unlocked achievements with summary stats",
+        "operationId": "getUserAchievements",
+        "security": [
+          {
+            "sessionAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "include",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["progress"]
+            },
+            "description": "Include in-progress achievements"
+          },
+          {
+            "name": "lang",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["en", "es", "fr", "de", "pt", "ja", "zh"]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "enum": ["success"]
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "achievements": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "#/components/schemas/UserAchievement"
+                          }
+                        },
+                        "summary": {
+                          "type": "object",
+                          "properties": {
+                            "totalPoints": {
+                              "type": "integer"
+                            },
+                            "totalUnlocked": {
+                              "type": "integer"
+                            },
+                            "totalAchievements": {
+                              "type": "integer"
+                            },
+                            "completionPercentage": {
+                              "type": "number"
+                            },
+                            "unseenCount": {
+                              "type": "integer"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          }
+        }
+      }
+    },
+    "/achievements/unlock": {
+      "post": {
+        "summary": "Manually unlock achievement",
+        "description": "Admin-only endpoint to manually unlock an achievement for a user (testing/correction purposes)",
+        "operationId": "unlockAchievement",
+        "security": [
+          {
+            "sessionAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "userId": {
+                    "type": "string",
+                    "format": "objectid"
+                  },
+                  "achievementId": {
+                    "type": "string",
+                    "pattern": "^[a-z0-9-]+$"
+                  }
+                },
+                "required": ["userId", "achievementId"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Achievement unlocked successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "enum": ["success"]
+                    },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "userAchievement": {
+                          "$ref": "#/components/schemas/UserAchievement"
+                        },
+                        "user": {
+                          "type": "object",
+                          "properties": {
+                            "achievementPoints": {
+                              "type": "integer"
+                            },
+                            "pointsAdded": {
+                              "type": "integer"
+                            }
+                          }
+                        },
+                        "achievement": {
+                          "type": "object",
+                          "properties": {
+                            "name": {
+                              "type": "string"
+                            },
+                            "points": {
+                              "type": "integer"
+                            },
+                            "rarity": {
+                              "type": "string"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ConflictError"
+          }
+        }
+      }
+    },
+    "/admin/achievements": {
+      "post": {
+        "summary": "Create new achievement",
+        "description": "Admin-only endpoint to create a new achievement definition",
+        "operationId": "createAchievement",
+        "security": [
+          {
+            "sessionAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "achievementId": {
+                    "type": "string",
+                    "pattern": "^[a-z0-9-]+$"
+                  },
+                  "translations": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "type": "string",
+                          "minLength": 3,
+                          "maxLength": 100
+                        },
+                        "description": {
+                          "type": "string",
+                          "minLength": 10,
+                          "maxLength": 500
+                        },
+                        "shortDescription": {
+                          "type": "string",
+                          "minLength": 3,
+                          "maxLength": 50
+                        }
+                      },
+                      "required": ["name", "description", "shortDescription"]
+                    },
+                    "required": ["en"]
+                  },
+                  "badgeImage": {
+                    "type": "object",
+                    "properties": {
+                      "locked": {
+                        "type": "string",
+                        "format": "uri"
+                      },
+                      "unlocked": {
+                        "type": "string",
+                        "format": "uri"
+                      }
+                    }
+                  },
+                  "icon": {
+                    "type": "string"
+                  },
+                  "iconColor": {
+                    "type": "string",
+                    "pattern": "^#[0-9A-Fa-f]{6}$"
+                  },
+                  "category": {
+                    "type": "string",
+                    "enum": ["getting-started", "duration", "streak", "goal", "weight", "consistency", "special", "knowledge"]
+                  },
+                  "points": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 1000
+                  },
+                  "rarity": {
+                    "type": "string",
+                    "enum": ["common", "rare", "epic", "legendary"]
+                  },
+                  "order": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "criteria": {
+                    "type": "object",
+                    "properties": {
+                      "type": {
+                        "type": "string"
+                      },
+                      "params": {
+                        "type": "object"
+                      }
+                    },
+                    "required": ["type", "params"]
+                  },
+                  "isActive": {
+                    "type": "boolean",
+                    "default": true
+                  },
+                  "isSecret": {
+                    "type": "boolean",
+                    "default": false
+                  },
+                  "releaseDate": {
+                    "type": "string",
+                    "format": "date-time"
+                  }
+                },
+                "required": ["achievementId", "translations", "category", "points", "rarity", "criteria"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Achievement created successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "enum": ["success"]
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/Achievement"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ConflictError"
+          },
+          "400": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
