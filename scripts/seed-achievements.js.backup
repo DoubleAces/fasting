@@ -20,12 +20,8 @@ import bcrypt from 'bcrypt';
 import Achievement from '../src/lib/models/Achievement.js';
 import User from '../src/lib/models/User.js';
 import { connectDB } from '../src/lib/db.js';
-import { achievementsData } from './achievements-data.js';
 
-const achievements = achievementsData;
-
-/* Legacy achievements array - now imported from achievements-data.js
-const legacyAchievements = [
+const achievements = [
   {
     achievementId: 'sweet-sixteen',
     translations: {
@@ -195,7 +191,6 @@ const legacyAchievements = [
     isSecret: false
   }
 ];
-*/
 
 async function seed() {
   try {

@@ -52,6 +52,7 @@ export default function AchievementsPage() {
         params.append('status', selectedStatus);
       }
       params.append('sort', 'dateUnlocked');
+      params.append('limit', '100'); // Fetch all achievements (max 100)
       
       const response = await fetch(`/api/user/achievements?${params.toString()}`);
       
@@ -193,10 +194,10 @@ export default function AchievementsPage() {
             {achievements.map((achievement) => (
               <div
                 key={achievement.achievementId}
-                className={`bg-white rounded-lg shadow-sm p-6 border-2 transition-all hover:shadow-md ${
+                className={`rounded-lg shadow-sm p-6 border-2 transition-all hover:shadow-md ${
                   achievement.userProgress.isUnlocked
-                    ? 'border-green-300'
-                    : 'border-gray-200 opacity-75'
+                    ? 'border-green-400 bg-gradient-to-b from-green-50 to-white'
+                    : 'border-gray-200 bg-white opacity-75'
                 }`}
               >
                 {/* Achievement Icon/Badge */}
