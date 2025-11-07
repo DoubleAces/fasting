@@ -1,12 +1,33 @@
 # Feature Backlog - Fasting Tracker
 
-**Last Updated**: November 6, 2025  
-**Completed Features**: 001-030 (All shipped!)
+**Last Updated**: November 7, 2025  
+**Completed Features**: 001-031 (All shipped!)
 **Note**: This backlog has been audited against the actual codebase. Only features NOT yet implemented are listed below.
 
 ---
 
-## ✅ Recently Completed (Features 022-030)
+## ✅ Recently Completed (Features 022-031)
+
+### Feature 031: Achievement Unlock Logic (November 7, 2025)
+- ✅ **AchievementService** with 6 evaluator methods (Duration, Streak, Goal, Entry Count, Weight, Custom)
+- ✅ **evaluateAndUnlock orchestrator** - Coordinates all evaluators with Promise.all
+- ✅ **Batch unlocking** - Creates UserAchievement records with E11000 duplicate handling
+- ✅ **API Integration** - POST/PUT /api/entries evaluate achievements and return unlockedAchievements
+- ✅ **SimpleCache utility** - 1-hour TTL for achievement definitions
+- ✅ **calculateStreak helper** - Detects consecutive daily fasting patterns
+- ✅ **Error resilience** - Non-blocking, graceful degradation
+- ✅ **60/60 tests passing** (46 unit + 14 integration)
+  - Duration evaluator: 7 tests
+  - Streak evaluator: 8 tests
+  - Goal evaluator: 6 tests
+  - Batch unlocking: 7 tests
+  - Orchestrator: 7 tests
+  - Helper functions: 11 tests
+  - Integration flows: 6 tests
+  - Error resilience: 8 tests
+- ✅ **Performance validated**: <7s test suite, <100ms individual operations
+- 📝 Entry Count, Weight, and Custom evaluators stubbed for post-MVP (P3)
+- 🚀 **Production deployed** - Ready for user achievement unlocking
 
 ### Feature 030: Achievement Content Seed Data (November 6, 2025)
 - ✅ 81 comprehensive achievements across 8 categories
@@ -17,7 +38,6 @@
 - ✅ Database seed script with idempotent upsert pattern
 - ✅ 16/16 tests passing (10 unit + 6 integration)
 - ✅ Achievements page updated with gradient highlighting and pagination fix
-- 🔧 Note: Achievement unlock logic to be implemented in future feature
 
 ### Feature 029: Achievement API Endpoints (November 2025)
 - ✅ GET /api/user/achievements - List all achievements with user progress
