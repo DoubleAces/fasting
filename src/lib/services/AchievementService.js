@@ -368,8 +368,9 @@ export class AchievementService {
           description: achievement.translations?.en?.description || '',
           points: achievement.points,
           rarity: achievement.rarity,
-          icon: achievement.icon,
           category: achievement.category,
+          icon: achievement.icon,
+          iconColor: achievement.iconColor,
           unlockedAt: userAchievement.unlockedAt,
         });
 
