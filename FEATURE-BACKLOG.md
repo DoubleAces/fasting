@@ -389,7 +389,9 @@ async function checkCitationHealth() {
 - ✅ Public achievements page with filtering
 
 **Remaining Work**:
-- ⏳ Achievement unlock logic (automatic checking when entries are created/updated)
+- ⏳ Achievement unlock logic (automatic checking when entries are created/updated) - **Feature 031 in progress**
+- ⏳ **Hide locked achievements** - Only show progress count (e.g., "19/81 unlocked") and unlocked achievements, hide locked ones to prevent gaming
+- ⏳ Achievement criteria visibility (show exact unlock requirements to users - only for unlocked achievements)
 - ⏳ Admin UI for managing achievements
 - ⏳ Badge image uploads and cloud storage
 - ⏳ Unlock notifications

@@ -325,17 +325,26 @@ export const POST = withErrorHandler(async (request) => {
     // Continue - don't fail entry creation if cache invalidation fails
   }
 
-  // Trigger achievement evaluation for this user (async, non-blocking)
+  // Evaluate and unlock achievements for this entry (non-blocking)
+  let unlockedAchievements = [];
   try {
-    const { evaluateAchievements } = await import('@/lib/services/achievementEvaluator');
-    // Fire and forget - don't block entry creation response
-    evaluateAchievements(session.user.id).catch(evalError => {
-      console.error('Achievement evaluation failed:', evalError);
-    });
-  } catch (importError) {
-    console.warn('Could not trigger achievement evaluation:', importError.message);
-    // Continue - don't fail entry creation if evaluation fails
+    const { AchievementService } = await import('@/lib/services/AchievementService');
+    const result = await AchievementService.evaluateAndUnlock(
+      session.user.id,
+      entry._id.toString()
+    );
+    unlockedAchievements = result.unlockedAchievements;
+    
+    if (unlockedAchievements.length > 0) {
+      console.log('🏆 Achievements unlocked:', unlockedAchievements.map(a => a.achievementId));
+    }
+  } catch (achievementError) {
+    console.error('Achievement evaluation failed (non-blocking):', achievementError.message);
+    // Continue - don't fail entry creation if achievement evaluation fails
   }
 
-  return createdResponse(entry);
+  return createdResponse({
+    ...entry.toObject(),
+    unlockedAchievements, // Include unlocked achievements in response
+  });
 });
