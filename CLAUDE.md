@@ -62,6 +62,8 @@ Auto-generated from all feature plans. Last updated: 2025-10-17
 - MongoDB with Mongoose (models: Achievement, UserAchievement, Entry, User) (031-achievement-unlock-logic)
 - JavaScript (ES6+) / Next.js 15.x (App Router) + Mongoose ODM, AchievementService (Feature 031), Next.js API Routes (032-achievement-unlock-response)
 - MongoDB (existing Entry, UserAchievement, Achievement collections) (032-achievement-unlock-response)
+- JavaScript (ES6+) / Next.js 15.x (App Router) + Next.js (App Router), NextAuth/Auth.js (authentication), Mongoose ODM (database queries), AchievementService (Feature 031), useToast hook (Feature 021) (033-admin-achievement-backfill)
+- MongoDB with Mongoose (models: Entry, Achievement, UserAchievement, User) (033-admin-achievement-backfill)
 
 ## Project Structure
 ```
@@ -77,9 +79,9 @@ npm test; npm run lint
 JavaScript ES6+ with Node.js 18+ (Next.js 14+): Follow standard conventions
 
 ## Recent Changes
+- 033-admin-achievement-backfill: Added JavaScript (ES6+) / Next.js 15.x (App Router) + Next.js (App Router), NextAuth/Auth.js (authentication), Mongoose ODM (database queries), AchievementService (Feature 031), useToast hook (Feature 021)
 - 032-achievement-unlock-response: Added JavaScript (ES6+) / Next.js 15.x (App Router) + Mongoose ODM, AchievementService (Feature 031), Next.js API Routes
 - 031-achievement-unlock-logic: Added JavaScript (ES6+) / Node.js (Next.js runtime) + Next.js (App Router), Mongoose ODM, MongoDB
-- 030-achievement-content-seed: Added JavaScript ES6+ (Node.js via Next.js 15.5.6 runtime) + Mongoose 8.19.1 (ODM), MongoDB 5.5 (database), bcrypt (admin user password hashing), dotenv (environment variables)
 
 <!-- MANUAL ADDITIONS START -->
 
