@@ -26,6 +26,7 @@
 import { formatDateTime } from '@/lib/utils/dateFormatter';
 import AdminToggle from './AdminToggle';
 import DeleteUserButton from './DeleteUserButton';
+import BackfillAchievementsButton from './BackfillAchievementsButton';
 
 /**
  * UserRow component
@@ -121,6 +122,13 @@ export default function UserRow({ user, isCurrentUser, onRefresh }) {
       {/* Actions Column */}
       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
         <div className="flex items-center justify-end gap-2">
+          {/* Backfill Achievements Button */}
+          <BackfillAchievementsButton
+            userId={user._id}
+            userName={user.name || user.email}
+            onBackfillSuccess={onRefresh}
+          />
+
           {/* Toggle Admin Button */}
           <AdminToggle
             userId={user._id}

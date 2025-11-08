@@ -1,0 +1,225 @@
+openapi: 3.0.3
+info:
+  title: Admin Achievement Backfill API
+  description: API endpoint for administrators to retroactively evaluate and unlock achievements for users with historical entries
+  version: 1.0.0
+  contact:
+    name: Fasting Tracker Development Team
+
+servers:
+  - url: https://fasting-tracker.vercel.app
+    description: Production
+  - url: http://localhost:3000
+    description: Local development
+
+tags:
+  - name: Admin
+    description: Administrative operations requiring admin privileges
+
+paths:
+  /api/admin/users/{userId}/backfill-achievements:
+    post:
+      summary: Backfill achievements for a user
+      description: |
+        Evaluates all existing entries for the specified user and unlocks any achievements they qualify for.
+        This operation is idempotent and can be safely run multiple times without creating duplicates.
+        
+        **Use Case**: Fix missing achievements for users whose entries existed before the achievement system was implemented.
+        
+        **Process**:
+        1. Fetch all entries for user in chronological order
+        2. Sequentially evaluate each entry against all achievement criteria
+        3. Create UserAchievement records for qualifying achievements (unique constraint prevents duplicates)
+        4. Return aggregate statistics (entries processed, achievements unlocked, points earned)
+        
+        **Performance**: Typical response time is 5-15 seconds for users with 50-150 entries. Maximum timeout is 60 seconds for users with 500+ entries.
+      operationId: backfillUserAchievements
+      tags:
+        - Admin
+      security:
+        - sessionAuth: []
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          description: MongoDB ObjectId of the target user
+          schema:
+            type: string
+            pattern: '^[0-9a-fA-F]{24}$'
+            example: '673d4e8a9b1c2d3e4f5a6b7c'
+      responses:
+        '200':
+          description: Backfill operation completed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BackfillSuccessResponse'
+              examples:
+                withAchievements:
+                  summary: User unlocked new achievements
+                  value:
+                    success: true
+                    entriesProcessed: 127
+                    achievementsUnlocked: 8
+                    pointsEarned: 150
+                    achievements:
+                      - achievementId: '673d4e8a9b1c2d3e4f5a6b7c'
+                        name: 'Sweet Sixteen'
+                        description: 'Complete your first 16-hour fast'
+                        points: 15
+                        unlockedAt: '2025-11-07T14:32:10.123Z'
+                      - achievementId: '673d4e8a9b1c2d3e4f5a6b7d'
+                        name: 'Daily Dozen'
+                        description: 'Complete 12 consecutive days of fasting'
+                        points: 50
+                        unlockedAt: '2025-11-07T14:32:11.456Z'
+                noNewAchievements:
+                  summary: All achievements already unlocked
+                  value:
+                    success: true
+                    entriesProcessed: 50
+                    achievementsUnlocked: 0
+                    pointsEarned: 0
+                    achievements: []
+                zeroEntries:
+                  summary: User has no entries
+                  value:
+                    success: true
+                    entriesProcessed: 0
+                    achievementsUnlocked: 0
+                    pointsEarned: 0
+                    achievements: []
+        '401':
+          description: Authentication required (user not logged in)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: 'Authentication required'
+        '403':
+          description: Forbidden (user is not an administrator)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: 'Admin access required'
+        '404':
+          description: Target user not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: 'User not found'
+        '500':
+          description: Server error during backfill operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                genericError:
+                  summary: Generic server error
+                  value:
+                    error: 'Failed to backfill achievements'
+                serviceError:
+                  summary: Achievement service unavailable
+                  value:
+                    error: 'Achievement service unavailable'
+                databaseError:
+                  summary: Database connection error
+                  value:
+                    error: 'Database connection error'
+
+components:
+  securitySchemes:
+    sessionAuth:
+      type: apiKey
+      in: cookie
+      name: next-auth.session-token
+      description: NextAuth.js session cookie (automatically sent by browser)
+
+  schemas:
+    BackfillSuccessResponse:
+      type: object
+      required:
+        - success
+        - entriesProcessed
+        - achievementsUnlocked
+        - pointsEarned
+        - achievements
+      properties:
+        success:
+          type: boolean
+          description: Indicates successful completion
+          example: true
+        entriesProcessed:
+          type: integer
+          minimum: 0
+          description: Total number of user entries evaluated
+          example: 127
+        achievementsUnlocked:
+          type: integer
+          minimum: 0
+          description: Number of new achievements unlocked (excludes already unlocked)
+          example: 8
+        pointsEarned:
+          type: integer
+          minimum: 0
+          description: Sum of points from newly unlocked achievements
+          example: 150
+        achievements:
+          type: array
+          description: Detailed list of newly unlocked achievements
+          items:
+            $ref: '#/components/schemas/UnlockedAchievement'
+
+    UnlockedAchievement:
+      type: object
+      required:
+        - achievementId
+        - name
+        - description
+        - points
+        - unlockedAt
+      properties:
+        achievementId:
+          type: string
+          format: objectId
+          description: MongoDB ObjectId of the achievement
+          example: '673d4e8a9b1c2d3e4f5a6b7c'
+        name:
+          type: string
+          description: Display name of the achievement (English)
+          example: 'Sweet Sixteen'
+        description:
+          type: string
+          description: Achievement description (English)
+          example: 'Complete your first 16-hour fast'
+        points:
+          type: integer
+          minimum: 1
+          description: Points value of the achievement
+          example: 15
+        unlockedAt:
+          type: string
+          format: date-time
+          description: ISO 8601 timestamp when achievement was unlocked
+          example: '2025-11-07T14:32:10.123Z'
+
+    ErrorResponse:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          description: Human-readable error message
+          example: 'Failed to backfill achievements'
+
+  examples:
+    ExampleUserId:
+      summary: Valid MongoDB ObjectId
+      value: '673d4e8a9b1c2d3e4f5a6b7c'
