@@ -232,8 +232,50 @@ export class AchievementService {
    * @returns {Promise<string[]>} Array of qualifying achievement IDs
    */
   static async evaluateEntryCountAchievements(userId) {
-    // TODO: Implement entry-count evaluator
-    return [];
+    // Count total entries for this user
+    const totalEntries = await Entry.countDocuments({ userId });
+
+    // If no entries, return empty array
+    if (totalEntries === 0) {
+      return [];
+    }
+
+    // Get active achievements from cache
+    const activeAchievements = await this.getActiveAchievements();
+
+    // Filter to entry-count achievements only
+    const entryCountAchievements = activeAchievements.filter(
+      (ach) => ach.criteria?.type === 'entry-count'
+    );
+
+    // Check which achievements are already unlocked by this user
+    const unlockedIds = await UserAchievement.find({
+      userId,
+      achievementId: { $in: entryCountAchievements.map((a) => a.achievementId) },
+    })
+      .distinct('achievementId')
+      .lean();
+
+    const unlockedSet = new Set(unlockedIds);
+
+    // Find achievements where entry count >= required count
+    const qualifiedAchievements = entryCountAchievements.filter((ach) => {
+      // Skip if already unlocked
+      if (unlockedSet.has(ach.achievementId)) {
+        return false;
+      }
+
+      // Check if entry count meets or exceeds threshold
+      const requiredCount = ach.criteria?.params?.count;
+      if (typeof requiredCount !== 'number') {
+        return false; // Invalid criteria
+      }
+
+      return totalEntries >= requiredCount;
+    });
+
+    // Return array of qualifying achievement IDs
+    return qualifiedAchievements.map((ach) => ach.achievementId);
   }
 
   /**
