@@ -70,22 +70,22 @@ export class AchievementService {
 
     // Collect achievement IDs from all evaluators
     const achievementIdSets = await Promise.all([
-      // Duration evaluator (requires entry)
+      // Duration evaluator (duration-milestone achievements)
       this.evaluateDurationAchievements(userId, entryId),
       
-      // Streak evaluator (calculates from all user entries)
+      // Streak evaluator (streak-milestone achievements)
       this.evaluateStreakAchievements(userId),
       
-      // Entry count evaluator (stub - returns empty)
+      // Entry count evaluator (entry-count achievements)
       this.evaluateEntryCountAchievements(userId),
       
-      // Goal evaluator (counts completed goals)
+      // Goal evaluator (goal-completion achievements)
       this.evaluateGoalAchievements(userId),
       
-      // Weight evaluator (stub - returns empty)
+      // Weight evaluator (weight-loss achievements)
       this.evaluateWeightAchievements(userId),
       
-      // Custom evaluator (stub - returns empty)
+      // Custom evaluator (custom achievements: goals, time-based, patterns, meta)
       this.evaluateCustomAchievements(userId, entry),
     ]);
 
@@ -343,21 +343,276 @@ export class AchievementService {
    * @returns {Promise<string[]>} Array of qualifying achievement IDs
    */
   static async evaluateWeightAchievements(userId) {
-    // TODO: Implement weight evaluator
-    return [];
+    // Find all entries with weight data for this user
+    const entriesWithWeight = await Entry.find({
+      userId,
+      morningWeight: { $exists: true, $ne: null },
+    })
+      .select('morningWeight date')
+      .sort({ date: 1 }) // Oldest first
+      .lean();
+
+    // If fewer than 2 weight entries, can't calculate loss
+    if (entriesWithWeight.length < 2) {
+      return [];
+    }
+
+    // Calculate weight loss: starting weight - current weight
+    const startingWeight = entriesWithWeight[0].morningWeight;
+    const currentWeight = entriesWithWeight[entriesWithWeight.length - 1].morningWeight;
+    const weightLoss = startingWeight - currentWeight;
+
+    // If no weight loss (or weight gain), return empty
+    if (weightLoss <= 0) {
+      return [];
+    }
+
+    // Get active achievements from cache
+    const activeAchievements = await this.getActiveAchievements();
+
+    // Filter to custom achievements with weight-related requirements
+    const weightAchievements = activeAchievements.filter((ach) => {
+      if (ach.criteria?.type !== 'custom') return false;
+      const req = ach.criteria?.params?.requirement;
+      return req && req.match(/^(lose\d+Pounds|logFirstWeight)$/);
+    });
+
+    // Check which achievements are already unlocked
+    const unlockedIds = await UserAchievement.find({
+      userId,
+      achievementId: { $in: weightAchievements.map((a) => a.achievementId) },
+    })
+      .distinct('achievementId')
+      .lean();
+
+    const unlockedSet = new Set(unlockedIds);
+
+    // Find achievements where weight loss meets threshold
+    const qualifiedAchievements = weightAchievements.filter((ach) => {
+      if (unlockedSet.has(ach.achievementId)) {
+        return false;
+      }
+
+      const requirement = ach.criteria?.params?.requirement;
+
+      // logFirstWeight: just need 1+ weight entries
+      if (requirement === 'logFirstWeight') {
+        return entriesWithWeight.length >= 1;
+      }
+
+      // lose5Pounds, lose10Pounds, etc.
+      const match = requirement.match(/^lose(\d+)Pounds$/);
+      if (match) {
+        const targetLoss = parseInt(match[1]);
+        return weightLoss >= targetLoss;
+      }
+
+      return false;
+    });
+
+    return qualifiedAchievements.map((ach) => ach.achievementId);
   }
 
   /**
    * Evaluate custom achievements
-   * Dispatches to custom evaluation functions based on customKey
+   * Dispatches to custom evaluation functions based on requirement
    * 
    * @param {string} userId - User ObjectId
    * @param {Object} entry - Entry document
    * @returns {Promise<string[]>} Array of qualifying achievement IDs
    */
   static async evaluateCustomAchievements(userId, entry) {
-    // TODO: Implement custom evaluator dispatcher
-    return [];
+    // Get active achievements from cache
+    const activeAchievements = await this.getActiveAchievements();
+
+    // Filter to custom achievements only
+    const customAchievements = activeAchievements.filter(
+      (ach) => ach.criteria?.type === 'custom'
+    );
+
+    // Check which achievements are already unlocked
+    const unlockedIds = await UserAchievement.find({
+      userId,
+      achievementId: { $in: customAchievements.map((a) => a.achievementId) },
+    })
+      .distinct('achievementId')
+      .lean();
+
+    const unlockedSet = new Set(unlockedIds);
+
+    // Evaluate each custom achievement
+    const evaluationPromises = customAchievements.map(async (ach) => {
+      // Skip if already unlocked
+      if (unlockedSet.has(ach.achievementId)) {
+        return null;
+      }
+
+      const requirement = ach.criteria?.params?.requirement;
+      if (!requirement) {
+        return null;
+      }
+
+      // Evaluate based on requirement type
+      const isQualified = await this.evaluateCustomRequirement(userId, requirement, entry);
+      return isQualified ? ach.achievementId : null;
+    });
+
+    const results = await Promise.all(evaluationPromises);
+    return results.filter((id) => id !== null);
+  }
+
+  /**
+   * Evaluate a single custom requirement
+   * 
+   * @param {string} userId - User ObjectId
+   * @param {string} requirement - Requirement string (e.g., "completeThreeGoals")
+   * @param {Object} entry - Current entry being evaluated
+   * @returns {Promise<boolean>} Whether the requirement is met
+   */
+  static async evaluateCustomRequirement(userId, requirement, entry) {
+    // Goal-related achievements
+    if (requirement === 'setFirstGoal') {
+      // Check if any entry has a goal set
+      const entryWithGoal = await Entry.findOne({
+        userId,
+        goalDuration: { $exists: true, $ne: null },
+      }).lean();
+      return !!entryWithGoal;
+    }
+
+    if (requirement === 'completeFirstGoal') {
+      const completedGoals = await Entry.countDocuments({
+        userId,
+        goalStatus: 'completed',
+      });
+      return completedGoals >= 1;
+    }
+
+    if (requirement === 'completeThreeGoals') {
+      const completedGoals = await Entry.countDocuments({
+        userId,
+        goalStatus: 'completed',
+      });
+      return completedGoals >= 3;
+    }
+
+    if (requirement === 'completeFiveGoals') {
+      const completedGoals = await Entry.countDocuments({
+        userId,
+        goalStatus: 'completed',
+      });
+      return completedGoals >= 5;
+    }
+
+    if (requirement === 'completeTenGoals') {
+      const completedGoals = await Entry.countDocuments({
+        userId,
+        goalStatus: 'completed',
+      });
+      return completedGoals >= 10;
+    }
+
+    if (requirement === 'completeTwentyfiveGoals') {
+      const completedGoals = await Entry.countDocuments({
+        userId,
+        goalStatus: 'completed',
+      });
+      return completedGoals >= 25;
+    }
+
+    if (requirement === 'complete20HourGoal') {
+      // Check if any entry has completed a 20+ hour goal
+      const entry20Hour = await Entry.findOne({
+        userId,
+        goalStatus: 'completed',
+        goalDuration: { $gte: 20 * 60 }, // 20 hours in minutes
+      }).lean();
+      return !!entry20Hour;
+    }
+
+    if (requirement === 'perfectMonthGoals') {
+      // Check if user has completed goals for 30 consecutive days
+      const entries = await Entry.find({
+        userId,
+        goalStatus: 'completed',
+      })
+        .select('date')
+        .sort({ date: 1 })
+        .lean();
+
+      if (entries.length < 30) return false;
+
+      // Check for 30 consecutive days
+      for (let i = 0; i <= entries.length - 30; i++) {
+        let consecutive = true;
+        for (let j = 1; j < 30; j++) {
+          const prevDate = new Date(entries[i + j - 1].date);
+          const currDate = new Date(entries[i + j].date);
+          const dayDiff = Math.floor((currDate - prevDate) / (1000 * 60 * 60 * 24));
+          if (dayDiff !== 1) {
+            consecutive = false;
+            break;
+          }
+        }
+        if (consecutive) return true;
+      }
+      return false;
+    }
+
+    // Weight-related achievements are handled by evaluateWeightAchievements
+    if (requirement.match(/^(lose\d+Pounds|logFirstWeight)$/)) {
+      return false; // Skip, handled elsewhere
+    }
+
+    // Time-based achievements (these require more complex logic - return false for now)
+    // Examples: earlyBird, nightOwl, midnightFaster, etc.
+    if (
+      requirement.match(
+        /^(earlyBird|nightOwl|midnightFaster|sunriseFinisher|weekendWarrior|weekdayChampion)$/
+      )
+    ) {
+      return false; // TODO: Implement time-based achievements
+    }
+
+    // Entry pattern achievements
+    if (
+      requirement.match(
+        /^(perfectWeek|perfectMonth|monthlyMilestones|quarterlyChampion|yearlyLegend)$/
+      )
+    ) {
+      return false; // TODO: Implement pattern-based achievements
+    }
+
+    // Meta achievements
+    if (
+      requirement.match(
+        /^(allRounder|completionist|masterFaster|faqExplorer|knowledgeSeeker|scienceScholar|fastingEncyclopedia)$/
+      )
+    ) {
+      return false; // TODO: Implement meta achievements
+    }
+
+    // Profile/UI achievements
+    if (
+      requirement.match(
+        /^(profilePerfectionist|socialSharer|motivationalNote|methodMaster|safetyFirst|hydrationHero|autophagyAware)$/
+      )
+    ) {
+      return false; // TODO: Implement UI-based achievements
+    }
+
+    // Special date achievements
+    if (
+      requirement.match(
+        /^(newYearResolution|birthdayFaster|holidayDedication|luckyThirteen|secretHunter|comebackChampion)$/
+      )
+    ) {
+      return false; // TODO: Implement special date achievements
+    }
+
+    // Unknown requirement - log warning and return false
+    console.warn(`⚠️ Unknown custom achievement requirement: ${requirement}`);
+    return false;
   }
 
   /**
