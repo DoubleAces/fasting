@@ -69,7 +69,7 @@ describe('POST /api/admin/users/[userId]/backfill-achievements', () => {
     // Create test achievement
     await Achievement.create({
       achievementId: 'first-sixteen',
-      criteria: { type: 'duration-milestone', durationHours: 16 },
+      criteria: { type: 'duration-milestone', params: { hours: 16 } },
       points: 15,
       rarity: 'common',
       category: 'duration',

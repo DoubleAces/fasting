@@ -150,12 +150,20 @@ export class AchievementService {
       }
 
       // Check if entry duration meets or exceeds threshold
+      // Support both minDuration (minutes) and hours params
       const minDuration = ach.criteria?.params?.minDuration;
-      if (typeof minDuration !== 'number') {
+      const hours = ach.criteria?.params?.hours;
+      
+      let thresholdMinutes;
+      if (typeof minDuration === 'number') {
+        thresholdMinutes = minDuration;
+      } else if (typeof hours === 'number') {
+        thresholdMinutes = hours * 60; // Convert hours to minutes
+      } else {
         return false; // Invalid criteria
       }
 
-      return entry.fastingDuration >= minDuration;
+      return entry.fastingDuration >= thresholdMinutes;
     });
 
     // Return array of qualifying achievement IDs
