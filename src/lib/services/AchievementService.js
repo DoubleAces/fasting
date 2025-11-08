@@ -473,10 +473,10 @@ export class AchievementService {
   static async evaluateCustomRequirement(userId, requirement, entry) {
     // Goal-related achievements
     if (requirement === 'setFirstGoal') {
-      // Check if any entry has a goal set
+      // Check if any entry has a goal set (fastingGoal field, not goalDuration)
       const entryWithGoal = await Entry.findOne({
         userId,
-        goalDuration: { $exists: true, $ne: null },
+        fastingGoal: { $exists: true, $ne: null },
       }).lean();
       return !!entryWithGoal;
     }
@@ -526,7 +526,7 @@ export class AchievementService {
       const entry20Hour = await Entry.findOne({
         userId,
         goalStatus: 'completed',
-        goalDuration: { $gte: 20 * 60 }, // 20 hours in minutes
+        fastingGoal: { $gte: 20 * 60 }, // 20 hours in minutes
       }).lean();
       return !!entry20Hour;
     }
