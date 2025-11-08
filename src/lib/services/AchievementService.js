@@ -565,65 +565,76 @@ export class AchievementService {
       return false; // Skip, handled elsewhere
     }
 
-    // Time-based achievements - check meal times and dates
-    // tenEarlyStarts: Start 10 fasts before 6 AM
-    if (requirement === 'tenEarlyStarts') {
-      const earlyStarts = entries.filter((entry) => {
-        if (!entry.lastMealTime) return false;
-        const [hours] = entry.lastMealTime.split(':').map(Number);
-        return hours < 6;
-      });
-      return earlyStarts.length >= 10;
-    }
+    // Time-based achievements - need to fetch all entries
+    if (
+      requirement.match(
+        /^(tenEarlyStarts|tenLateStarts|startAtMidnight|endAtSunrise|comebackAfter30Days|twoMidnightFast)$/
+      )
+    ) {
+      // Fetch all entries for time-based evaluation
+      const entries = await Entry.find({ userId })
+        .select('date lastMealTime firstMealTime fastingDuration')
+        .sort({ date: 1 })
+        .lean();
 
-    // tenLateStarts: Start 10 fasts after 10 PM (22:00)
-    if (requirement === 'tenLateStarts') {
-      const lateStarts = entries.filter((entry) => {
-        if (!entry.lastMealTime) return false;
-        const [hours] = entry.lastMealTime.split(':').map(Number);
-        return hours >= 22;
-      });
-      return lateStarts.length >= 10;
-    }
-
-    // startAtMidnight: Start a fast exactly at midnight (00:00)
-    if (requirement === 'startAtMidnight') {
-      return entries.some((entry) => entry.lastMealTime === '00:00');
-    }
-
-    // endAtSunrise: End a fast at sunrise (5-7 AM)
-    if (requirement === 'endAtSunrise') {
-      return entries.some((entry) => {
-        if (!entry.firstMealTime) return false;
-        const [hours] = entry.firstMealTime.split(':').map(Number);
-        return hours >= 5 && hours < 7;
-      });
-    }
-
-    // comebackAfter30Days: Return to fasting after a 30+ day break
-    if (requirement === 'comebackAfter30Days') {
-      const sortedEntries = [...entries].sort((a, b) => new Date(a.date) - new Date(b.date));
-      for (let i = 1; i < sortedEntries.length; i++) {
-        const prevDate = new Date(sortedEntries[i - 1].date);
-        const currDate = new Date(sortedEntries[i].date);
-        const dayDiff = Math.floor((currDate - prevDate) / (1000 * 60 * 60 * 24));
-        if (dayDiff >= 30) return true;
+      // tenEarlyStarts: Start 10 fasts before 6 AM
+      if (requirement === 'tenEarlyStarts') {
+        const earlyStarts = entries.filter((entry) => {
+          if (!entry.lastMealTime) return false;
+          const [hours] = entry.lastMealTime.split(':').map(Number);
+          return hours < 6;
+        });
+        return earlyStarts.length >= 10;
       }
-      return false;
-    }
 
-    // twoMidnightFast: Complete a 48+ hour fast that spans two midnights
-    if (requirement === 'twoMidnightFast') {
-      return entries.some((entry) => {
-        // Must have completed the fast (firstMealTime present)
-        if (!entry.firstMealTime || !entry.fastingDuration) return false;
-        
-        // Fast must be at least 48 hours (2880 minutes)
-        if (entry.fastingDuration < 2880) return false;
-        
-        // A 48+ hour fast always spans at least two midnights
-        return true;
-      });
+      // tenLateStarts: Start 10 fasts after 10 PM (22:00)
+      if (requirement === 'tenLateStarts') {
+        const lateStarts = entries.filter((entry) => {
+          if (!entry.lastMealTime) return false;
+          const [hours] = entry.lastMealTime.split(':').map(Number);
+          return hours >= 22;
+        });
+        return lateStarts.length >= 10;
+      }
+
+      // startAtMidnight: Start a fast exactly at midnight (00:00)
+      if (requirement === 'startAtMidnight') {
+        return entries.some((entry) => entry.lastMealTime === '00:00');
+      }
+
+      // endAtSunrise: End a fast at sunrise (5-7 AM)
+      if (requirement === 'endAtSunrise') {
+        return entries.some((entry) => {
+          if (!entry.firstMealTime) return false;
+          const [hours] = entry.firstMealTime.split(':').map(Number);
+          return hours >= 5 && hours < 7;
+        });
+      }
+
+      // comebackAfter30Days: Return to fasting after a 30+ day break
+      if (requirement === 'comebackAfter30Days') {
+        for (let i = 1; i < entries.length; i++) {
+          const prevDate = new Date(entries[i - 1].date);
+          const currDate = new Date(entries[i].date);
+          const dayDiff = Math.floor((currDate - prevDate) / (1000 * 60 * 60 * 24));
+          if (dayDiff >= 30) return true;
+        }
+        return false;
+      }
+
+      // twoMidnightFast: Complete a 48+ hour fast that spans two midnights
+      if (requirement === 'twoMidnightFast') {
+        return entries.some((entry) => {
+          // Must have completed the fast (firstMealTime present)
+          if (!entry.firstMealTime || !entry.fastingDuration) return false;
+
+          // Fast must be at least 48 hours (2880 minutes)
+          if (entry.fastingDuration < 2880) return false;
+
+          // A 48+ hour fast always spans at least two midnights
+          return true;
+        });
+      }
     }
 
     // Entry pattern achievements
