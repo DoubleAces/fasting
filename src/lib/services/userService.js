@@ -114,6 +114,7 @@ export async function getPaginatedUsers({
 
     const filterQuery = {
       isActive: true, // Only show active users (soft delete filter)
+      email: { $ne: 'system@achievements.local' }, // Hide system accounts
     };
 
     // Name filter: Case-insensitive partial match using regex
