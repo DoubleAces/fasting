@@ -189,9 +189,9 @@ export class AchievementService {
     // Get active achievements from cache
     const activeAchievements = await this.getActiveAchievements();
 
-    // Filter to streak-milestone achievements only
+    // Filter to streak achievements (both "streak" and "streak-milestone" types)
     const streakAchievements = activeAchievements.filter(
-      (ach) => ach.criteria?.type === 'streak-milestone'
+      (ach) => ach.criteria?.type === 'streak' || ach.criteria?.type === 'streak-milestone'
     );
 
     // Check which achievements are already unlocked by this user
@@ -204,7 +204,7 @@ export class AchievementService {
 
     const unlockedSet = new Set(unlockedIds);
 
-    // Find achievements where current streak >= count threshold
+    // Find achievements where current streak >= threshold
     const qualifiedAchievements = streakAchievements.filter((ach) => {
       // Skip if already unlocked
       if (unlockedSet.has(ach.achievementId)) {
@@ -212,7 +212,8 @@ export class AchievementService {
       }
 
       // Check if current streak meets or exceeds threshold
-      const requiredCount = ach.criteria?.params?.count;
+      // Support both params.count and params.days
+      const requiredCount = ach.criteria?.params?.count || ach.criteria?.params?.days;
       if (typeof requiredCount !== 'number') {
         return false; // Invalid criteria
       }
