@@ -461,6 +461,7 @@ const EntryForm = ({
           
           if (achievementMessage) {
             showSuccess(achievementMessage, {
+              duration: 20000,
               action: {
                 label: 'View Achievements',
                 onAction: () => router.push('/achievements')
@@ -585,6 +586,7 @@ const EntryForm = ({
           
           if (achievementMessage) {
             showSuccess(achievementMessage, {
+              duration: 20000,
               action: {
                 label: 'View Achievements',
                 onAction: () => router.push('/achievements')
