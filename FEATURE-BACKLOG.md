@@ -1,12 +1,35 @@
 # Feature Backlog - Fasting Tracker
 
-**Last Updated**: November 7, 2025  
-**Completed Features**: 001-031 (All shipped!)
+**Last Updated**: November 9, 2025  
+**Completed Features**: 001-034 (All shipped!)
 **Note**: This backlog has been audited against the actual codebase. Only features NOT yet implemented are listed below.
 
 ---
 
-## ✅ Recently Completed (Features 022-031)
+## ✅ Recently Completed (Features 028-034)
+
+### Feature 034: Achievement Unlock Toast Notifications (November 9, 2025)
+- ✅ **Achievement toast helper** - formatAchievementToast() with validation, truncation, fallback messages
+- ✅ **Rarity-based emojis** - 🏆 Common, ⭐ Rare, 🎉 Epic, ✨ Legendary
+- ✅ **Multi-achievement consolidation** - Single toast for 2-3 achievements, truncation for 4+
+- ✅ **EntryForm integration** - Displays toast after entry save with "View Achievements" action button
+- ✅ **Navigation integration** - Routes to /achievements page on button click
+- ✅ **Error handling** - Graceful degradation, validation filters malformed data, entry save never blocked
+- ✅ **27+ unit tests passing** (getRarityEmoji, formatAchievementToast, edge cases)
+- ✅ **15+ integration tests** (EntryForm behavior, navigation, error scenarios)
+- 🚀 **Production-ready** - All automated tasks complete, manual QA pending
+
+### Feature 033: Admin Achievement Backfill (November 2025)
+- ✅ Admin-only backfill endpoint for historical achievement evaluation
+- ✅ Dry-run mode for testing without database changes
+- ✅ Progress tracking with detailed results
+- ✅ Batch processing for all users or specific user
+
+### Feature 032: Achievement Unlock API Response (November 2025)
+- ✅ POST/PUT /api/entries returns unlockedAchievements array
+- ✅ Integration with AchievementService evaluation
+- ✅ Non-blocking achievement evaluation
+- ✅ Detailed achievement metadata in response
 
 ### Feature 031: Achievement Unlock Logic (November 7, 2025)
 - ✅ **AchievementService** with 6 evaluator methods (Duration, Streak, Goal, Entry Count, Weight, Custom)
