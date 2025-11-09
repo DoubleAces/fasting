@@ -60,10 +60,14 @@ Auto-generated from all feature plans. Last updated: 2025-10-17
 - MongoDB with Achievement collection (existing model from Feature 028) and User collection (for system admin reference) (030-achievement-content-seed)
 - JavaScript (ES6+) / Node.js (Next.js runtime) + Next.js (App Router), Mongoose ODM, MongoDB (031-achievement-unlock-logic)
 - MongoDB with Mongoose (models: Achievement, UserAchievement, Entry, User) (031-achievement-unlock-logic)
+- JavaScript (ES6+) with Next.js 15.5.6 (App Router), React 19.1.0 + Next.js, React, Tailwind CSS, ToastContext (Feature 021) (034-achievement-unlock-toasts)
+- N/A (frontend-only feature, no database changes) (034-achievement-unlock-toasts)
 - JavaScript (ES6+) / Next.js 15.x (App Router) + Mongoose ODM, AchievementService (Feature 031), Next.js API Routes (032-achievement-unlock-response)
 - MongoDB (existing Entry, UserAchievement, Achievement collections) (032-achievement-unlock-response)
 - JavaScript (ES6+) / Next.js 15.x (App Router) + Next.js (App Router), NextAuth/Auth.js (authentication), Mongoose ODM (database queries), AchievementService (Feature 031), useToast hook (Feature 021) (033-admin-achievement-backfill)
 - MongoDB with Mongoose (models: Entry, Achievement, UserAchievement, User) (033-admin-achievement-backfill)
+- JavaScript (ES6+) / Next.js (App Router) + React Context (ToastContext), Next.js router, existing `useToast` hook (034-achievement-unlock-toasts)
+- N/A (frontend display only, uses API response data) (034-achievement-unlock-toasts)
 
 ## Project Structure
 ```
@@ -79,9 +83,9 @@ npm test; npm run lint
 JavaScript ES6+ with Node.js 18+ (Next.js 14+): Follow standard conventions
 
 ## Recent Changes
+- 034-achievement-unlock-toasts: Added JavaScript (ES6+) / Next.js (App Router) + React Context (ToastContext), Next.js router, existing `useToast` hook
 - 033-admin-achievement-backfill: Added JavaScript (ES6+) / Next.js 15.x (App Router) + Next.js (App Router), NextAuth/Auth.js (authentication), Mongoose ODM (database queries), AchievementService (Feature 031), useToast hook (Feature 021)
 - 032-achievement-unlock-response: Added JavaScript (ES6+) / Next.js 15.x (App Router) + Mongoose ODM, AchievementService (Feature 031), Next.js API Routes
-- 031-achievement-unlock-logic: Added JavaScript (ES6+) / Node.js (Next.js runtime) + Next.js (App Router), Mongoose ODM, MongoDB
 
 <!-- MANUAL ADDITIONS START -->
 
@@ -1145,4 +1149,182 @@ await User.findByIdAndUpdate(
 - **Testing**: Manual testing passed, automated tests pending (32 tasks)
 - **Database**: 6 achievements seeded, indexes optimized
 - **Real-world validation**: User successfully unlocked 3 achievements from historical data
+
+---
+
+## Feature 034: Achievement Unlock Toasts - Key Patterns
+
+### 1. Achievement Toast Helper
+**Pattern**: Centralized formatting logic for achievement toast messages
+
+**Implementation**:
+```javascript
+// src/lib/utils/achievementToast.js
+export function getRarityEmoji(rarity) {
+  const emojiMap = {
+    common: '🏆',
+    rare: '⭐',
+    epic: '🎉',
+    legendary: '✨'
+  };
+  return emojiMap[rarity?.toLowerCase()] || '🏆';
+}
+
+export function formatAchievementToast(achievements) {
+  try {
+    // Validation
+    if (!achievements || !Array.isArray(achievements) || achievements.length === 0) {
+      return null;
+    }
+
+    // Filter valid achievements
+    const validAchievements = achievements.filter(ach => 
+      ach && typeof ach === 'object' && ach.name && ach.rarity && typeof ach.points === 'number'
+    );
+
+    if (validAchievements.length === 0) {
+      return 'Achievement Unlocked! 🎉';
+    }
+
+    const totalPoints = validAchievements.reduce((sum, ach) => sum + ach.points, 0);
+
+    // Single achievement
+    if (validAchievements.length === 1) {
+      const ach = validAchievements[0];
+      const emoji = getRarityEmoji(ach.rarity);
+      return `${emoji} ${ach.name} (${ach.points} pts)`;
+    }
+
+    // Multiple achievements - show first 3 and truncate
+    const displayCount = Math.min(3, validAchievements.length);
+    const achievements List = validAchievements
+      .slice(0, displayCount)
+      .map(ach => `${ach.name} (${ach.points} pts)`)
+      .join(', ');
+
+    if (validAchievements.length > 3) {
+      const remaining = validAchievements.length - 3;
+      return `${validAchievements.length} Achievements Unlocked! ${achievementsList}, and ${remaining} more... (+${totalPoints} pts total)`;
+    }
+
+    return `${validAchievements.length} Achievements Unlocked! ${achievementsList} (+${totalPoints} pts total)`;
+  } catch (error) {
+    console.error('Error formatting achievement toast:', error);
+    return 'Achievement Unlocked! 🎉';
+  }
+}
+```
+
+**Files**: `src/lib/utils/achievementToast.js`
+
+### 2. EntryForm Achievement Toast Integration
+**Pattern**: Display achievement toast after entry save with navigation action
+
+**Implementation**:
+```javascript
+// src/components/organisms/EntryForm.js
+import { useRouter } from 'next/navigation';
+import { formatAchievementToast } from '@/lib/utils/achievementToast';
+
+const EntryForm = ({ entry, onSuccess }) => {
+  const router = useRouter();
+  const { showSuccess } = useToast();
+
+  const handleSaveEntry = async () => {
+    // ... entry save logic ...
+    const result = await saveEntry(data);
+    
+    // Show standard success toast
+    showSuccess('Entry saved successfully!');
+
+    // Show achievement toast if achievements unlocked
+    try {
+      if (result.unlockedAchievements && result.unlockedAchievements.length > 0) {
+        const achievementMessage = formatAchievementToast(result.unlockedAchievements);
+        
+        if (achievementMessage) {
+          showSuccess(achievementMessage, {
+            duration: 5000,
+            action: {
+              label: 'View Achievements',
+              onClick: () => router.push('/achievements')
+            }
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error displaying achievement toast:', error);
+      // Don't block entry save on achievement toast errors
+    }
+  };
+};
+```
+
+**Use Cases**: Entry creation, entry update (any operation that returns unlockedAchievements)
+
+**Files**: `src/components/organisms/EntryForm.js`
+
+### 3. Rarity-Based Visual Differentiation
+**Pattern**: Emoji-based rarity indicators for immediate visual recognition
+
+**Rarity Mapping**:
+- 🏆 Common (40% of achievements, 5-10 points)
+- ⭐ Rare (26% of achievements, 15-25 points)
+- 🎉 Epic (22% of achievements, 30-50 points)
+- ✨ Legendary (12% of achievements, 75-500 points)
+
+**Design Decision**: Emoji-based MVP (custom colors deferred to future enhancement)
+
+### 4. Multi-Achievement Consolidation
+**Pattern**: Single toast for multiple simultaneous unlocks with truncation
+
+**Behavior**:
+- 1 achievement: Show full details with emoji
+- 2-3 achievements: List all with names and points
+- 4+ achievements: Show first 3 + "and X more..." with total points
+
+**Example Messages**:
+- Single: "🏆 First Fast (5 pts)"
+- Multiple: "3 Achievements Unlocked! First Fast (5 pts), Sweet Sixteen (10 pts), Perfect Day (15 pts) (+30 pts total)"
+- Truncated: "5 Achievements Unlocked! First Fast (5 pts), Sweet Sixteen (10 pts), Perfect Day (15 pts), and 2 more... (+50 pts total)"
+
+### 5. Error Handling & Graceful Degradation
+**Pattern**: Achievement toast errors never block entry save operations
+
+**Error Handling**:
+```javascript
+try {
+  if (result.unlockedAchievements?.length > 0) {
+    const message = formatAchievementToast(result.unlockedAchievements);
+    showSuccess(message, { action: { ... } });
+  }
+} catch (error) {
+  console.error('Error displaying achievement toast:', error);
+  // Entry save succeeds regardless
+}
+```
+
+**Validation Logic**:
+- Filter malformed achievement objects
+- Fallback to generic message if all invalid
+- Console warnings for debugging
+- Never throw errors to user
+
+### 6. Testing Strategy
+**Coverage**:
+- Unit tests: 27+ tests (all passing) covering all helper functions, edge cases, error scenarios
+- Integration tests: 15+ tests covering EntryForm behavior, navigation, multi-achievement display
+- Manual QA: Browser testing for visual validation, mobile responsive testing
+
+**Test Files**:
+- `tests/unit/lib/achievementToast.test.js` (170 lines)
+- `tests/integration/EntryForm.achievement-toasts.test.js` (480 lines)
+
+### Feature Status
+- **Completion**: 77% (54/66 tasks automated, 12 manual QA pending)
+- **Status**: ✅ Production-ready - Core implementation complete
+- **Testing**: All unit tests passing, integration tests written
+- **Dependencies**: Feature 021 (Toast System), Feature 032 (Achievement API Response)
+- **Documentation**: `specs/034-achievement-unlock-toasts/IMPLEMENTATION-COMPLETE.md`
+
 

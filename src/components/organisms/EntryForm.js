@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { flushSync } from 'react-dom';
+import { useRouter } from 'next/navigation';
 import FormField from '@/components/molecules/FormField';
 import DateInput from '@/components/molecules/DateInput';
 import TimeInput from '@/components/molecules/TimeInput';
@@ -9,6 +10,7 @@ import ErrorMessage from '@/components/atoms/ErrorMessage';
 import { getTodayISO } from '@/lib/utils/dateUtils';
 import { useFastingGoal } from '@/contexts/FastingGoalContext';
 import { useToast } from '@/contexts/ToastContext';
+import { formatAchievementToast } from '@/lib/utils/achievementToast';
 
 /**
  * Format an ISO date string to "DD Mon" format (e.g., "22 Oct").
@@ -71,6 +73,9 @@ const EntryForm = ({
   
   // T021: Toast notifications for success feedback
   const { showSuccess, showError } = useToast();
+  
+  // Feature 034: Router for achievement navigation
+  const router = useRouter();
   
   // Get weight unit from settings
   const weightUnit = settings?.measurementSystem === 'imperial' ? 'lbs' : 'kg';
@@ -449,6 +454,25 @@ const EntryForm = ({
       // T021: Show success toast
       showSuccess(isEditMode ? 'Entry updated successfully!' : 'Entry saved successfully!');
 
+      // Feature 034: Display achievement unlock toast if achievements were unlocked
+      try {
+        if (result.unlockedAchievements && result.unlockedAchievements.length > 0) {
+          const achievementMessage = formatAchievementToast(result.unlockedAchievements);
+          
+          if (achievementMessage) {
+            showSuccess(achievementMessage, {
+              action: {
+                label: 'View Achievements',
+                onAction: () => router.push('/achievements')
+              }
+            });
+          }
+        }
+      } catch (achievementError) {
+        // Don't break entry save flow if achievement toast fails
+        console.error('[EntryForm] Error displaying achievement toast:', achievementError);
+      }
+
       // Call success callback if provided
       if (onSuccess) {
         onSuccess(result.data);
@@ -553,6 +577,25 @@ const EntryForm = ({
 
       // T021: Show success toast
       showSuccess(isEditMode ? 'Entry updated successfully!' : 'Entry saved successfully!');
+
+      // Feature 034: Display achievement unlock toast if achievements were unlocked
+      try {
+        if (result.unlockedAchievements && result.unlockedAchievements.length > 0) {
+          const achievementMessage = formatAchievementToast(result.unlockedAchievements);
+          
+          if (achievementMessage) {
+            showSuccess(achievementMessage, {
+              action: {
+                label: 'View Achievements',
+                onAction: () => router.push('/achievements')
+              }
+            });
+          }
+        }
+      } catch (achievementError) {
+        // Don't break entry save flow if achievement toast fails
+        console.error('[EntryForm] Error displaying achievement toast:', achievementError);
+      }
 
       // Call success callback if provided
       if (onSuccess) {
