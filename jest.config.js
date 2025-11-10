@@ -52,6 +52,10 @@ const config = {
     '^@/components/(.*)$': '<rootDir>/src/components/$1',
     '^@/lib/(.*)$': '<rootDir>/src/lib/$1',
     '^@/styles/(.*)$': '<rootDir>/src/styles/$1',
+    // Mock next-auth to fix ESM import issues
+    '^next-auth$': '<rootDir>/tests/__mocks__/next-auth.js',
+    '^next-auth/providers/credentials$': '<rootDir>/tests/__mocks__/next-auth/providers/credentials.js',
+    '^next-auth/providers/google$': '<rootDir>/tests/__mocks__/next-auth/providers/google.js',
   },
   
   // Transform files

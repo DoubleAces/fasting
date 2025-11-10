@@ -435,12 +435,11 @@ async function checkCitationHealth() {
 - ⏳ Achievement unlock logic (automatic checking when entries are created/updated) - **Feature 031 in progress**
 - ⏳ **Hide locked achievements** - Only show progress count (e.g., "19/81 unlocked") and unlocked achievements, hide locked ones to prevent gaming
 - ⏳ Achievement criteria visibility (show exact unlock requirements to users - only for unlocked achievements)
-- ⏳ Admin UI for managing achievements
+- ⏳ Admin achievement analytics page - Overview stats, unlock trends, performance metrics, engagement insights
 - ⏳ Badge image uploads and cloud storage
 - ⏳ Unlock notifications
 - ⏳ Progress tracking for incremental achievements
 - ⏳ Additional language translations
-- ⏳ Achievement analytics
 
 **Problem**: Users need motivation and recognition for their fasting milestones. Gamification increases engagement and retention.
 
@@ -1029,6 +1028,49 @@ function AchievementCard({ achievement }) {
 - Achievement page is public (good for discovery)
 - Social share cards for unlocked achievements
 - Meta tags for achievement categories
+
+---
+
+#### Achievement Analytics Dashboard (Admin Feature)
+
+**Purpose**: Provide admins with insights into achievement system performance and user engagement.
+
+**Route**: `/admin/achievements/analytics`
+
+**Key Metrics:**
+
+1. **Overview Stats Cards**
+   - Total Achievements (active/inactive)
+   - Total Unlocks Across All Users
+   - Most Popular Achievement
+   - Rarest Achievement (lowest unlock rate)
+
+2. **Performance Table**
+   - Achievement Name, Unlocks, Unlock Rate %, Category, Tier
+   - Sortable and searchable
+   - Shows which achievements are performing well
+
+3. **Category Breakdown** (Pie Chart)
+   - Distribution by category (Duration, Streak, Goal, etc.)
+
+4. **User Engagement Segments**
+   - 0 achievements, 1-5, 6-15, 16+ counts
+   - Helps understand user engagement levels
+
+**API Endpoints:**
+```javascript
+GET /api/admin/achievements/analytics/overview
+GET /api/admin/achievements/analytics/performance
+GET /api/admin/achievements/analytics/categories
+GET /api/admin/achievements/analytics/user-segments
+```
+
+**Implementation Priority:**
+- Phase 1 (MVP - 2-3 hours): Stats cards + performance table
+- Phase 2 (Enhanced - 4-6 hours): Add charts
+- Phase 3 (Advanced - 2-3 hours): User segments, filters
+
+**Status**: ⏳ Not yet implemented (added to backlog Nov 10, 2025)
 
 ---
 
