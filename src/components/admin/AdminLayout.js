@@ -13,25 +13,28 @@
 
 'use client';
 
+import { ToastProvider } from '@/components/common/Toast';
 import AdminSidebar from './AdminSidebar';
 import AdminHeader from './AdminHeader';
 
 export default function AdminLayout({ children, user }) {
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      {/* Sidebar (fixed) */}
-      <AdminSidebar user={user} />
+    <ToastProvider>
+      <div className="flex min-h-screen bg-gray-50">
+        {/* Sidebar (fixed) */}
+        <AdminSidebar user={user} />
 
-      {/* Main Content Area */}
-      <div className="flex-1 ml-64">
-        {/* Header */}
-        <AdminHeader />
+        {/* Main Content Area */}
+        <div className="flex-1 ml-64">
+          {/* Header */}
+          <AdminHeader />
 
-        {/* Page Content */}
-        <main className="p-8" role="main" aria-label="Admin dashboard content">
-          {children}
-        </main>
+          {/* Page Content */}
+          <main className="p-8" role="main" aria-label="Admin dashboard content">
+            {children}
+          </main>
+        </div>
       </div>
-    </div>
+    </ToastProvider>
   );
 }

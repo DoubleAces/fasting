@@ -68,6 +68,8 @@ Auto-generated from all feature plans. Last updated: 2025-10-17
 - MongoDB with Mongoose (models: Entry, Achievement, UserAchievement, User) (033-admin-achievement-backfill)
 - JavaScript (ES6+) / Next.js (App Router) + React Context (ToastContext), Next.js router, existing `useToast` hook (034-achievement-unlock-toasts)
 - N/A (frontend display only, uses API response data) (034-achievement-unlock-toasts)
+- JavaScript ES6+ with Next.js 15.5.6 (App Router), React 19.1.0 + Next.js, React, Mongoose (MongoDB ODM), NextAuth v5, Tailwind CSS, React Hook Form (035-admin-achievement-management)
+- MongoDB with Achievement, UserAchievement, and AdminAuditLog collections (035-admin-achievement-management)
 
 ## Project Structure
 ```
@@ -83,9 +85,9 @@ npm test; npm run lint
 JavaScript ES6+ with Node.js 18+ (Next.js 14+): Follow standard conventions
 
 ## Recent Changes
+- 035-admin-achievement-management: Added JavaScript ES6+ with Next.js 15.5.6 (App Router), React 19.1.0 + Next.js, React, Mongoose (MongoDB ODM), NextAuth v5, Tailwind CSS, React Hook Form
 - 034-achievement-unlock-toasts: Added JavaScript (ES6+) / Next.js (App Router) + React Context (ToastContext), Next.js router, existing `useToast` hook
 - 033-admin-achievement-backfill: Added JavaScript (ES6+) / Next.js 15.x (App Router) + Next.js (App Router), NextAuth/Auth.js (authentication), Mongoose ODM (database queries), AchievementService (Feature 031), useToast hook (Feature 021)
-- 032-achievement-unlock-response: Added JavaScript (ES6+) / Next.js 15.x (App Router) + Mongoose ODM, AchievementService (Feature 031), Next.js API Routes
 
 <!-- MANUAL ADDITIONS START -->
 

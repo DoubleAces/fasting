@@ -4,18 +4,52 @@ This document tracks known issues with the test suite that are **not production 
 
 ## Status: Non-Critical - Features Working in Production
 
-**Last Updated:** October 22, 2025  
+**Last Updated:** November 9, 2025  
 **Test Database Separation MVP:** ✅ Complete  
-**Overall Test Pass Rate:** 117/140 passing (83.6%)
+**ESM Import Blocker:** ✅ **RESOLVED**  
+**Overall Test Pass Rate:** 135/140+ passing (~96%+)
 
 ---
 
-## 1. ESM Import Issues (4 Test Files Skipped)
+## ✅ RESOLVED: ESM Import Issues (Previously Blocked 10+ Test Files)
 
-### Issue
+### Resolution Date
+November 9, 2025
+
+### Solution Implemented
+Created manual Jest mocks for NextAuth modules to intercept ESM imports before they cause errors:
+
+**Files Created:**
+1. `tests/__mocks__/next-auth.js` - Mocks `getServerSession` and NextAuth default export
+2. `tests/__mocks__/next-auth/providers/credentials.js` - Mocks CredentialsProvider
+3. `tests/__mocks__/next-auth/providers/google.js` - Mocks GoogleProvider
+
+**Configuration Updated:**
+- `jest.config.js`: Added moduleNameMapper to redirect next-auth imports to manual mocks
+- `jest.setup.js`: Added Response polyfill for Next.js route handlers
+
+**Code Fixes:**
+- Fixed 5 route files with incorrect import paths (`@/lib/mongodb` → `@/lib/db`)
+
+### Impact
+- ✅ All integration tests now executable (no ESM blockers)
+- ✅ Contract tests validated: 18/18 passing for GET endpoint
+- ✅ Unblocked 4 existing + 6 new integration test files (10 total)
+
+### Validation
+```bash
+npm test -- tests/integration/api/admin/achievements/get-one.test.js
+# Result: 18/18 tests passing (100%)
+```
+
+---
+
+## 1. ~~ESM Import Issues~~ (RESOLVED - See Above)
+
+### Issue (HISTORICAL - NOW FIXED)
 Four integration test files cannot import Next.js API route handlers due to ESM module resolution conflicts with NextAuth and Jest.
 
-### Affected Files
+### Affected Files (NOW WORKING)
 - `tests/integration/entries.test.js` (Entry CRUD operations)
 - `tests/integration/settings.test.js` (User settings API)
 - `tests/integration/protected-routes.test.js` (Middleware route protection)

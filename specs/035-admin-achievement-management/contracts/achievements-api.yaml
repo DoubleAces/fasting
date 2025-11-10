@@ -1,0 +1,833 @@
+openapi: 3.0.0
+info:
+  title: Admin Achievement Management API
+  description: REST API for admin CRUD operations on achievements, translations, and analytics
+  version: 1.0.0
+  contact:
+    name: Feature 035 Team
+
+servers:
+  - url: /api/admin/achievements
+    description: Admin achievements endpoints (requires admin authentication)
+
+security:
+  - sessionAuth: []
+
+tags:
+  - name: CRUD
+    description: Create, Read, Update, Delete operations
+  - name: Bulk Operations
+    description: Batch activate/deactivate
+  - name: Translations
+    description: CSV import/export for multilingual content
+  - name: Analytics
+    description: Achievement statistics and insights
+
+paths:
+  /:
+    get:
+      summary: List achievements (paginated, filtered, sorted)
+      tags: [CRUD]
+      description: |
+        Retrieve paginated list of achievements with filtering, sorting, and search.
+        Maps to FR-001, FR-003, FR-004, FR-005, FR-006, FR-007.
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+            minimum: 1
+          description: Page number for pagination
+        
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+            minimum: 1
+            maximum: 100
+          description: Results per page
+        
+        - name: search
+          in: query
+          schema:
+            type: string
+          description: Search in name/description (English only per FR-005)
+        
+        - name: category
+          in: query
+          schema:
+            type: string
+            enum: [fasting, streak, goal, milestone, special]
+          description: Filter by category
+        
+        - name: tier
+          in: query
+          schema:
+            type: string
+            enum: [bronze, silver, gold, platinum, diamond]
+          description: Filter by tier
+        
+        - name: isActive
+          in: query
+          schema:
+            type: boolean
+          description: Filter by active status
+        
+        - name: sortBy
+          in: query
+          schema:
+            type: string
+            enum: [name, category, tier, rarity, createdAt, updatedAt]
+            default: name
+          description: Sort field
+        
+        - name: sortOrder
+          in: query
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: asc
+          description: Sort direction
+      
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Achievement'
+                  pagination:
+                    type: object
+                    properties:
+                      page:
+                        type: integer
+                        example: 1
+                      limit:
+                        type: integer
+                        example: 20
+                      total:
+                        type: integer
+                        example: 81
+                      pages:
+                        type: integer
+                        example: 5
+        
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        
+        '429':
+          $ref: '#/components/responses/RateLimited'
+    
+    post:
+      summary: Create new achievement
+      tags: [CRUD]
+      description: |
+        Create a new achievement with multilingual support.
+        Maps to FR-012 through FR-025 (multi-step form).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AchievementCreateRequest'
+      
+      responses:
+        '201':
+          description: Achievement created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/Achievement'
+                  message:
+                    type: string
+                    example: Achievement created successfully
+        
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        
+        '409':
+          description: Conflict - achievementId already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        
+        '429':
+          $ref: '#/components/responses/RateLimited'
+
+  /{achievementId}:
+    get:
+      summary: Get single achievement by ID
+      tags: [CRUD]
+      description: Retrieve full achievement details for editing. Maps to FR-026, FR-027.
+      parameters:
+        - name: achievementId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Unique achievement identifier (slug format)
+      
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/Achievement'
+        
+        '404':
+          $ref: '#/components/responses/NotFound'
+        
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    
+    put:
+      summary: Update existing achievement
+      tags: [CRUD]
+      description: |
+        Update achievement with change tracking.
+        Maps to FR-028 through FR-037 (edit form).
+      parameters:
+        - name: achievementId
+          in: path
+          required: true
+          schema:
+            type: string
+      
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AchievementUpdateRequest'
+      
+      responses:
+        '200':
+          description: Achievement updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/Achievement'
+                  message:
+                    type: string
+                    example: Achievement updated successfully
+        
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        
+        '404':
+          $ref: '#/components/responses/NotFound'
+        
+        '429':
+          $ref: '#/components/responses/RateLimited'
+    
+    delete:
+      summary: Delete achievement (with cascade)
+      tags: [CRUD]
+      description: |
+        Delete achievement and cascade to UserAchievements.
+        Maps to FR-064, FR-065, FR-066.
+      parameters:
+        - name: achievementId
+          in: path
+          required: true
+          schema:
+            type: string
+      
+      responses:
+        '200':
+          description: Achievement deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Achievement deleted successfully
+                  usersAffected:
+                    type: integer
+                    example: 47
+                    description: Number of UserAchievements cascade deleted
+        
+        '404':
+          $ref: '#/components/responses/NotFound'
+        
+        '429':
+          $ref: '#/components/responses/RateLimited'
+
+  /bulk-activate:
+    post:
+      summary: Bulk activate achievements
+      tags: [Bulk Operations]
+      description: Set isActive=true for multiple achievements. Maps to FR-039, FR-040.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - achievementIds
+              properties:
+                achievementIds:
+                  type: array
+                  items:
+                    type: string
+                  minItems: 1
+                  maxItems: 50
+                  example: [first-fast, week-warrior, month-master]
+      
+      responses:
+        '200':
+          description: Bulk activation completed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BulkOperationResponse'
+        
+        '400':
+          $ref: '#/components/responses/ValidationError'
+
+  /bulk-deactivate:
+    post:
+      summary: Bulk deactivate achievements
+      tags: [Bulk Operations]
+      description: Set isActive=false for multiple achievements. Maps to FR-039, FR-040.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - achievementIds
+              properties:
+                achievementIds:
+                  type: array
+                  items:
+                    type: string
+                  minItems: 1
+                  maxItems: 50
+      
+      responses:
+        '200':
+          description: Bulk deactivation completed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BulkOperationResponse'
+
+  /translations/export:
+    get:
+      summary: Export translations to CSV
+      tags: [Translations]
+      description: |
+        Export all achievement translations to CSV file.
+        Maps to FR-051, FR-052. Limit: 5MB per Clarification Q4.
+      responses:
+        '200':
+          description: CSV file download
+          content:
+            text/csv:
+              schema:
+                type: string
+                format: binary
+              example: |
+                achievementId,language,name,description,iconUrl
+                first-fast,en,Complete Your First Fast,Successfully complete your first fasting period,/icons/first-fast.svg
+                first-fast,es,Completa tu Primer Ayuno,Completa exitosamente tu primer período de ayuno,/icons/first-fast.svg
+          headers:
+            Content-Disposition:
+              schema:
+                type: string
+                example: attachment; filename=achievements-translations-2025-01-09.csv
+        
+        '429':
+          $ref: '#/components/responses/RateLimited'
+
+  /translations/import:
+    post:
+      summary: Import translations from CSV
+      tags: [Translations]
+      description: |
+        Upload CSV file to update translations.
+        Maps to FR-043, FR-044, FR-045, FR-046, FR-047, FR-048, FR-049, FR-050.
+        Limits: 5MB file size, 500 rows per Clarification Q4.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - file
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: CSV file (max 5MB, 500 rows)
+      
+      responses:
+        '200':
+          description: Import completed with summary
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  summary:
+                    type: object
+                    properties:
+                      totalRows:
+                        type: integer
+                        example: 250
+                      processed:
+                        type: integer
+                        example: 245
+                      errors:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            row:
+                              type: integer
+                            error:
+                              type: string
+                        example:
+                          - row: 12
+                            error: Invalid language code 'jp' (must be en/es/fr/de/ar)
+                          - row: 34
+                            error: Achievement ID 'nonexistent' not found
+        
+        '400':
+          description: Validation error (file too large, invalid format, etc.)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /analytics:
+    get:
+      summary: Get achievement analytics
+      tags: [Analytics]
+      description: |
+        Calculate real-time analytics (no caching per Clarification Q5).
+        Maps to FR-053 through FR-061. Target: 3-5 seconds.
+      responses:
+        '200':
+          description: Analytics data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      summary:
+                        type: object
+                        properties:
+                          totalAchievements:
+                            type: integer
+                            example: 81
+                          activeCount:
+                            type: integer
+                            example: 75
+                          inactiveCount:
+                            type: integer
+                            example: 6
+                      
+                      byCategory:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            category:
+                              type: string
+                            count:
+                              type: integer
+                        example:
+                          - category: fasting
+                            count: 30
+                          - category: streak
+                            count: 20
+                      
+                      byTier:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            tier:
+                              type: string
+                            count:
+                              type: integer
+                      
+                      topUnlocked:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            achievementId:
+                              type: string
+                            name:
+                              type: string
+                            unlockCount:
+                              type: integer
+                        description: Top 10 most unlocked achievements
+                      
+                      rarest:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            achievementId:
+                              type: string
+                            name:
+                              type: string
+                            earnedByPercentage:
+                              type: number
+                        description: Rarest achievements (lowest unlock rate)
+                      
+                      unlockTimeline:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            date:
+                              type: string
+                              format: date
+                            unlocks:
+                              type: integer
+                        description: Unlocks per day (last 30 days)
+
+components:
+  securitySchemes:
+    sessionAuth:
+      type: apiKey
+      in: cookie
+      name: next-auth.session-token
+      description: NextAuth session cookie (admin role required)
+  
+  schemas:
+    Achievement:
+      type: object
+      properties:
+        _id:
+          type: string
+          format: objectid
+        achievementId:
+          type: string
+          example: first-fast
+        category:
+          type: string
+          enum: [fasting, streak, goal, milestone, special]
+        type:
+          type: string
+          enum: [automatic, manual-trigger, admin-granted]
+        tier:
+          type: string
+          enum: [bronze, silver, gold, platinum, diamond]
+        isActive:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        createdBy:
+          type: string
+          format: objectid
+        rarity:
+          type: object
+          properties:
+            score:
+              type: integer
+              minimum: 1
+              maximum: 100
+            earnedByPercentage:
+              type: number
+            lastCalculated:
+              type: string
+              format: date-time
+        criteria:
+          type: object
+          properties:
+            type:
+              type: string
+              enum: [fasting-hours, streak-days, goal-completions, custom]
+            value:
+              type: number
+            conditions:
+              type: object
+        translations:
+          type: object
+          properties:
+            en:
+              $ref: '#/components/schemas/Translation'
+            es:
+              $ref: '#/components/schemas/Translation'
+            fr:
+              $ref: '#/components/schemas/Translation'
+            de:
+              $ref: '#/components/schemas/Translation'
+            ar:
+              $ref: '#/components/schemas/Translation'
+    
+    Translation:
+      type: object
+      required: [name, description, iconUrl]
+      properties:
+        name:
+          type: string
+          maxLength: 100
+        description:
+          type: string
+          maxLength: 500
+        iconUrl:
+          type: string
+          format: uri
+    
+    AchievementCreateRequest:
+      type: object
+      required:
+        - category
+        - type
+        - tier
+        - rarity
+        - criteria
+        - translations
+      properties:
+        category:
+          type: string
+          enum: [fasting, streak, goal, milestone, special]
+        type:
+          type: string
+          enum: [automatic, manual-trigger, admin-granted]
+        tier:
+          type: string
+          enum: [bronze, silver, gold, platinum, diamond]
+        isActive:
+          type: boolean
+          default: true
+        rarity:
+          type: object
+          required: [score]
+          properties:
+            score:
+              type: integer
+              minimum: 1
+              maximum: 100
+        criteria:
+          type: object
+          required: [type, value]
+          properties:
+            type:
+              type: string
+              enum: [fasting-hours, streak-days, goal-completions, custom]
+            value:
+              type: number
+              minimum: 1
+            conditions:
+              type: object
+        translations:
+          type: object
+          required: [en]
+          properties:
+            en:
+              $ref: '#/components/schemas/Translation'
+            es:
+              $ref: '#/components/schemas/Translation'
+            fr:
+              $ref: '#/components/schemas/Translation'
+            de:
+              $ref: '#/components/schemas/Translation'
+            ar:
+              $ref: '#/components/schemas/Translation'
+    
+    AchievementUpdateRequest:
+      type: object
+      properties:
+        category:
+          type: string
+          enum: [fasting, streak, goal, milestone, special]
+        type:
+          type: string
+          enum: [automatic, manual-trigger, admin-granted]
+        tier:
+          type: string
+          enum: [bronze, silver, gold, platinum, diamond]
+        isActive:
+          type: boolean
+        rarity:
+          type: object
+          properties:
+            score:
+              type: integer
+              minimum: 1
+              maximum: 100
+        criteria:
+          type: object
+          properties:
+            type:
+              type: string
+            value:
+              type: number
+            conditions:
+              type: object
+        translations:
+          type: object
+          properties:
+            en:
+              $ref: '#/components/schemas/Translation'
+            es:
+              $ref: '#/components/schemas/Translation'
+            fr:
+              $ref: '#/components/schemas/Translation'
+            de:
+              $ref: '#/components/schemas/Translation'
+            ar:
+              $ref: '#/components/schemas/Translation'
+    
+    BulkOperationResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: Bulk operation completed
+        summary:
+          type: object
+          properties:
+            totalRequested:
+              type: integer
+              example: 5
+            successful:
+              type: integer
+              example: 5
+            failed:
+              type: integer
+              example: 0
+            errors:
+              type: array
+              items:
+                type: object
+                properties:
+                  achievementId:
+                    type: string
+                  error:
+                    type: string
+    
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: string
+          example: Validation error
+        details:
+          type: object
+  
+  responses:
+    Unauthorized:
+      description: Not authenticated
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            success: false
+            error: Authentication required
+    
+    Forbidden:
+      description: Not authorized (non-admin user)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            success: false
+            error: Admin access required
+    
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            success: false
+            error: Achievement not found
+    
+    ValidationError:
+      description: Request validation failed
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            success: false
+            error: Validation error
+            details:
+              translations.en.name: Name is required
+              tier: Must be one of: bronze, silver, gold, platinum, diamond
+    
+    RateLimited:
+      description: Rate limit exceeded (100 req/min per Clarification Q2)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            success: false
+            error: Rate limit exceeded
+            retryAfter: 60

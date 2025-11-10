@@ -1,4 +1,21 @@
 /**
+ * GET /api/admin/achievements
+ * List all achievements with pagination, search, filters, and sorting
+ * 
+ * Query Parameters:
+ * - page: Page number (default: 1)
+ * - limit: Items per page (default: 20)
+ * - search: Search term for name/description
+ * - status: Filter by status (active/inactive/all)
+ * - category: Filter by category
+ * - tier: Filter by tier
+ * - sortBy: Sort field (name/createdAt/points)
+ * - sortOrder: Sort order (asc/desc)
+ * 
+ * Authentication: Required (Admin only)
+ */
+
+/**
  * POST /api/admin/achievements
  * Create a new achievement definition (admin only)
  * 
@@ -25,6 +42,9 @@ import { connectDB } from '@/lib/db';
 import Achievement from '@/lib/models/Achievement';
 import { withErrorHandler, okResponse, unauthorizedResponse, forbiddenResponse, badRequestResponse, errorResponse } from '@/lib/api/errorHandler';
 import { auth } from '@/lib/auth';
+import achievementAdminService from '@/lib/services/achievementAdminService';
+import auditLogService from '@/lib/services/auditLogService';
+import { rateLimit } from '@/lib/middleware/rateLimit';
 
 // Valid enum values
 const VALID_CATEGORIES = [
@@ -47,6 +67,79 @@ const VALID_CRITERIA_TYPES = [
   'weight-loss',
   'custom'
 ];
+
+export const GET = withErrorHandler(async (request) => {
+  // Check authentication
+  const session = await auth();
+  if (!session?.user?.id) {
+    return unauthorizedResponse('Authentication required');
+  }
+
+  // Check admin permission
+  if (!session.user.isAdmin) {
+    return forbiddenResponse('Admin access required');
+  }
+
+  // Apply rate limiting
+  request.session = session;
+  const rateLimitResult = rateLimit(request);
+  if (rateLimitResult) {
+    return new Response(
+      JSON.stringify(rateLimitResult.body),
+      { 
+        status: rateLimitResult.status,
+        headers: {
+          'Content-Type': 'application/json',
+          ...rateLimitResult.headers
+        }
+      }
+    );
+  }
+
+  await connectDB();
+
+  // Parse query parameters
+  const { searchParams } = new URL(request.url);
+  const options = {
+    page: parseInt(searchParams.get('page') || '1'),
+    limit: parseInt(searchParams.get('limit') || '20'),
+    search: searchParams.get('search') || undefined,
+    status: searchParams.get('status') || 'all',
+    category: searchParams.get('category') || undefined,
+    tier: searchParams.get('tier') || undefined,
+    sortBy: searchParams.get('sortBy') || 'createdAt',
+    sortOrder: searchParams.get('sortOrder') || 'desc'
+  };
+
+  // Get achievements list
+  const result = await achievementAdminService.list(options);
+
+  // Log action
+  const ipAddress = request.headers.get('x-forwarded-for') || 'unknown';
+  const userAgent = request.headers.get('user-agent') || 'unknown';
+  
+  await auditLogService.log({
+    userId: session.user.id,
+    action: 'view-list',
+    resource: 'achievement',
+    ipAddress,
+    userAgent
+  });
+
+  // Return response with rate limit headers
+  const responseHeaders = {
+    'Content-Type': 'application/json',
+    ...(request.rateLimitHeaders || {})
+  };
+
+  return new Response(
+    JSON.stringify(result),
+    {
+      status: 200,
+      headers: responseHeaders
+    }
+  );
+});
 
 export const POST = withErrorHandler(async (request) => {
   // Check authentication

@@ -28,6 +28,7 @@
     "node-cache": "^5.1.2",
     "react": "19.1.0",
     "react-dom": "19.1.0",
+    "react-hook-form": "^7.66.0",
     "recharts": "^3.3.0",
     "resend": "^6.2.0",
     "web-push": "^3.6.7"
